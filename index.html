@@ -1217,96 +1217,286 @@ function openGlyphEditor(){
 }
 
 // Get the actual font file URL from Google Fonts CSS
+// Map of fonts to direct TTF URLs on jsDelivr (CORS-friendly)
+// Based on Google Fonts repo: https://github.com/google/fonts
+var FONT_TTF_MAP = {
+  'Cinzel': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/cinzel/static/',
+    files: {
+      '400-normal': 'Cinzel-Regular.ttf',
+      '500-normal': 'Cinzel-Medium.ttf',
+      '600-normal': 'Cinzel-SemiBold.ttf',
+      '700-normal': 'Cinzel-Bold.ttf',
+      '800-normal': 'Cinzel-ExtraBold.ttf',
+      '900-normal': 'Cinzel-Black.ttf'
+    }
+  },
+  'Cinzel Decorative': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/cinzeldecorative/',
+    files: {
+      '400-normal': 'CinzelDecorative-Regular.ttf',
+      '700-normal': 'CinzelDecorative-Bold.ttf',
+      '900-normal': 'CinzelDecorative-Black.ttf'
+    }
+  },
+  'Forum': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/forum/',
+    files: { '400-normal': 'Forum-Regular.ttf' }
+  },
+  'Marcellus': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/marcellus/',
+    files: { '400-normal': 'Marcellus-Regular.ttf' }
+  },
+  'Marcellus SC': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/marcellussc/',
+    files: { '400-normal': 'MarcellusSC-Regular.ttf' }
+  },
+  'Cantata One': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/cantataone/',
+    files: { '400-normal': 'CantataOne-Regular.ttf' }
+  },
+  'IM Fell English': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/imfellenglish/',
+    files: {
+      '400-normal': 'IMFellEnglish-Regular.ttf',
+      '400-italic': 'IMFellEnglish-Italic.ttf'
+    }
+  },
+  'IM Fell English SC': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/imfellenglishsc/',
+    files: { '400-normal': 'IMFellEnglishSC-Regular.ttf' }
+  },
+  'IM Fell DW Pica': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/imfelldwpica/',
+    files: {
+      '400-normal': 'IMFellDWPica-Regular.ttf',
+      '400-italic': 'IMFellDWPica-Italic.ttf'
+    }
+  },
+  'IM Fell French Canon': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/imfellfrenchcanon/',
+    files: {
+      '400-normal': 'IMFellFrenchCanon-Regular.ttf',
+      '400-italic': 'IMFellFrenchCanon-Italic.ttf'
+    }
+  },
+  'Almendra SC': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/almendrasc/',
+    files: { '400-normal': 'AlmendraSC-Regular.ttf' }
+  },
+  'Almendra': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/almendra/',
+    files: {
+      '400-normal': 'Almendra-Regular.ttf',
+      '400-italic': 'Almendra-Italic.ttf',
+      '700-normal': 'Almendra-Bold.ttf',
+      '700-italic': 'Almendra-BoldItalic.ttf'
+    }
+  },
+  'Cormorant Garamond': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/cormorantgaramond/',
+    files: {
+      '300-normal': 'CormorantGaramond-Light.ttf',
+      '300-italic': 'CormorantGaramond-LightItalic.ttf',
+      '400-normal': 'CormorantGaramond-Regular.ttf',
+      '400-italic': 'CormorantGaramond-Italic.ttf',
+      '500-normal': 'CormorantGaramond-Medium.ttf',
+      '500-italic': 'CormorantGaramond-MediumItalic.ttf',
+      '600-normal': 'CormorantGaramond-SemiBold.ttf',
+      '600-italic': 'CormorantGaramond-SemiBoldItalic.ttf',
+      '700-normal': 'CormorantGaramond-Bold.ttf',
+      '700-italic': 'CormorantGaramond-BoldItalic.ttf'
+    }
+  },
+  'Cormorant SC': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/cormorantsc/',
+    files: {
+      '400-normal': 'CormorantSC-Regular.ttf',
+      '500-normal': 'CormorantSC-Medium.ttf',
+      '600-normal': 'CormorantSC-SemiBold.ttf',
+      '700-normal': 'CormorantSC-Bold.ttf'
+    }
+  },
+  'EB Garamond': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/ebgaramond/static/',
+    files: {
+      '400-normal': 'EBGaramond-Regular.ttf',
+      '400-italic': 'EBGaramond-Italic.ttf',
+      '500-normal': 'EBGaramond-Medium.ttf',
+      '600-normal': 'EBGaramond-SemiBold.ttf',
+      '700-normal': 'EBGaramond-Bold.ttf',
+      '700-italic': 'EBGaramond-BoldItalic.ttf',
+      '800-normal': 'EBGaramond-ExtraBold.ttf'
+    }
+  },
+  'Cardo': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/cardo/',
+    files: {
+      '400-normal': 'Cardo-Regular.ttf',
+      '400-italic': 'Cardo-Italic.ttf',
+      '700-normal': 'Cardo-Bold.ttf'
+    }
+  },
+  'Tinos': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/apache/tinos/',
+    files: {
+      '400-normal': 'Tinos-Regular.ttf',
+      '400-italic': 'Tinos-Italic.ttf',
+      '700-normal': 'Tinos-Bold.ttf',
+      '700-italic': 'Tinos-BoldItalic.ttf'
+    }
+  },
+  'Playfair Display': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/playfairdisplay/static/',
+    files: {
+      '400-normal': 'PlayfairDisplay-Regular.ttf',
+      '400-italic': 'PlayfairDisplay-Italic.ttf',
+      '500-normal': 'PlayfairDisplay-Medium.ttf',
+      '600-normal': 'PlayfairDisplay-SemiBold.ttf',
+      '700-normal': 'PlayfairDisplay-Bold.ttf',
+      '800-normal': 'PlayfairDisplay-ExtraBold.ttf',
+      '900-normal': 'PlayfairDisplay-Black.ttf',
+      '900-italic': 'PlayfairDisplay-BlackItalic.ttf'
+    }
+  },
+  'Playfair Display SC': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/playfairdisplaysc/',
+    files: {
+      '400-normal': 'PlayfairDisplaySC-Regular.ttf',
+      '400-italic': 'PlayfairDisplaySC-Italic.ttf',
+      '700-normal': 'PlayfairDisplaySC-Bold.ttf',
+      '700-italic': 'PlayfairDisplaySC-BoldItalic.ttf',
+      '900-normal': 'PlayfairDisplaySC-Black.ttf',
+      '900-italic': 'PlayfairDisplaySC-BlackItalic.ttf'
+    }
+  },
+  'Libre Baskerville': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/librebaskerville/',
+    files: {
+      '400-normal': 'LibreBaskerville-Regular.ttf',
+      '400-italic': 'LibreBaskerville-Italic.ttf',
+      '700-normal': 'LibreBaskerville-Bold.ttf'
+    }
+  },
+  'Crimson Pro': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/crimsonpro/static/',
+    files: {
+      '300-normal': 'CrimsonPro-Light.ttf',
+      '400-normal': 'CrimsonPro-Regular.ttf',
+      '600-normal': 'CrimsonPro-SemiBold.ttf',
+      '700-normal': 'CrimsonPro-Bold.ttf'
+    }
+  },
+  'Spectral': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/spectral/',
+    files: {
+      '300-normal': 'Spectral-Light.ttf',
+      '400-normal': 'Spectral-Regular.ttf',
+      '400-italic': 'Spectral-Italic.ttf',
+      '600-normal': 'Spectral-SemiBold.ttf',
+      '700-normal': 'Spectral-Bold.ttf'
+    }
+  },
+  'Spectral SC': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/spectralsc/',
+    files: {
+      '400-normal': 'SpectralSC-Regular.ttf',
+      '600-normal': 'SpectralSC-SemiBold.ttf',
+      '700-normal': 'SpectralSC-Bold.ttf'
+    }
+  },
+  'Yeseva One': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/yesevaone/',
+    files: { '400-normal': 'YesevaOne-Regular.ttf' }
+  },
+  'Italianno': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/italianno/',
+    files: { '400-normal': 'Italianno-Regular.ttf' }
+  },
+  'Uncial Antiqua': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/uncialantiqua/',
+    files: { '400-normal': 'UncialAntiqua-Regular.ttf' }
+  },
+  'UnifrakturMaguntia': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/unifrakturmaguntia/',
+    files: { '400-normal': 'UnifrakturMaguntia-Book.ttf' }
+  },
+  'UnifrakturCook': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/unifrakturcook/',
+    files: { '700-normal': 'UnifrakturCook-Bold.ttf' }
+  },
+  'Pirata One': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/pirataone/',
+    files: { '400-normal': 'PirataOne-Regular.ttf' }
+  },
+  'Raleway': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/raleway/static/',
+    files: {
+      '300-normal': 'Raleway-Light.ttf',
+      '400-normal': 'Raleway-Regular.ttf',
+      '500-normal': 'Raleway-Medium.ttf',
+      '600-normal': 'Raleway-SemiBold.ttf',
+      '700-normal': 'Raleway-Bold.ttf',
+      '900-normal': 'Raleway-Black.ttf'
+    }
+  },
+  'Josefin Sans': {
+    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/josefinsans/static/',
+    files: {
+      '300-normal': 'JosefinSans-Light.ttf',
+      '400-normal': 'JosefinSans-Regular.ttf',
+      '600-normal': 'JosefinSans-SemiBold.ttf',
+      '700-normal': 'JosefinSans-Bold.ttf'
+    }
+  }
+};
+
 function loadFontFile(ef){
   return new Promise(function(resolve, reject){
     if(typeof opentype === 'undefined'){
       reject(new Error('Bibliotheque opentype non chargee. Verifiez votre connexion internet.'));
       return;
     }
-    var fam = ef.gname.replace(/\+/g, ' ');
-    var weight = ef.weight;
-    var ital = ef.style === 'italic' ? 'italic' : '';
-    // Use the legacy Google Fonts API v1 which returns TTF for older user-agents
-    // Strategy: fetch CSS via a thirdparty CORS proxy that adds proper headers
-    var cssUrl1 = 'https://fonts.googleapis.com/css?family=' + encodeURIComponent(fam) + ':' + weight + ital + '&display=swap';
-    var cssUrl2 = 'https://fonts.googleapis.com/css2?family=' + ef.gname + ':ital,wght@' + (ital?1:0) + ',' + weight + '&display=swap';
-    var attempts = [cssUrl1, cssUrl2];
-    var idx = 0;
-
-    function tryNext(){
-      if(idx >= attempts.length){
-        reject(new Error('Impossible de charger la police. Essayez sur https://vitald81.github.io/Jorge/ (pas en fichier local).'));
-        return;
+    var entry = FONT_TTF_MAP[ef.family];
+    if(!entry){
+      reject(new Error('Police "' + ef.family + '" pas encore prise en charge dans l\u0027editeur. Choisissez une autre police.'));
+      return;
+    }
+    // Find best matching file
+    var key = ef.weight + '-' + (ef.style === 'italic' ? 'italic' : 'normal');
+    var fname = entry.files[key];
+    // Fallback chain
+    if(!fname){
+      var fallbacks = [
+        ef.weight + '-normal',
+        '400-' + (ef.style === 'italic' ? 'italic' : 'normal'),
+        '400-normal'
+      ];
+      for(var i=0; i<fallbacks.length; i++){
+        if(entry.files[fallbacks[i]]){ fname = entry.files[fallbacks[i]]; break; }
       }
-      var url = attempts[idx++];
-      fetch(url, {
-        headers: {
-          // Force a user-agent that gets TTF (server-side check is on UA, this header may be stripped by browser)
-          'Accept': 'text/css,*/*;q=0.1'
-        },
-        mode: 'cors'
-      })
-      .then(function(r){
-        if(!r.ok) throw new Error('HTTP ' + r.status);
-        return r.text();
-      })
-      .then(function(css){
-        // Find ALL src urls (multiple formats may be present), prefer TTF then OTF then WOFF
-        var allUrls = [];
-        var rx = /url\((['"]?)([^)'"]+)\1\)/gi;
-        var match;
-        while((match = rx.exec(css)) !== null){
-          allUrls.push(match[2]);
-        }
-        // Sort: ttf > otf > woff > woff2
-        var prio = function(u){
-          var ul = u.toLowerCase();
-          if(ul.indexOf('.ttf') > -1) return 0;
-          if(ul.indexOf('.otf') > -1) return 1;
-          if(ul.indexOf('.woff2') > -1) return 3;
-          if(ul.indexOf('.woff') > -1) return 2;
-          return 4;
-        };
-        allUrls.sort(function(a,b){ return prio(a) - prio(b); });
-        if(allUrls.length === 0){
-          tryNext();
-          return;
-        }
-        // opentype.js supports ttf, otf, woff (not woff2)
-        var supported = allUrls.filter(function(u){
-          var ul = u.toLowerCase();
-          return ul.indexOf('.ttf') > -1 || ul.indexOf('.otf') > -1 || (ul.indexOf('.woff') > -1 && ul.indexOf('.woff2') === -1);
-        });
-        if(supported.length === 0){
-          tryNext();
-          return;
-        }
-        loadFromUrls(supported, 0, resolve, function(err){
-          tryNext();
-        });
-      })
-      .catch(function(e){
-        console.warn('[Jorge] CSS fetch failed:', e.message);
-        tryNext();
-      });
     }
-
-    function loadFromUrls(urls, i, ok, fail){
-      if(i >= urls.length){ fail(new Error('Aucune URL de police chargeable')); return; }
-      opentype.load(urls[i], function(err, font){
-        if(err || !font){
-          console.warn('[Jorge] opentype.load failed for', urls[i], err);
-          loadFromUrls(urls, i+1, ok, fail);
-        } else {
-          ok(font);
-        }
-      });
+    // Last resort: any file
+    if(!fname){
+      var anyKey = Object.keys(entry.files)[0];
+      fname = entry.files[anyKey];
     }
-
-    tryNext();
+    if(!fname){
+      reject(new Error('Aucun fichier TTF trouve pour cette graisse'));
+      return;
+    }
+    var url = entry.base + fname;
+    console.log('[Jorge] Loading font from:', url);
+    opentype.load(url, function(err, font){
+      if(err){
+        console.error('[Jorge] opentype.load error:', err);
+        reject(new Error('Echec du chargement: ' + (err.message || err)));
+      } else {
+        resolve(font);
+      }
+    });
   });
 }
-
 function buildLetterTabs(){
   var tabs = document.getElementById('geTabs');
   tabs.innerHTML = '';
