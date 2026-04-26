@@ -170,6 +170,11 @@ textarea::placeholder{color:var(--fnt)}
 @media(min-width:700px){.ge-main{flex-direction:row}}
 .ge-canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:repeating-conic-gradient(#f0f4f1 0 25%,#f8fbf9 0 50%) 50%/16px 16px;overflow:hidden;min-height:300px;padding:20px;position:relative}
 .ge-canvas-wrap svg{max-width:100%;max-height:100%;display:block;cursor:default}
+.ge-photo-ref{flex-shrink:0;display:flex;flex-direction:column;gap:6px;padding:14px;background:var(--g50);border-left:1px solid var(--brd);min-width:240px;max-width:300px}
+.ge-photo-ref.hidden{display:none}
+.ge-photo-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--mut);font-family:var(--mono);text-align:center}
+.ge-photo-ref img{width:100%;max-height:50vh;object-fit:contain;border-radius:8px;background:var(--wh);border:1px solid var(--brd2);display:block}
+@media(max-width:899px){.ge-photo-ref{display:none}}
 .ge-tools{flex-shrink:0;display:flex;flex-direction:column;gap:10px;padding:14px;background:var(--wh);border-top:1px solid var(--brd);min-width:240px}
 @media(min-width:700px){.ge-tools{border-top:none;border-left:1px solid var(--brd);max-width:240px;overflow-y:auto}}
 .ge-tool-row{display:flex;flex-direction:column;gap:5px}
@@ -377,6 +382,43 @@ textarea::placeholder{color:var(--fnt)}
     <button class="btn btn-g" id="btnApply" style="width:100%">Utiliser cette police &#10003;</button>
   </div>
 </div>
+
+<!-- GLYPH EDITOR -->
+<div id="glyphEditor">
+  <div class="ge-box">
+    <div class="ge-top">
+      <h2 id="geTitle">Editeur de glyphes</h2>
+      <button class="btn btn-sm btn-ghost" id="geClose">Fermer</button>
+    </div>
+    <div class="ge-tabs" id="geTabs"></div>
+    <div class="ge-main">
+      <div class="ge-canvas-wrap" id="geCanvasWrap"></div>
+        <div class="ge-photo-ref" id="gePhotoRef">
+          <div class="ge-photo-lbl">PHOTO DE REFERENCE</div>
+          <img id="gePhotoImg" src="" alt="">
+        </div>
+      <div class="ge-tools">
+        <div class="ge-status" id="geStatus">Selectionnez une lettre</div>
+        <div class="ge-tool-row">
+          <div class="ge-tool-lbl">Modifications</div>
+          <button class="btn btn-sm" id="geReset">Reinitialiser cette lettre</button>
+          <button class="btn btn-sm" id="geResetAll">Tout reinitialiser</button>
+        </div>
+        <div class="ge-tool-row">
+          <div class="ge-tool-lbl">Affichage</div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mid)">
+            <input type="checkbox" id="geShowHandles" checked> Poignees Bezier
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mid)">
+            <input type="checkbox" id="geShowAnchors" checked> Points d'ancrage
+          </label>
+        </div>
+        <div class="ge-tool-row">
+          <div class="ge-tool-lbl">Aide</div>
+          <p style="font-size:11px;color:var(--mut);line-height:1.5">Glissez les <strong>carres bleus</strong> pour deplacer les points. Glissez les <strong>cercles</strong> pour courber les segments.</p>
+        </div>
+      </div>
+    </div>
 
 <script>
 // =============================================
@@ -1178,6 +1220,15 @@ function openGlyphEditor(){
   var ef = effectiveFont(); if(!ef) return;
   var raw = document.getElementById('ta').value || 'JORGE';
   var txt = applyCase(raw, ef.textCase);
+  // Set photo reference
+  var photoEl = document.getElementById('gePhotoImg');
+  var photoBox = document.getElementById('gePhotoRef');
+  if(S.cropPreviewUrl && photoEl && photoBox){
+    photoEl.src = S.cropPreviewUrl;
+    photoBox.classList.remove('hidden');
+  } else if(photoBox){
+    photoBox.classList.add('hidden');
+  }
   // Get unique letters (no spaces / newlines)
   var seen = {};
   GE.letters = [];
@@ -1554,38 +1605,7 @@ document.getElementById('geApply').addEventListener('click', function(){
 
 </script>
 
-<!-- GLYPH EDITOR -->
-<div id="glyphEditor">
-  <div class="ge-box">
-    <div class="ge-top">
-      <h2 id="geTitle">Editeur de glyphes</h2>
-      <button class="btn btn-sm btn-ghost" id="geClose">Fermer</button>
-    </div>
-    <div class="ge-tabs" id="geTabs"></div>
-    <div class="ge-main">
-      <div class="ge-canvas-wrap" id="geCanvasWrap"></div>
-      <div class="ge-tools">
-        <div class="ge-status" id="geStatus">Selectionnez une lettre</div>
-        <div class="ge-tool-row">
-          <div class="ge-tool-lbl">Modifications</div>
-          <button class="btn btn-sm" id="geReset">Reinitialiser cette lettre</button>
-          <button class="btn btn-sm" id="geResetAll">Tout reinitialiser</button>
-        </div>
-        <div class="ge-tool-row">
-          <div class="ge-tool-lbl">Affichage</div>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mid)">
-            <input type="checkbox" id="geShowHandles" checked> Poignees Bezier
-          </label>
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mid)">
-            <input type="checkbox" id="geShowAnchors" checked> Points d'ancrage
-          </label>
-        </div>
-        <div class="ge-tool-row">
-          <div class="ge-tool-lbl">Aide</div>
-          <p style="font-size:11px;color:var(--mut);line-height:1.5">Glissez les <strong>carres bleus</strong> pour deplacer les points. Glissez les <strong>cercles</strong> pour courber les segments.</p>
-        </div>
-      </div>
-    </div>
+
     <div class="ge-foot">
       <button class="btn btn-f" id="geCancel">Annuler</button>
       <button class="btn btn-g btn-f" id="geApply">Appliquer aux glyphes</button>
