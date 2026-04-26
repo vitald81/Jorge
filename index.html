@@ -393,10 +393,6 @@ var FONTS = [
   {family:'Cantata One',       gname:'Cantata+One',         weight:'400', style:'normal', tag:'Lapidaire epais',         prev:'ABCDEF'},
 
   // === MEMORIAL / FUNERAIRE TRADITIONNEL ===
-  {family:'IM Fell English',   gname:'IM+Fell+English',     weight:'400', style:'normal', tag:'Gravure ancienne',        prev:'ABCDEF'},
-  {family:'IM Fell English SC',gname:'IM+Fell+English+SC',  weight:'400', style:'normal', tag:'Petites capitales anciennes',prev:'ABCDEF'},
-  {family:'IM Fell DW Pica',   gname:'IM+Fell+DW+Pica',     weight:'400', style:'normal', tag:'Gravure XVIIIe',          prev:'ABCDEF'},
-  {family:'IM Fell French Canon',gname:'IM+Fell+French+Canon',weight:'400', style:'normal', tag:'Gravure XVIIe',         prev:'ABCDEF'},
   {family:'Almendra SC',       gname:'Almendra+SC',         weight:'400', style:'normal', tag:'Capitales gravees',       prev:'ABCDEF'},
   {family:'Almendra',          gname:'Almendra',            weight:'700', style:'normal', tag:'Serif memorial gras',     prev:'ABCDEF'},
 
@@ -422,7 +418,6 @@ var FONTS = [
 
   // === ITALIQUES / SCRIPT ===
   {family:'Cormorant Garamond',gname:'Cormorant+Garamond',  weight:'400', style:'italic', tag:'Italique elegant',        prev:'ABCDEF'},
-  {family:'IM Fell English',   gname:'IM+Fell+English',     weight:'400', style:'italic', tag:'Italique ancien',         prev:'ABCDEF'},
   {family:'Italianno',         gname:'Italianno',           weight:'400', style:'normal', tag:'Calligraphie cursive',    prev:'ABCDEF'},
 
   // === MEDIEVAL / GOTHIQUE ===
@@ -687,11 +682,11 @@ window.addEventListener('resize',function(){
 var FONT_CATS = [
   {at:0,  label:'Gravure lapidaire / Romaine'},
   {at:7,  label:'Memorial / Funeraire traditionnel'},
-  {at:13, label:'Serifs elegants / Neoclassiques'},
-  {at:20, label:'Serifs haut contraste'},
-  {at:28, label:'Italiques / Calligraphie'},
-  {at:31, label:'Medieval / Gothique'},
-  {at:35, label:'Sans-serif modernes'}
+  {at:9,  label:'Serifs elegants / Neoclassiques'},
+  {at:16, label:'Serifs haut contraste'},
+  {at:24, label:'Italiques / Calligraphie'},
+  {at:26, label:'Medieval / Gothique'},
+  {at:30, label:'Sans-serif modernes'}
 ];
 
 function buildFontPicker() {
@@ -1220,235 +1215,33 @@ function openGlyphEditor(){
 // Map of fonts to direct TTF URLs on jsDelivr (CORS-friendly)
 // Based on Google Fonts repo: https://github.com/google/fonts
 var FONT_TTF_MAP = {
-  'Cinzel': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/cinzel/static/',
-    files: {
-      '400-normal': 'Cinzel-Regular.ttf',
-      '500-normal': 'Cinzel-Medium.ttf',
-      '600-normal': 'Cinzel-SemiBold.ttf',
-      '700-normal': 'Cinzel-Bold.ttf',
-      '800-normal': 'Cinzel-ExtraBold.ttf',
-      '900-normal': 'Cinzel-Black.ttf'
-    }
-  },
-  'Cinzel Decorative': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/cinzeldecorative/',
-    files: {
-      '400-normal': 'CinzelDecorative-Regular.ttf',
-      '700-normal': 'CinzelDecorative-Bold.ttf',
-      '900-normal': 'CinzelDecorative-Black.ttf'
-    }
-  },
-  'Forum': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/forum/',
-    files: { '400-normal': 'Forum-Regular.ttf' }
-  },
-  'Marcellus': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/marcellus/',
-    files: { '400-normal': 'Marcellus-Regular.ttf' }
-  },
-  'Marcellus SC': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/marcellussc/',
-    files: { '400-normal': 'MarcellusSC-Regular.ttf' }
-  },
-  'Cantata One': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/cantataone/',
-    files: { '400-normal': 'CantataOne-Regular.ttf' }
-  },
-  'IM Fell English': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/imfellenglish/',
-    files: {
-      '400-normal': 'IMFellEnglish-Regular.ttf',
-      '400-italic': 'IMFellEnglish-Italic.ttf'
-    }
-  },
-  'IM Fell English SC': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/imfellenglishsc/',
-    files: { '400-normal': 'IMFellEnglishSC-Regular.ttf' }
-  },
-  'IM Fell DW Pica': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/imfelldwpica/',
-    files: {
-      '400-normal': 'IMFellDWPica-Regular.ttf',
-      '400-italic': 'IMFellDWPica-Italic.ttf'
-    }
-  },
-  'IM Fell French Canon': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/imfellfrenchcanon/',
-    files: {
-      '400-normal': 'IMFellFrenchCanon-Regular.ttf',
-      '400-italic': 'IMFellFrenchCanon-Italic.ttf'
-    }
-  },
-  'Almendra SC': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/almendrasc/',
-    files: { '400-normal': 'AlmendraSC-Regular.ttf' }
-  },
-  'Almendra': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/almendra/',
-    files: {
-      '400-normal': 'Almendra-Regular.ttf',
-      '400-italic': 'Almendra-Italic.ttf',
-      '700-normal': 'Almendra-Bold.ttf',
-      '700-italic': 'Almendra-BoldItalic.ttf'
-    }
-  },
-  'Cormorant Garamond': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/cormorantgaramond/',
-    files: {
-      '300-normal': 'CormorantGaramond-Light.ttf',
-      '300-italic': 'CormorantGaramond-LightItalic.ttf',
-      '400-normal': 'CormorantGaramond-Regular.ttf',
-      '400-italic': 'CormorantGaramond-Italic.ttf',
-      '500-normal': 'CormorantGaramond-Medium.ttf',
-      '500-italic': 'CormorantGaramond-MediumItalic.ttf',
-      '600-normal': 'CormorantGaramond-SemiBold.ttf',
-      '600-italic': 'CormorantGaramond-SemiBoldItalic.ttf',
-      '700-normal': 'CormorantGaramond-Bold.ttf',
-      '700-italic': 'CormorantGaramond-BoldItalic.ttf'
-    }
-  },
-  'Cormorant SC': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/cormorantsc/',
-    files: {
-      '400-normal': 'CormorantSC-Regular.ttf',
-      '500-normal': 'CormorantSC-Medium.ttf',
-      '600-normal': 'CormorantSC-SemiBold.ttf',
-      '700-normal': 'CormorantSC-Bold.ttf'
-    }
-  },
-  'EB Garamond': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/ebgaramond/static/',
-    files: {
-      '400-normal': 'EBGaramond-Regular.ttf',
-      '400-italic': 'EBGaramond-Italic.ttf',
-      '500-normal': 'EBGaramond-Medium.ttf',
-      '600-normal': 'EBGaramond-SemiBold.ttf',
-      '700-normal': 'EBGaramond-Bold.ttf',
-      '700-italic': 'EBGaramond-BoldItalic.ttf',
-      '800-normal': 'EBGaramond-ExtraBold.ttf'
-    }
-  },
-  'Cardo': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/cardo/',
-    files: {
-      '400-normal': 'Cardo-Regular.ttf',
-      '400-italic': 'Cardo-Italic.ttf',
-      '700-normal': 'Cardo-Bold.ttf'
-    }
-  },
-  'Tinos': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/apache/tinos/',
-    files: {
-      '400-normal': 'Tinos-Regular.ttf',
-      '400-italic': 'Tinos-Italic.ttf',
-      '700-normal': 'Tinos-Bold.ttf',
-      '700-italic': 'Tinos-BoldItalic.ttf'
-    }
-  },
-  'Playfair Display': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/playfairdisplay/static/',
-    files: {
-      '400-normal': 'PlayfairDisplay-Regular.ttf',
-      '400-italic': 'PlayfairDisplay-Italic.ttf',
-      '500-normal': 'PlayfairDisplay-Medium.ttf',
-      '600-normal': 'PlayfairDisplay-SemiBold.ttf',
-      '700-normal': 'PlayfairDisplay-Bold.ttf',
-      '800-normal': 'PlayfairDisplay-ExtraBold.ttf',
-      '900-normal': 'PlayfairDisplay-Black.ttf',
-      '900-italic': 'PlayfairDisplay-BlackItalic.ttf'
-    }
-  },
-  'Playfair Display SC': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/playfairdisplaysc/',
-    files: {
-      '400-normal': 'PlayfairDisplaySC-Regular.ttf',
-      '400-italic': 'PlayfairDisplaySC-Italic.ttf',
-      '700-normal': 'PlayfairDisplaySC-Bold.ttf',
-      '700-italic': 'PlayfairDisplaySC-BoldItalic.ttf',
-      '900-normal': 'PlayfairDisplaySC-Black.ttf',
-      '900-italic': 'PlayfairDisplaySC-BlackItalic.ttf'
-    }
-  },
-  'Libre Baskerville': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/librebaskerville/',
-    files: {
-      '400-normal': 'LibreBaskerville-Regular.ttf',
-      '400-italic': 'LibreBaskerville-Italic.ttf',
-      '700-normal': 'LibreBaskerville-Bold.ttf'
-    }
-  },
-  'Crimson Pro': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/crimsonpro/static/',
-    files: {
-      '300-normal': 'CrimsonPro-Light.ttf',
-      '400-normal': 'CrimsonPro-Regular.ttf',
-      '600-normal': 'CrimsonPro-SemiBold.ttf',
-      '700-normal': 'CrimsonPro-Bold.ttf'
-    }
-  },
-  'Spectral': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/spectral/',
-    files: {
-      '300-normal': 'Spectral-Light.ttf',
-      '400-normal': 'Spectral-Regular.ttf',
-      '400-italic': 'Spectral-Italic.ttf',
-      '600-normal': 'Spectral-SemiBold.ttf',
-      '700-normal': 'Spectral-Bold.ttf'
-    }
-  },
-  'Spectral SC': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/spectralsc/',
-    files: {
-      '400-normal': 'SpectralSC-Regular.ttf',
-      '600-normal': 'SpectralSC-SemiBold.ttf',
-      '700-normal': 'SpectralSC-Bold.ttf'
-    }
-  },
-  'Yeseva One': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/yesevaone/',
-    files: { '400-normal': 'YesevaOne-Regular.ttf' }
-  },
-  'Italianno': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/italianno/',
-    files: { '400-normal': 'Italianno-Regular.ttf' }
-  },
-  'Uncial Antiqua': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/uncialantiqua/',
-    files: { '400-normal': 'UncialAntiqua-Regular.ttf' }
-  },
-  'UnifrakturMaguntia': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/unifrakturmaguntia/',
-    files: { '400-normal': 'UnifrakturMaguntia-Book.ttf' }
-  },
-  'UnifrakturCook': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/unifrakturcook/',
-    files: { '700-normal': 'UnifrakturCook-Bold.ttf' }
-  },
-  'Pirata One': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/pirataone/',
-    files: { '400-normal': 'PirataOne-Regular.ttf' }
-  },
-  'Raleway': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/raleway/static/',
-    files: {
-      '300-normal': 'Raleway-Light.ttf',
-      '400-normal': 'Raleway-Regular.ttf',
-      '500-normal': 'Raleway-Medium.ttf',
-      '600-normal': 'Raleway-SemiBold.ttf',
-      '700-normal': 'Raleway-Bold.ttf',
-      '900-normal': 'Raleway-Black.ttf'
-    }
-  },
-  'Josefin Sans': {
-    base: 'https://cdn.jsdelivr.net/gh/google/fonts/ofl/josefinsans/static/',
-    files: {
-      '300-normal': 'JosefinSans-Light.ttf',
-      '400-normal': 'JosefinSans-Regular.ttf',
-      '600-normal': 'JosefinSans-SemiBold.ttf',
-      '700-normal': 'JosefinSans-Bold.ttf'
-    }
-  }
+  'Cinzel': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/cinzel/', variable:true, files:{ 'all-normal':'Cinzel%5Bwght%5D.ttf' } },
+  'Cinzel Decorative': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/cinzeldecorative/', variable:false, files:{ '400-normal':'CinzelDecorative-Regular.ttf', '700-normal':'CinzelDecorative-Bold.ttf', '900-normal':'CinzelDecorative-Black.ttf' } },
+  'Forum': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/forum/', variable:false, files:{ '400-normal':'Forum-Regular.ttf' } },
+  'Cormorant Garamond': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/cormorantgaramond/', variable:true, files:{ 'all-normal':'CormorantGaramond%5Bwght%5D.ttf', 'all-italic':'CormorantGaramond-Italic%5Bwght%5D.ttf' } },
+  'Playfair Display': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/playfairdisplay/', variable:true, files:{ 'all-normal':'PlayfairDisplay%5Bwght%5D.ttf', 'all-italic':'PlayfairDisplay-Italic%5Bwght%5D.ttf' } },
+  'Marcellus': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/marcellus/', variable:false, files:{ '400-normal':'Marcellus-Regular.ttf' } },
+  'Libre Baskerville': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/librebaskerville/', variable:true, files:{ 'all-normal':'LibreBaskerville%5Bwght%5D.ttf' } },
+  'Crimson Pro': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/crimsonpro/', variable:true, files:{ 'all-normal':'CrimsonPro%5Bwght%5D.ttf' } },
+  'Spectral': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/spectral/', variable:false, files:{ '400-normal':'Spectral-Regular.ttf', '400-italic':'Spectral-Italic.ttf', '700-normal':'Spectral-Bold.ttf' } },
+  'Cardo': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/cardo/', variable:false, files:{ '400-normal':'Cardo-Regular.ttf', '400-italic':'Cardo-Italic.ttf', '700-normal':'Cardo-Bold.ttf' } },
+  'Tinos': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/apache/tinos/', variable:false, files:{ '400-normal':'Tinos-Regular.ttf', '400-italic':'Tinos-Italic.ttf', '700-normal':'Tinos-Bold.ttf', '700-italic':'Tinos-BoldItalic.ttf' } },
+  'Raleway': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/raleway/', variable:true, files:{ 'all-normal':'Raleway%5Bwght%5D.ttf' } },
+  'Josefin Sans': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/josefinsans/', variable:true, files:{ 'all-normal':'JosefinSans%5Bwght%5D.ttf' } },
+  'Uncial Antiqua': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/uncialantiqua/', variable:false, files:{ '400-normal':'UncialAntiqua-Regular.ttf' } },
+  'UnifrakturMaguntia': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/unifrakturmaguntia/', variable:false, files:{ '400-normal':'UnifrakturMaguntia-Book.ttf' } },
+  'UnifrakturCook': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/unifrakturcook/', variable:false, files:{ '700-normal':'UnifrakturCook-Bold.ttf' } },
+  'Pirata One': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/pirataone/', variable:false, files:{ '400-normal':'PirataOne-Regular.ttf' } },
+  'Italianno': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/italianno/', variable:false, files:{ '400-normal':'Italianno-Regular.ttf' } },
+  'Yeseva One': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/yesevaone/', variable:false, files:{ '400-normal':'YesevaOne-Regular.ttf' } },
+  'Almendra': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/almendra/', variable:false, files:{ '400-normal':'Almendra-Regular.ttf', '400-italic':'Almendra-Italic.ttf', '700-normal':'Almendra-Bold.ttf', '700-italic':'Almendra-BoldItalic.ttf' } },
+  'Almendra SC': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/almendrasc/', variable:false, files:{ '400-normal':'AlmendraSC-Regular.ttf' } },
+  'Cantata One': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/cantataone/', variable:false, files:{ '400-normal':'CantataOne-Regular.ttf' } },
+  'Marcellus SC': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/marcellussc/', variable:false, files:{ '400-normal':'MarcellusSC-Regular.ttf' } },
+  'Cormorant SC': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/cormorantsc/', variable:false, files:{ '400-normal':'CormorantSC-Regular.ttf', '500-normal':'CormorantSC-Medium.ttf', '600-normal':'CormorantSC-SemiBold.ttf', '700-normal':'CormorantSC-Bold.ttf' } },
+  'Spectral SC': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/spectralsc/', variable:false, files:{ '400-normal':'SpectralSC-Regular.ttf' } },
+  'Playfair Display SC': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/playfairdisplaysc/', variable:false, files:{ '400-normal':'PlayfairDisplaySC-Regular.ttf', '400-italic':'PlayfairDisplaySC-Italic.ttf', '700-normal':'PlayfairDisplaySC-Bold.ttf' } },
+  'EB Garamond': { base:'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/ebgaramond/', variable:true, files:{ 'all-normal':'EBGaramond%5Bwght%5D.ttf', 'all-italic':'EBGaramond-Italic%5Bwght%5D.ttf' } },
 };
 
 function loadFontFile(ef){
@@ -1463,13 +1256,20 @@ function loadFontFile(ef){
       return;
     }
     // Find best matching file
-    var key = ef.weight + '-' + (ef.style === 'italic' ? 'italic' : 'normal');
+    var styleSuffix = ef.style === 'italic' ? 'italic' : 'normal';
+    var key = ef.weight + '-' + styleSuffix;
     var fname = entry.files[key];
+    // Variable fonts use 'all-normal' / 'all-italic'
+    if(!fname && entry.variable){
+      fname = entry.files['all-' + styleSuffix];
+    }
     // Fallback chain
     if(!fname){
       var fallbacks = [
         ef.weight + '-normal',
-        '400-' + (ef.style === 'italic' ? 'italic' : 'normal'),
+        'all-' + styleSuffix,
+        'all-normal',
+        '400-' + styleSuffix,
         '400-normal'
       ];
       for(var i=0; i<fallbacks.length; i++){
