@@ -1409,7 +1409,7 @@ function renderEditor(){
   // Baseline
   svg += '<line x1="' + bb.minX + '" y1="0" x2="' + bb.maxX + '" y2="0" stroke="#cce0d4" stroke-width="' + (upem*0.005) + '" stroke-dasharray="' + (upem*0.02) + ',' + (upem*0.02) + '"/>';
   // Glyph fill
-  svg += '<path d="' + d + '" fill="#0b1e12" fill-opacity="0.85" stroke="#1a5c38" stroke-width="' + (upem*0.003) + '" />';
+  svg += '<path d="' + d + '" fill="#0b1e12" fill-opacity="0.45" stroke="#0b1e12" stroke-width="' + (upem*0.004) + '" />';
   svg += '</g>';
 
   // Overlays (anchors + handles) — also in flipped coord
@@ -1419,26 +1419,26 @@ function renderEditor(){
     var c = commands[i];
     if(c.type === 'M' || c.type === 'L'){
       if(GE.showAnchors){
-        svg += '<rect class="ge-anchor" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.012) + '" y="' + (c.y - upem*0.012) + '" width="' + (upem*0.024) + '" height="' + (upem*0.024) + '" fill="#3d8f58" stroke="#fff" stroke-width="' + (upem*0.003) + '"/>';
+        svg += '<rect class="ge-anchor" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.006) + '" y="' + (c.y - upem*0.006) + '" width="' + (upem*0.012) + '" height="' + (upem*0.012) + '" fill="#1a5c38" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
       }
     } else if(c.type === 'C'){
       if(GE.showHandles && prev){
         svg += '<line class="ge-ctrl-line" x1="' + prev.x + '" y1="' + prev.y + '" x2="' + c.x1 + '" y2="' + c.y1 + '"/>';
         svg += '<line class="ge-ctrl-line" x1="' + c.x + '" y1="' + c.y + '" x2="' + c.x2 + '" y2="' + c.y2 + '"/>';
-        svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl1" cx="' + c.x1 + '" cy="' + c.y1 + '" r="' + (upem*0.014) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.003) + '"/>';
-        svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl2" cx="' + c.x2 + '" cy="' + c.y2 + '" r="' + (upem*0.014) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.003) + '"/>';
+        svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl1" cx="' + c.x1 + '" cy="' + c.y1 + '" r="' + (upem*0.007) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
+        svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl2" cx="' + c.x2 + '" cy="' + c.y2 + '" r="' + (upem*0.007) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
       }
       if(GE.showAnchors){
-        svg += '<rect class="ge-anchor" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.012) + '" y="' + (c.y - upem*0.012) + '" width="' + (upem*0.024) + '" height="' + (upem*0.024) + '" fill="#3d8f58" stroke="#fff" stroke-width="' + (upem*0.003) + '"/>';
+        svg += '<rect class="ge-anchor" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.006) + '" y="' + (c.y - upem*0.006) + '" width="' + (upem*0.012) + '" height="' + (upem*0.012) + '" fill="#1a5c38" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
       }
     } else if(c.type === 'Q'){
       if(GE.showHandles && prev){
         svg += '<line class="ge-ctrl-line" x1="' + prev.x + '" y1="' + prev.y + '" x2="' + c.x1 + '" y2="' + c.y1 + '"/>';
         svg += '<line class="ge-ctrl-line" x1="' + c.x + '" y1="' + c.y + '" x2="' + c.x1 + '" y2="' + c.y1 + '"/>';
-        svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl1" cx="' + c.x1 + '" cy="' + c.y1 + '" r="' + (upem*0.014) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.003) + '"/>';
+        svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl1" cx="' + c.x1 + '" cy="' + c.y1 + '" r="' + (upem*0.007) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
       }
       if(GE.showAnchors){
-        svg += '<rect class="ge-anchor" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.012) + '" y="' + (c.y - upem*0.012) + '" width="' + (upem*0.024) + '" height="' + (upem*0.024) + '" fill="#3d8f58" stroke="#fff" stroke-width="' + (upem*0.003) + '"/>';
+        svg += '<rect class="ge-anchor" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.006) + '" y="' + (c.y - upem*0.006) + '" width="' + (upem*0.012) + '" height="' + (upem*0.012) + '" fill="#1a5c38" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
       }
     }
     if(c.type !== 'Z' && c.x !== undefined) prev = { x: c.x, y: c.y };
@@ -1551,35 +1551,48 @@ function bindDrag(svgEl){
   svgEl.addEventListener('pointercancel', onUp);
 }
 
-document.getElementById('geShowHandles').addEventListener('change', function(e){
-  GE.showHandles = e.target.checked;
-  renderEditor();
-});
-document.getElementById('geShowAnchors').addEventListener('change', function(e){
-  GE.showAnchors = e.target.checked;
-  renderEditor();
+// Event delegation — works even if elements are added later
+document.addEventListener('click', function(e){
+  if(!e.target) return;
+  var id = e.target.id;
+  if(id === 'geClose' || id === 'geCancel'){
+    e.preventDefault();
+    document.getElementById('glyphEditor').classList.remove('on');
+    return;
+  }
+  if(id === 'geReset'){
+    e.preventDefault();
+    if(!GE.currentChar) return;
+    delete GE.glyphs[GE.currentChar];
+    selectLetter(GE.currentChar);
+    return;
+  }
+  if(id === 'geResetAll'){
+    e.preventDefault();
+    if(!confirm('Reinitialiser toutes les lettres modifiees ?')) return;
+    GE.glyphs = {};
+    if(GE.letters.length > 0) selectLetter(GE.letters[0]);
+    return;
+  }
+  if(id === 'geApply'){
+    e.preventDefault();
+    geApplyGlyphs();
+    return;
+  }
 });
 
-document.getElementById('geReset').addEventListener('click', function(){
-  if(!GE.currentChar) return;
-  delete GE.glyphs[GE.currentChar];
-  selectLetter(GE.currentChar);
+document.addEventListener('change', function(e){
+  if(!e.target) return;
+  if(e.target.id === 'geShowHandles'){
+    GE.showHandles = e.target.checked;
+    renderEditor();
+  } else if(e.target.id === 'geShowAnchors'){
+    GE.showAnchors = e.target.checked;
+    renderEditor();
+  }
 });
 
-document.getElementById('geResetAll').addEventListener('click', function(){
-  if(!confirm('Reinitialiser toutes les lettres modifiees ?')) return;
-  GE.glyphs = {};
-  if(GE.letters.length > 0) selectLetter(GE.letters[0]);
-});
-
-document.getElementById('geClose').addEventListener('click', function(){
-  document.getElementById('glyphEditor').classList.remove('on');
-});
-document.getElementById('geCancel').addEventListener('click', function(){
-  document.getElementById('glyphEditor').classList.remove('on');
-});
-
-document.getElementById('geApply').addEventListener('click', function(){
+function geApplyGlyphs(){
   // Save modified glyphs to global state
   var ef = effectiveFont();
   var modifiedOnly = {};
@@ -1601,7 +1614,7 @@ document.getElementById('geApply').addEventListener('click', function(){
   if(n > 0){
     btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg> Modifier les lettres (' + n + ' modifiees)';
   }
-});
+}
 
 </script>
 
