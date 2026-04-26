@@ -188,6 +188,21 @@ textarea::placeholder{color:var(--fnt)}
 .ge-anchor:active{cursor:grabbing}
 .ge-ctrl-line{stroke:var(--g300);stroke-width:1;stroke-dasharray:3,3;opacity:.6;pointer-events:none}
 .ge-status{font-size:11px;color:var(--mut);font-family:var(--mono);padding:4px 8px;background:var(--g50);border-radius:6px;text-align:center}
+
+/* FINAL PREVIEW */
+#finalPreview{position:fixed;inset:0;z-index:250;background:rgba(10,30,18,.78);backdrop-filter:blur(8px);display:none;align-items:stretch;justify-content:center}
+#finalPreview.on{display:flex}
+.fp-box{background:var(--wh);width:100%;max-width:1200px;display:flex;flex-direction:column;overflow:hidden}
+@media(min-width:900px){.fp-box{margin:20px;border-radius:20px;max-height:calc(100vh - 40px)}}
+.fp-top{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--brd);background:var(--g50)}
+.fp-top h2{font-size:16px;font-weight:700;color:var(--g600)}
+.fp-info{padding:10px 20px;background:var(--off);font-size:12px;font-family:var(--mono);color:var(--mid);border-bottom:1px solid var(--brd)}
+.fp-info strong{color:var(--g500)}
+.fp-canvas-wrap{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;background:repeating-conic-gradient(#f5f7f5 0 25%,#fff 0 50%) 50%/24px 24px;padding:30px;display:flex;align-items:center;justify-content:center;min-height:300px}
+.fp-canvas{display:inline-block;background:#fff;box-shadow:0 4px 20px rgba(10,40,20,.18);transform-origin:center center}
+.fp-canvas svg{display:block}
+.fp-controls{display:flex;align-items:center;gap:14px;padding:10px 20px;border-top:1px solid var(--brd);background:var(--off)}
+.fp-foot{display:flex;gap:10px;padding:14px 20px;border-top:1px solid var(--brd);background:var(--wh)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
 </head>
@@ -383,6 +398,32 @@ textarea::placeholder{color:var(--fnt)}
   </div>
 </div>
 
+
+<!-- FINAL PREVIEW MODAL -->
+<div id="finalPreview">
+  <div class="fp-box">
+    <div class="fp-top">
+      <h2>Apercu final taille reelle</h2>
+      <button class="btn btn-sm btn-ghost" id="fpClose">Fermer</button>
+    </div>
+    <div class="fp-info" id="fpInfo">--</div>
+    <div class="fp-canvas-wrap">
+      <div class="fp-canvas" id="fpCanvas"></div>
+    </div>
+    <div class="fp-controls">
+      <label style="font-size:11px;color:var(--mut);display:flex;flex-direction:column;gap:3px;flex:1">
+        Zoom d'affichage (n'affecte pas l'export)
+        <input type="range" id="fpZoom" min="50" max="400" value="100" step="10" style="accent-color:var(--g500)">
+      </label>
+      <span id="fpZoomValue" style="font-family:var(--mono);font-size:13px;color:var(--g500);font-weight:600;min-width:50px;text-align:right">100%</span>
+    </div>
+    <div class="fp-foot">
+      <button class="btn btn-f" id="fpCancel">Modifier encore</button>
+      <button class="btn btn-g btn-f" id="fpExport">Enregistrer le SVG</button>
+    </div>
+  </div>
+</div>
+
 <!-- GLYPH EDITOR -->
 <div id="glyphEditor">
   <div class="ge-box">
@@ -406,12 +447,13 @@ textarea::placeholder{color:var(--fnt)}
           </label>
           <label style="font-size:11px;color:var(--mut);display:flex;flex-direction:column;gap:3px">
             Taille
-            <input type="range" id="gePhotoScale" min="20" max="300" value="100" step="5" style="accent-color:var(--g500)">
+            <input type="range" id="gePhotoScale" min="20" max="1000" value="100" step="10" style="accent-color:var(--g500)">
           </label>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mid)">
             <input type="checkbox" id="gePhotoBehind" checked> Photo derriere la lettre
           </label>
-          <button class="btn btn-sm" id="gePhotoCenter">Recentrer la photo</button>
+          <button class="btn btn-sm" id="gePhotoCenter">Recentrer 100%</button>
+          <button class="btn btn-sm" id="gePhotoFitLetter">Zoomer sur la lettre 400%</button>
           <p style="font-size:10px;color:var(--mut);line-height:1.4;margin-top:4px">Glissez la photo dans le canevas avec le bouton droit ou la molette.</p>
         </div>
         <div class="ge-tool-row">
@@ -906,7 +948,7 @@ document.getElementById('btnMain').addEventListener('click',function(){
     if(!S.baseFont) return;
     openCust(S.baseFont);
   } else if(document.getElementById('vCompose').classList.contains('on')){
-    doExport();
+    openFinalPreview();
   }
 });
 
@@ -1756,6 +1798,15 @@ document.addEventListener('click', function(e){
     if(sl) sl.value = 100;
     renderEditor();
   }
+  if(e.target && e.target.id === 'gePhotoFitLetter'){
+    e.preventDefault();
+    GE.photoTx = 0;
+    GE.photoTy = 0;
+    GE.photoScale = 4.0;
+    var sl2 = document.getElementById('gePhotoScale');
+    if(sl2) sl2.value = 400;
+    renderEditor();
+  }
 });
 
 function geApplyGlyphs(){
@@ -1780,7 +1831,137 @@ function geApplyGlyphs(){
   if(n > 0){
     btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg> Modifier les lettres (' + n + ' modifiees)';
   }
+  // Refresh the live preview to show modified glyphs
+  updatePreview();
 }
+
+
+// =================================================
+// FINAL PREVIEW — taille reelle avant export
+// =================================================
+function buildFinalSvg(){
+  // Build the same SVG as doExport but return as string (without saving)
+  var ef = effectiveFont();
+  if(!ef) return null;
+  var raw = document.getElementById('ta').value || 'Jorge';
+  var txt = applyCase(raw, ef.textCase);
+  var h = parseFloat(document.getElementById('hm').value) || 20;
+  var w = parseFloat(document.getElementById('wm').value) || 15;
+  var s = parseFloat(document.getElementById('sm').value) || 0;
+  var lines = txt.split('\n');
+  var maxL = Math.max.apply(null, lines.map(function(l){return l.length;}).concat([1]));
+
+  var hasModified = S._modifiedGlyphs &&
+                    S._modifiedGlyphsFont === ef.family + '-' + ef.weight + '-' + ef.style &&
+                    Object.keys(S._modifiedGlyphs).length > 0;
+
+  var svgW = ((w + s) * maxL - s);
+  var svgH = lines.length * h;
+  var fsMm = h * 0.76;
+  var baseY = h * 0.80;
+  var natW = measureCharWidth(ef.family, ef.weight, ef.style, fsMm, 'H');
+  if(!natW || natW < 1) natW = fsMm * 0.55;
+  var visualCellW = w * ef.scaleX;
+  var glyphScaleX = visualCellW / natW;
+
+  var els = '';
+  var anyTextNeeded = false;
+  lines.forEach(function(line, li){
+    var yB = (li * h + baseY).toFixed(3);
+    line.split('').forEach(function(ch, ci){
+      var xC = (ci * (w + s) + w/2);
+      var modGlyph = hasModified && S._modifiedGlyphs[ch];
+      if(modGlyph){
+        var sy = fsMm / modGlyph.unitsPerEm;
+        var sx = sy * glyphScaleX;
+        var glyphW = modGlyph.advanceWidth * sx;
+        var tx = xC - glyphW/2;
+        var ty = li * h + baseY;
+        var d = commandsToPathData(modGlyph.commands);
+        els += '\n  <g transform="translate(' + tx.toFixed(3) + ',' + ty.toFixed(3) + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')">' +
+               '<path d="' + d + '" fill="#000000"/></g>';
+      } else {
+        anyTextNeeded = true;
+        var txM = (xC * (1 - glyphScaleX)).toFixed(3);
+        els += '\n  <text x="' + xC.toFixed(3) + '" y="' + yB + '"' +
+               ' text-anchor="middle"' +
+               ' font-family="' + xe(ef.family) + ',Georgia,serif"' +
+               ' font-size="' + fsMm.toFixed(3) + '"' +
+               ' font-weight="' + ef.weight + '"' +
+               ' font-style="' + ef.style + '"' +
+               ' transform="matrix(' + glyphScaleX.toFixed(4) + ',0,0,1,' + txM + ',0)"' +
+               ' fill="#000000">' + xc(ch) + '</text>';
+      }
+    });
+  });
+
+  var fontImport = '';
+  if(anyTextNeeded){
+    var gfu = 'https://fonts.googleapis.com/css2?family=' + ef.gname + ':ital,wght@0,' + ef.weight + ';1,' + ef.weight + '&display=swap';
+    fontImport = '<defs><style>@import url(\'' + gfu + '\');</style></defs>\n  ';
+  }
+
+  var svg = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<svg xmlns="http://www.w3.org/2000/svg" width="' + svgW.toFixed(3) + 'mm" height="' + svgH.toFixed(3) + 'mm" viewBox="0 0 ' + svgW.toFixed(3) + ' ' + svgH.toFixed(3) + '">\n  ' +
+    fontImport +
+    '<rect width="' + svgW.toFixed(3) + '" height="' + svgH.toFixed(3) + '" fill="white"/>' + els + '\n</svg>';
+
+  var fname = 'jorge_' + ef.family.replace(/\s+/g, '-').toLowerCase() + (hasModified ? '_custom' : '') + '_' + w + 'x' + h + 'mm.svg';
+
+  return { svg: svg, filename: fname, widthMm: svgW, heightMm: svgH, hasModified: hasModified };
+}
+
+function openFinalPreview(){
+  var data = buildFinalSvg();
+  if(!data) return;
+  var canvas = document.getElementById('fpCanvas');
+  var info = document.getElementById('fpInfo');
+  // Display SVG at actual size (1mm = 3.7795 px in browser)
+  // Strip XML declaration for inline display
+  var displaySvg = data.svg.replace(/^<\?xml[^>]+\?>\s*/, '');
+  // Set explicit size based on viewport
+  // Use mm directly since browsers honor it
+  canvas.innerHTML = displaySvg;
+  // Adjust the inner SVG to render via the wrapper
+  var inner = canvas.querySelector('svg');
+  if(inner){
+    // Force exact mm dimensions
+    inner.style.width = data.widthMm + 'mm';
+    inner.style.height = data.heightMm + 'mm';
+  }
+  info.innerHTML = 'Dimensions <strong>' + data.widthMm.toFixed(1) + ' x ' + data.heightMm.toFixed(1) + ' mm</strong>' +
+                   ' &nbsp;&middot;&nbsp; ' + (data.hasModified ? '<strong style="color:var(--g500)">Avec glyphes modifies</strong>' : 'Glyphes standards') +
+                   ' &nbsp;&middot;&nbsp; Fichier : ' + data.filename;
+  // Reset zoom
+  document.getElementById('fpZoom').value = 100;
+  document.getElementById('fpZoomValue').textContent = '100%';
+  canvas.style.transform = 'scale(1)';
+  // Show modal
+  document.getElementById('finalPreview').classList.add('on');
+}
+
+document.addEventListener('click', function(e){
+  if(!e.target) return;
+  if(e.target.id === 'fpClose' || e.target.id === 'fpCancel'){
+    e.preventDefault();
+    document.getElementById('finalPreview').classList.remove('on');
+  } else if(e.target.id === 'fpExport'){
+    e.preventDefault();
+    var data = buildFinalSvg();
+    if(data){
+      saveSVG(data.svg, data.filename);
+      document.getElementById('finalPreview').classList.remove('on');
+    }
+  }
+});
+
+document.addEventListener('input', function(e){
+  if(e.target && e.target.id === 'fpZoom'){
+    var v = parseInt(e.target.value, 10);
+    document.getElementById('fpZoomValue').textContent = v + '%';
+    document.getElementById('fpCanvas').style.transform = 'scale(' + (v/100) + ')';
+  }
+});
 
 </script>
 
