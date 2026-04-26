@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -12,7 +11,7 @@
 <meta name="color-scheme" content="light">
 <title>Jorge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Cinzel:wght@400;600;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=IM+Fell+English:ital@0;1&family=Uncial+Antiqua&family=Forum&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Raleway:wght@300;400;600;700;900&family=Josefin+Sans:wght@300;400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Spectral:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Cormorant+SC:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=IM+Fell+DW+Pica:ital@0;1&family=IM+Fell+French+Canon:ital@0;1&family=Uncial+Antiqua&family=Forum&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Playfair+Display+SC:ital,wght@0,400;0,700;0,900;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Raleway:wght@300;400;600;700;900&family=Josefin+Sans:wght@300;400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Spectral:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Spectral+SC:wght@400;600;700&family=Cardo:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Marcellus&family=Marcellus+SC&family=Yeseva+One&family=Italianno&family=Tinos:ital,wght@0,400;0,700;1,400&family=Trajan+Pro&family=Almendra+SC&family=Almendra:ital,wght@0,400;0,700;1,400&family=Cantata+One&family=UnifrakturMaguntia&family=UnifrakturCook:wght@700&family=Pirata+One&family=Cinzel:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -31,13 +30,13 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 .hidden{display:none!important}
 
 /* HEADER */
-#hdr{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:calc(var(–sft) + 10px) 18px 10px;background:rgba(255,255,255,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(–brd);z-index:50}
+#hdr{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:calc(var(--sft) + 10px) 18px 10px;background:rgba(255,255,255,.96);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--brd);z-index:50}
 .logo{display:flex;align-items:center;gap:9px}
-.logo svg{width:26px;height:26px;color:var(–g500)}
-.logo-n{font-size:17px;font-weight:700;color:var(–g600);letter-spacing:-.02em}
+.logo svg{width:26px;height:26px;color:var(--g500)}
+.logo-n{font-size:17px;font-weight:700;color:var(--g600);letter-spacing:-.02em}
 .dots{display:flex;gap:5px}
-.dot{width:22px;height:4px;border-radius:2px;background:var(–brd);transition:background .3s}
-.dot.done{background:var(–g300)}.dot.act{background:var(–g500)}
+.dot{width:22px;height:4px;border-radius:2px;background:var(--brd);transition:background .3s}
+.dot.done{background:var(--g300)}.dot.act{background:var(--g500)}
 
 /* SCROLL */
 #body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#f5f9f6}
@@ -46,109 +45,160 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 
 /* HOME */
 .hero{text-align:center;padding:6px 0 2px}
-.hico{width:62px;height:62px;background:var(–g600);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 10px 28px rgba(10,40,20,.3)}
+.hico{width:62px;height:62px;background:var(--g600);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 10px 28px rgba(10,40,20,.3)}
 .hico svg{width:28px;height:28px;color:#fff}
-.hero h1{font-size:26px;font-weight:700;color:var(–g600);letter-spacing:-.03em;margin-bottom:5px}
-.hero p{font-size:13px;color:var(–mut);line-height:1.5}
+.hero h1{font-size:26px;font-weight:700;color:var(--g600);letter-spacing:-.03em;margin-bottom:5px}
+.hero p{font-size:13px;color:var(--mut);line-height:1.5}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.upload-lbl{display:flex;flex-direction:column;align-items:center;gap:9px;padding:20px 10px;background:var(–wh);border:1.5px solid var(–brd2);border-radius:14px;cursor:pointer;box-shadow:0 2px 8px var(–sh);text-align:center}
-.upload-lbl:active{transform:scale(.97);background:var(–g50);border-color:var(–g300)}
-.upload-lbl svg{width:28px;height:28px;color:var(–g400)}
-.upload-lbl strong{font-size:13px;font-weight:600;color:var(–mid);display:block}
-.upload-lbl small{font-size:11px;color:var(–mut);line-height:1.3;display:block}
-.or-sep{display:flex;align-items:center;gap:10px;font-size:12px;color:var(–fnt)}
-.or-sep::before,.or-sep::after{content:’’;flex:1;height:1px;background:var(–brd)}
-.upload-row{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;background:var(–wh);border:1.5px solid var(–brd2);border-radius:12px;cursor:pointer;box-shadow:0 2px 8px var(–sh);font-size:14px;font-weight:600;color:var(–mid)}
-.upload-row:active{background:var(–g50);border-color:var(–g300)}
-.upload-row svg{width:18px;height:18px;color:var(–g400)}
+.upload-lbl{display:flex;flex-direction:column;align-items:center;gap:9px;padding:20px 10px;background:var(--wh);border:1.5px solid var(--brd2);border-radius:14px;cursor:pointer;box-shadow:0 2px 8px var(--sh);text-align:center}
+.upload-lbl:active{transform:scale(.97);background:var(--g50);border-color:var(--g300)}
+.upload-lbl svg{width:28px;height:28px;color:var(--g400)}
+.upload-lbl strong{font-size:13px;font-weight:600;color:var(--mid);display:block}
+.upload-lbl small{font-size:11px;color:var(--mut);line-height:1.3;display:block}
+.or-sep{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--fnt)}
+.or-sep::before,.or-sep::after{content:'';flex:1;height:1px;background:var(--brd)}
+.upload-row{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;background:var(--wh);border:1.5px solid var(--brd2);border-radius:12px;cursor:pointer;box-shadow:0 2px 8px var(--sh);font-size:14px;font-weight:600;color:var(--mid)}
+.upload-row:active{background:var(--g50);border-color:var(--g300)}
+.upload-row svg{width:18px;height:18px;color:var(--g400)}
 
 /* CROP */
 #vCrop{padding:0;gap:0;background:#111;min-height:100%}
 .cbar{flex-shrink:0;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(0,0,0,.75)}
 .cbar p{font-size:12px;color:rgba(255,255,255,.75);flex:1;line-height:1.4}
-.chint{padding:5px 14px;background:rgba(0,0,0,.55);flex-shrink:0;font-size:11px;font-family:var(–mono);color:rgba(255,255,255,.5);text-align:center}
+.chint{padding:5px 14px;background:rgba(0,0,0,.55);flex-shrink:0;font-size:11px;font-family:var(--mono);color:rgba(255,255,255,.5);text-align:center}
 #cwrap{flex:1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:200px}
 #cimg{max-width:100%;max-height:100%;object-fit:contain;display:block;pointer-events:none;user-select:none}
 #ccv{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none}
-.cfoot{display:flex;gap:10px;padding:12px 14px;padding-bottom:calc(12px + var(–sfb));background:rgba(0,0,0,.75);flex-shrink:0}
+.cfoot{display:flex;gap:10px;padding:12px 14px;padding-bottom:calc(12px + var(--sfb));background:rgba(0,0,0,.75);flex-shrink:0}
 
 /* FONT PICKER */
-.pick-hd h2{font-size:15px;font-weight:700;color:var(–mid);margin-bottom:3px}
-.pick-hd p{font-size:12px;color:var(–mut)}
+.pick-hd h2{font-size:15px;font-weight:700;color:var(--mid);margin-bottom:3px}
+.pick-hd p{font-size:12px;color:var(--mut)}
+.ref-img-box{position:sticky;top:0;z-index:5;background:var(--wh);border:1.5px solid var(--brd2);border-radius:12px;padding:10px;box-shadow:0 4px 14px var(--sh);display:flex;flex-direction:column;gap:7px}
+.ref-label{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--mut);font-family:var(--mono);text-align:center}
+.ref-img-box img{width:100%;max-height:240px;object-fit:contain;border-radius:8px;background:var(--off);display:block}
+.preview-input-box{background:var(--g50);border:1.5px solid var(--brd2);border-radius:10px;padding:10px 12px}
+.preview-input-box input{width:100%;border:none;background:transparent;font-family:var(--sans);font-size:18px;font-weight:600;color:var(--g600);outline:none;padding:4px 0;letter-spacing:.02em;-webkit-appearance:none;text-align:center}
+.preview-input-box input::placeholder{color:var(--fnt);font-weight:400}
 .font-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.font-card{background:var(–wh);border:2px solid var(–brd);border-radius:12px;padding:13px 11px;cursor:pointer;transition:border-color .15s,box-shadow .15s;box-shadow:0 2px 6px var(–sh);display:flex;flex-direction:column;gap:5px}
+.cat-hdr{grid-column:1/-1;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--g500);font-family:var(--mono);padding:10px 4px 4px;display:flex;align-items:center;gap:8px}
+.cat-hdr::after{content:'';flex:1;height:1px;background:var(--brd2)}
+.font-card{background:var(--wh);border:2px solid var(--brd);border-radius:12px;padding:13px 11px;cursor:pointer;transition:border-color .15s,box-shadow .15s;box-shadow:0 2px 6px var(--sh);display:flex;flex-direction:column;gap:5px}
 .font-card:active{transform:scale(.97)}
-.font-card.sel{border-color:var(–g400);background:var(–g50);box-shadow:0 0 0 3px var(–g100)}
-.fc-prev{font-size:22px;line-height:1.1;color:var(–tx);height:30px;overflow:hidden}
-.fc-name{font-size:10px;font-family:var(–mono);color:var(–mut);font-weight:500}
-.fc-tag{font-size:9px;color:var(–fnt)}
+.font-card.sel{border-color:var(--g400);background:var(--g50);box-shadow:0 0 0 3px var(--g100)}
+.fc-prev{font-size:22px;line-height:1.1;color:var(--tx);height:30px;overflow:hidden}
+.fc-name{font-size:10px;font-family:var(--mono);color:var(--mut);font-weight:500}
+.fc-tag{font-size:9px;color:var(--fnt)}
 
 /* CUSTOMIZER PANEL */
 #custPanel{position:fixed;inset:0;z-index:200;background:rgba(10,30,18,.6);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center}
 #custPanel.on{display:flex}
-.panel-box{background:var(–wh);border-radius:20px 20px 0 0;width:100%;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 18px;padding-bottom:calc(24px + var(–sfb));display:flex;flex-direction:column;gap:16px}
+.panel-box{background:var(--wh);border-radius:20px 20px 0 0;width:100%;max-height:85vh;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 18px;padding-bottom:calc(24px + var(--sfb));display:flex;flex-direction:column;gap:16px}
 .panel-top{display:flex;align-items:center;justify-content:space-between}
-.panel-top h2{font-size:16px;font-weight:700;color:var(–mid)}
-.close-x{width:30px;height:30px;background:var(–off);border:1px solid var(–brd);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(–mut);flex-shrink:0}
-.ctrl-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(–mut);font-family:var(–mono);margin-bottom:8px}
+.panel-top h2{font-size:16px;font-weight:700;color:var(--mid)}
+.close-x{width:30px;height:30px;background:var(--off);border:1px solid var(--brd);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--mut);flex-shrink:0}
+.ctrl-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);font-family:var(--mono);margin-bottom:8px}
 .ctrl-row{display:flex;gap:8px;flex-wrap:wrap}
-.ctrl-btn{padding:8px 14px;background:var(–off);border:1.5px solid var(–brd2);border-radius:20px;font-size:13px;font-weight:600;color:var(–mid);cursor:pointer;transition:all .15s}
-.ctrl-btn.act{background:var(–g500);border-color:var(–g500);color:#fff}
+.ctrl-btn{padding:8px 14px;background:var(--off);border:1.5px solid var(--brd2);border-radius:20px;font-size:13px;font-weight:600;color:var(--mid);cursor:pointer;transition:all .15s}
+.ctrl-btn.act{background:var(--g500);border-color:var(--g500);color:#fff}
 .ctrl-btn:active{transform:scale(.96)}
 .weight-row{display:flex;gap:6px}
-.wbtn{flex:1;padding:9px 4px;background:var(–off);border:1.5px solid var(–brd2);border-radius:10px;font-size:11px;font-weight:600;color:var(–mid);cursor:pointer;text-align:center;transition:all .15s}
-.wbtn.act{background:var(–g500);border-color:var(–g500);color:#fff}
+.wbtn{flex:1;padding:9px 4px;background:var(--off);border:1.5px solid var(--brd2);border-radius:10px;font-size:11px;font-weight:600;color:var(--mid);cursor:pointer;text-align:center;transition:all .15s}
+.wbtn.act{background:var(--g500);border-color:var(--g500);color:#fff}
 .wbtn:active{transform:scale(.96)}
-.prev-box{background:var(–off);border:1.5px solid var(–brd2);border-radius:12px;padding:20px;display:flex;align-items:center;justify-content:center;min-height:72px;overflow:hidden}
-#custPreview{font-size:28px;line-height:1.1;color:var(–tx);text-align:center;max-width:100%;overflow:hidden;white-space:nowrap}
+.prev-box{background:var(--off);border:1.5px solid var(--brd2);border-radius:12px;padding:20px;display:flex;align-items:center;justify-content:center;min-height:72px;overflow:hidden}
+#custPreview{font-size:28px;line-height:1.1;color:var(--tx);text-align:center;max-width:100%;overflow:hidden;white-space:nowrap}
 
 /* COMPOSE */
-.cbox{background:var(–wh);border:1px solid var(–brd);border-radius:14px;overflow:hidden;box-shadow:0 2px 8px var(–sh)}
-.cbox-h{background:var(–g50);border-bottom:1px solid var(–brd);padding:11px 15px;font-size:13px;font-weight:600;color:var(–mid)}
+.cbox{background:var(--wh);border:1px solid var(--brd);border-radius:14px;overflow:hidden;box-shadow:0 2px 8px var(--sh)}
+.cbox-h{background:var(--g50);border-bottom:1px solid var(--brd);padding:11px 15px;font-size:13px;font-weight:600;color:var(--mid)}
 .cbox-b{padding:14px 15px;display:flex;flex-direction:column;gap:11px}
-textarea{width:100%;min-height:80px;padding:10px 12px;font-family:var(–sans);font-size:14px;background:var(–off);border:1.5px solid var(–brd2);border-radius:10px;color:var(–tx);resize:none;outline:none;line-height:1.6;-webkit-appearance:none}
-textarea:focus{border-color:var(–g400);background:var(–wh)}
-textarea::placeholder{color:var(–fnt)}
+textarea{width:100%;min-height:80px;padding:10px 12px;font-family:var(--sans);font-size:14px;background:var(--off);border:1.5px solid var(--brd2);border-radius:10px;color:var(--tx);resize:none;outline:none;line-height:1.6;-webkit-appearance:none}
+textarea:focus{border-color:var(--g400);background:var(--wh)}
+textarea::placeholder{color:var(--fnt)}
 .dims{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .dg{display:flex;flex-direction:column;gap:4px}
-.dl{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(–mut);font-family:var(–mono)}
-.dr{display:flex;border:1.5px solid var(–brd2);border-radius:8px;overflow:hidden;background:var(–wh)}
-.dr:focus-within{border-color:var(–g400)}
-.dr input{flex:1;border:none;padding:8px 7px;font-family:var(–mono);font-size:18px;font-weight:300;color:var(–tx);background:transparent;outline:none;min-width:0;-webkit-appearance:none}
-.du{display:flex;align-items:center;padding:8px 8px;font-size:10px;font-family:var(–mono);font-weight:600;color:var(–g400);background:var(–g50);border-left:1px solid var(–brd)}
-.pvbox{background:var(–off);border:1.5px solid var(–brd2);border-radius:10px;padding:18px 14px;min-height:78px;display:flex;align-items:center;overflow:hidden;position:relative}
-.pvlbl{position:absolute;top:7px;right:9px;font-size:9px;font-family:var(–mono);font-weight:600;letter-spacing:.1em;color:var(–fnt);text-transform:uppercase}
-#pvt{white-space:pre;overflow:hidden;line-height:1.2;color:var(–tx)}
-.dinfo{font-size:11px;font-family:var(–mono);color:var(–mut);background:var(–g50);border:1px solid var(–brd);border-radius:6px;padding:6px 10px;line-height:1.7}
-.dinfo strong{color:var(–g500)}
-.enote{font-size:11px;color:var(–mut);line-height:1.5;display:flex;gap:7px}
-.enote svg{color:var(–g300);flex-shrink:0;margin-top:2px}
+.dl{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);font-family:var(--mono)}
+.dr{display:flex;border:1.5px solid var(--brd2);border-radius:8px;overflow:hidden;background:var(--wh)}
+.dr:focus-within{border-color:var(--g400)}
+.dr input{flex:1;border:none;padding:8px 7px;font-family:var(--mono);font-size:18px;font-weight:300;color:var(--tx);background:transparent;outline:none;min-width:0;-webkit-appearance:none}
+.du{display:flex;align-items:center;padding:8px 8px;font-size:10px;font-family:var(--mono);font-weight:600;color:var(--g400);background:var(--g50);border-left:1px solid var(--brd)}
+.photo-overlay-box{background:var(--wh);border:1.5px solid var(--brd2);border-radius:11px;padding:10px;display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
+.photo-overlay-box .pvlbl{position:relative;top:0;right:auto;text-align:left;font-size:9px;font-family:var(--mono);font-weight:600;letter-spacing:.1em;color:var(--mut);text-transform:uppercase}
+.overlay-stack{position:relative;background:var(--off);border-radius:8px;overflow:hidden;min-height:140px;display:flex;align-items:center;justify-content:center}
+.overlay-stack img{width:100%;max-height:260px;object-fit:contain;display:block}
+#overlayText{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;white-space:pre;color:#000;text-shadow:0 0 8px rgba(255,255,255,.85),0 0 4px rgba(255,255,255,.85);pointer-events:none;padding:8px;line-height:1.1;letter-spacing:0;mix-blend-mode:normal}
+.overlay-controls{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.overlay-toggle{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mid);cursor:pointer;font-weight:600}
+.overlay-toggle input{width:16px;height:16px;accent-color:var(--g500)}
+.overlay-opacity{display:flex;align-items:center;gap:6px;flex:1;min-width:140px}
+.overlay-opacity input[type=range]{flex:1;accent-color:var(--g500)}
+.pvbox{background:var(--off);border:1.5px solid var(--brd2);border-radius:10px;padding:18px 14px;min-height:78px;display:flex;align-items:center;overflow:hidden;position:relative}
+.pvlbl{position:absolute;top:7px;right:9px;font-size:9px;font-family:var(--mono);font-weight:600;letter-spacing:.1em;color:var(--fnt);text-transform:uppercase}
+#pvt{white-space:pre;overflow:hidden;line-height:1.2;color:var(--tx)}
+.dinfo{font-size:11px;font-family:var(--mono);color:var(--mut);background:var(--g50);border:1px solid var(--brd);border-radius:6px;padding:6px 10px;line-height:1.7}
+.dinfo strong{color:var(--g500)}
+.enote{font-size:11px;color:var(--mut);line-height:1.5;display:flex;gap:7px}
+.enote svg{color:var(--g300);flex-shrink:0;margin-top:2px}
 
 /* BOTTOM BAR */
-#botbar{flex-shrink:0;display:none;gap:10px;align-items:center;padding:10px 16px;padding-bottom:calc(10px + var(–sfb));background:rgba(255,255,255,.97);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(–brd)}
+#botbar{flex-shrink:0;display:none;gap:10px;align-items:center;padding:10px 16px;padding-bottom:calc(10px + var(--sfb));background:rgba(255,255,255,.97);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--brd)}
 #botbar.on{display:flex}
 
 /* BUTTONS */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:var(–sans);font-size:14px;font-weight:600;padding:12px 18px;border-radius:11px;border:1.5px solid var(–brd2);background:var(–wh);color:var(–mid);cursor:pointer;transition:all .15s;white-space:nowrap;-webkit-appearance:none;min-height:48px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-family:var(--sans);font-size:14px;font-weight:600;padding:12px 18px;border-radius:11px;border:1.5px solid var(--brd2);background:var(--wh);color:var(--mid);cursor:pointer;transition:all .15s;white-space:nowrap;-webkit-appearance:none;min-height:48px}
 .btn:active{opacity:.8;transform:scale(.98)}
 .btn:disabled{opacity:.28;pointer-events:none}
-.btn-g{background:var(–g500);border-color:var(–g500);color:#fff}
-.btn-g:active{background:var(–g600)}
-.btn-ghost{border-color:transparent;background:transparent;color:var(–mut)}
+.btn-g{background:var(--g500);border-color:var(--g500);color:#fff}
+.btn-g:active{background:var(--g600)}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--mut)}
 .btn-dark{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.75)}
 .btn-f{flex:1}.btn-sm{padding:9px 14px;font-size:12px;border-radius:9px;min-height:40px}
-</style>
 
+/* GLYPH EDITOR */
+#glyphEditor{position:fixed;inset:0;z-index:300;background:rgba(10,30,18,.7);backdrop-filter:blur(8px);display:none;align-items:stretch;justify-content:center}
+#glyphEditor.on{display:flex}
+.ge-box{background:var(--wh);width:100%;max-width:1100px;display:flex;flex-direction:column;overflow:hidden}
+@media(min-width:900px){.ge-box{margin:20px;border-radius:20px;max-height:calc(100vh - 40px)}}
+.ge-top{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--brd);background:var(--g50)}
+.ge-top h2{font-size:16px;font-weight:700;color:var(--g600);flex:1}
+.ge-tabs{display:flex;gap:4px;overflow-x:auto;padding:8px 14px;background:var(--off);border-bottom:1px solid var(--brd);flex-shrink:0}
+.ge-tab{flex-shrink:0;width:38px;height:42px;border:1.5px solid var(--brd2);border-radius:8px;background:var(--wh);font-family:Georgia,serif;font-size:18px;font-weight:600;color:var(--tx);cursor:pointer;transition:all .15s;position:relative}
+.ge-tab.act{border-color:var(--g500);background:var(--g50);color:var(--g600);box-shadow:0 0 0 2px var(--g100)}
+.ge-tab.modified::after{content:'';position:absolute;top:3px;right:3px;width:6px;height:6px;background:var(--g500);border-radius:50%}
+.ge-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+@media(min-width:700px){.ge-main{flex-direction:row}}
+.ge-canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:repeating-conic-gradient(#f0f4f1 0 25%,#f8fbf9 0 50%) 50%/16px 16px;overflow:hidden;min-height:300px;padding:20px;position:relative}
+.ge-canvas-wrap svg{max-width:100%;max-height:100%;display:block;cursor:default}
+.ge-tools{flex-shrink:0;display:flex;flex-direction:column;gap:10px;padding:14px;background:var(--wh);border-top:1px solid var(--brd);min-width:240px}
+@media(min-width:700px){.ge-tools{border-top:none;border-left:1px solid var(--brd);max-width:240px;overflow-y:auto}}
+.ge-tool-row{display:flex;flex-direction:column;gap:5px}
+.ge-tool-lbl{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);font-family:var(--mono)}
+.ge-foot{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--brd);background:var(--off);flex-shrink:0}
+.ge-handle{cursor:grab;transition:fill .12s}
+.ge-handle:hover{fill:var(--g500)}
+.ge-handle:active{cursor:grabbing;fill:var(--g600)}
+.ge-anchor{cursor:grab}
+.ge-anchor:hover{stroke:var(--g500)}
+.ge-anchor:active{cursor:grabbing}
+.ge-ctrl-line{stroke:var(--g300);stroke-width:1;stroke-dasharray:3,3;opacity:.6;pointer-events:none}
+.ge-status{font-size:11px;color:var(--mut);font-family:var(--mono);padding:4px 8px;background:var(--g50);border-radius:6px;text-align:center}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
 </head>
 <body>
 
 <div id="hdr">
   <div class="logo">
-    <svg viewBox="0 0 32 40" fill="none">
-      <path d="M4 18C4 6 28 6 28 18L28 34H4Z" fill="currentColor"/>
-      <rect x="14.5" y="10" width="3" height="14" rx="1.5" fill="white" opacity=".9"/>
-      <rect x="9" y="15" width="14" height="3" rx="1.5" fill="white" opacity=".9"/>
-      <rect x="1" y="34" width="30" height="5" rx="2" fill="currentColor"/>
+    <svg viewBox="0 0 40 40" fill="none">
+      <!-- Chisel (left, vertical) -->
+      <rect x="13" y="6" width="5" height="20" rx="1" fill="currentColor"/>
+      <path d="M13 26 L18 26 L15.5 32 Z" fill="currentColor"/>
+      <rect x="13" y="9" width="5" height="1.5" fill="rgba(255,255,255,.5)"/>
+      <!-- Hammer (right, angled) -->
+      <rect x="22" y="14" width="3" height="16" rx="1" fill="currentColor" transform="rotate(20 23.5 22)"/>
+      <rect x="20" y="9" width="11" height="7" rx="1.2" fill="currentColor" transform="rotate(20 25.5 12.5)"/>
+      <rect x="22" y="10" width="7" height="1.5" fill="rgba(255,255,255,.4)" transform="rotate(20 25.5 10.7)"/>
     </svg>
     <span class="logo-n">Jorge</span>
   </div>
@@ -158,11 +208,17 @@ textarea::placeholder{color:var(–fnt)}
 <div id="body">
 
   <!-- HOME -->
-
   <div class="view on" id="vHome">
     <div class="hero">
       <div class="hico">
-        <svg viewBox="0 0 32 40" fill="none"><path d="M3 17C3 5 29 5 29 17L29 34H3Z" fill="currentColor"/><rect x="14" y="9" width="4" height="15" rx="2" fill="rgba(0,0,0,.28)"/><rect x="8.5" y="14.5" width="15" height="4" rx="2" fill="rgba(0,0,0,.28)"/><rect x="1" y="34" width="30" height="5" rx="2" fill="currentColor"/></svg>
+        <svg viewBox="0 0 40 40" fill="none">
+          <rect x="13" y="6" width="5" height="20" rx="1" fill="white"/>
+          <path d="M13 26 L18 26 L15.5 32 Z" fill="white"/>
+          <rect x="13" y="9" width="5" height="1.5" fill="rgba(0,0,0,.25)"/>
+          <rect x="22" y="14" width="3" height="16" rx="1" fill="white" transform="rotate(20 23.5 22)"/>
+          <rect x="20" y="9" width="11" height="7" rx="1.2" fill="white" transform="rotate(20 25.5 12.5)"/>
+          <rect x="22" y="10" width="7" height="1.5" fill="rgba(0,0,0,.2)" transform="rotate(20 25.5 10.7)"/>
+        </svg>
       </div>
       <h1>Jorge</h1>
       <p>Photo &rarr; Zone &rarr; Police &rarr; SVG</p>
@@ -189,7 +245,6 @@ textarea::placeholder{color:var(–fnt)}
   </div>
 
   <!-- CROP -->
-
   <div class="view" id="vCrop" style="padding:0;gap:0;background:#111">
     <div class="cbar">
       <button class="btn btn-sm btn-dark" id="btnCropBack">&#8592; Retour</button>
@@ -204,15 +259,21 @@ textarea::placeholder{color:var(–fnt)}
   </div>
 
   <!-- FONT PICKER -->
-
   <div class="view" id="vFonts">
-    <div class="pick-hd"><h2>Choisissez la police</h2><p>Selectionnez celle qui ressemble le plus au texte de votre photo, puis personnalisez-la</p></div>
+    <div class="pick-hd"><h2>Choisissez la police</h2><p>Comparez avec votre photo et selectionnez la plus ressemblante</p></div>
+    <div class="ref-img-box" id="refImgBox">
+      <div class="ref-label">VOTRE PHOTO</div>
+      <img id="refImg" src="" alt="">
+    </div>
+    <div class="preview-input-box">
+      <div class="ref-label" style="text-align:left;margin-bottom:6px">APERCU AVEC VOTRE TEXTE</div>
+      <input type="text" id="previewText" placeholder="Tapez le texte a previsualiser..." value="ESSAI" maxlength="20" autocomplete="off" autocorrect="off" autocapitalize="characters">
+    </div>
     <div class="font-grid" id="fontGrid"></div>
     <div style="height:8px"></div>
   </div>
 
   <!-- COMPOSE -->
-
   <div class="view" id="vCompose">
     <div class="cbox">
       <div class="cbox-h" id="cboxH">Texte et dimensions</div>
@@ -220,11 +281,32 @@ textarea::placeholder{color:var(–fnt)}
         <textarea id="ta" placeholder="Saisissez votre texte..."></textarea>
         <div class="dims">
           <div class="dg"><div class="dl">Hauteur</div><div class="dr"><input type="number" id="hm" value="20" min="1" max="500" step="0.5" inputmode="decimal"><span class="du">mm</span></div></div>
-          <div class="dg"><div class="dl">Largeur</div><div class="dr"><input type="number" id="wm" value="15" min="1" max="500" step="0.5" inputmode="decimal"><span class="du">mm</span></div></div>
+          <div class="dg"><div class="dl">Largeur lettre</div><div class="dr"><input type="number" id="wm" value="15" min="1" max="500" step="0.5" inputmode="decimal"><span class="du">mm</span></div></div>
           <div class="dg"><div class="dl">Espacement</div><div class="dr"><input type="number" id="sm" value="0" min="-5" max="50" step="0.5" inputmode="decimal"><span class="du">mm</span></div></div>
+        </div>
+        <div class="photo-overlay-box hidden" id="overlayBox">
+          <span class="pvlbl">COMPARAISON AVEC LA PHOTO</span>
+          <div class="overlay-stack">
+            <img id="overlayImg" src="" alt="">
+            <div id="overlayText"></div>
+          </div>
+          <div class="overlay-controls">
+            <label class="overlay-toggle">
+              <input type="checkbox" id="ovShowText" checked>
+              <span>Afficher mon texte</span>
+            </label>
+            <div class="overlay-opacity">
+              <span class="dim-l">Opacite texte</span>
+              <input type="range" id="ovOpacity" min="30" max="100" value="100" step="5">
+            </div>
+          </div>
         </div>
         <div class="pvbox"><span class="pvlbl">Apercu</span><div id="pvt">...</div></div>
         <div class="dinfo" id="dinfo">SVG : <strong>-- x -- mm</strong></div>
+        <button class="btn btn-t" id="btnEditGlyphs" style="margin-top:6px;display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+          Modifier les lettres (desktop)
+        </button>
         <div class="enote">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           <span id="enoteT">Police Google Fonts integree dans le SVG.</span>
@@ -237,14 +319,12 @@ textarea::placeholder{color:var(–fnt)}
 </div>
 
 <!-- BOTTOM BAR -->
-
 <div id="botbar">
   <button class="btn btn-ghost btn-sm hidden" id="btnBack">&#8592; Retour</button>
   <button class="btn btn-g btn-f" id="btnMain">-</button>
 </div>
 
 <!-- CUSTOMIZER PANEL -->
-
 <div id="custPanel">
   <div class="panel-box">
     <div class="panel-top">
@@ -252,52 +332,49 @@ textarea::placeholder{color:var(–fnt)}
       <div class="close-x" id="custClose">&#215;</div>
     </div>
 
-```
-<div>
-  <div class="ctrl-lbl">Graisse</div>
-  <div class="weight-row" id="weightRow">
-    <div class="wbtn" data-w="300">Fin</div>
-    <div class="wbtn act" data-w="400">Normal</div>
-    <div class="wbtn" data-w="600">Semi</div>
-    <div class="wbtn" data-w="700">Gras</div>
-    <div class="wbtn" data-w="900">Noir</div>
-  </div>
-</div>
+    <div>
+      <div class="ctrl-lbl">Graisse</div>
+      <div class="weight-row" id="weightRow">
+        <div class="wbtn" data-w="300">Fin</div>
+        <div class="wbtn act" data-w="400">Normal</div>
+        <div class="wbtn" data-w="600">Semi</div>
+        <div class="wbtn" data-w="700">Gras</div>
+        <div class="wbtn" data-w="900">Noir</div>
+      </div>
+    </div>
 
-<div>
-  <div class="ctrl-lbl">Style</div>
-  <div class="ctrl-row">
-    <div class="ctrl-btn act" id="btnNormal">Normal</div>
-    <div class="ctrl-btn" id="btnItalic">Italique</div>
-  </div>
-</div>
+    <div>
+      <div class="ctrl-lbl">Style</div>
+      <div class="ctrl-row">
+        <div class="ctrl-btn act" id="btnNormal">Normal</div>
+        <div class="ctrl-btn" id="btnItalic">Italique</div>
+      </div>
+    </div>
 
-<div>
-  <div class="ctrl-lbl">Largeur des lettres</div>
-  <div class="ctrl-row">
-    <div class="ctrl-btn" id="btnCondensed">Etroit 80%</div>
-    <div class="ctrl-btn act" id="btnNormalW">Normal</div>
-    <div class="ctrl-btn" id="btnExtended">Large 120%</div>
-  </div>
-</div>
+    <div>
+      <div class="ctrl-lbl">Largeur des lettres</div>
+      <div class="ctrl-row">
+        <div class="ctrl-btn" id="btnCondensed">Etroit 80%</div>
+        <div class="ctrl-btn act" id="btnNormalW">Normal</div>
+        <div class="ctrl-btn" id="btnExtended">Large 120%</div>
+      </div>
+    </div>
 
-<div>
-  <div class="ctrl-lbl">Casse</div>
-  <div class="ctrl-row">
-    <div class="ctrl-btn act" id="btnMixed">Telle quelle</div>
-    <div class="ctrl-btn" id="btnUpper">MAJUSCULES</div>
-    <div class="ctrl-btn" id="btnLower">minuscules</div>
-  </div>
-</div>
+    <div>
+      <div class="ctrl-lbl">Casse</div>
+      <div class="ctrl-row">
+        <div class="ctrl-btn act" id="btnMixed">Telle quelle</div>
+        <div class="ctrl-btn" id="btnUpper">MAJUSCULES</div>
+        <div class="ctrl-btn" id="btnLower">minuscules</div>
+      </div>
+    </div>
 
-<div>
-  <div class="ctrl-lbl">Apercu</div>
-  <div class="prev-box"><div id="custPreview">ABCDEF 123</div></div>
-</div>
+    <div>
+      <div class="ctrl-lbl">Apercu</div>
+      <div class="prev-box"><div id="custPreview">ABCDEF 123</div></div>
+    </div>
 
-<button class="btn btn-g" id="btnApply" style="width:100%">Utiliser cette police &#10003;</button>
-```
-
+    <button class="btn btn-g" id="btnApply" style="width:100%">Utiliser cette police &#10003;</button>
   </div>
 </div>
 
@@ -306,18 +383,59 @@ textarea::placeholder{color:var(–fnt)}
 // FONTS
 // =============================================
 var FONTS = [
-  {family:'Cinzel',           gname:'Cinzel',              weight:'600', style:'normal', tag:'Inscription romaine', prev:'ABCDEF'},
-  {family:'Cormorant Garamond',gname:'Cormorant+Garamond', weight:'600', style:'normal', tag:'Serif elegant',       prev:'ABCDEF'},
-  {family:'IM Fell English',  gname:'IM+Fell+English',     weight:'400', style:'normal', tag:'Gravure ancienne',    prev:'ABCDEF'},
-  {family:'Forum',            gname:'Forum',               weight:'400', style:'normal', tag:'Lapidaire classique', prev:'ABCDEF'},
-  {family:'Playfair Display', gname:'Playfair+Display',    weight:'700', style:'normal', tag:'Serif haut contraste',prev:'ABCDEF'},
-  {family:'Libre Baskerville',gname:'Libre+Baskerville',   weight:'400', style:'normal', tag:'Serif traditionnel',  prev:'ABCDEF'},
-  {family:'Crimson Pro',      gname:'Crimson+Pro',         weight:'400', style:'normal', tag:'Serif editorial',     prev:'ABCDEF'},
-  {family:'Spectral',         gname:'Spectral',            weight:'400', style:'normal', tag:'Serif livre',         prev:'ABCDEF'},
-  {family:'Raleway',          gname:'Raleway',             weight:'600', style:'normal', tag:'Sans-serif moderne',  prev:'ABCDEF'},
-  {family:'Josefin Sans',     gname:'Josefin+Sans',        weight:'700', style:'normal', tag:'Geometrique epure',   prev:'ABCDEF'},
-  {family:'Uncial Antiqua',   gname:'Uncial+Antiqua',      weight:'400', style:'normal', tag:'Style medieval',      prev:'ABCDEF'},
-  {family:'Cormorant Garamond',gname:'Cormorant+Garamond', weight:'300', style:'italic', tag:'Serif fin italique',  prev:'ABCDEF'}
+  // === GRAVURE LAPIDAIRE / ROMAINE ===
+  {family:'Cinzel',            gname:'Cinzel',              weight:'600', style:'normal', tag:'Inscription romaine',     prev:'ABCDEF'},
+  {family:'Cinzel',            gname:'Cinzel',              weight:'900', style:'normal', tag:'Romaine epaisse',         prev:'ABCDEF'},
+  {family:'Cinzel Decorative', gname:'Cinzel+Decorative',   weight:'700', style:'normal', tag:'Romaine ornee',           prev:'ABCDEF'},
+  {family:'Forum',             gname:'Forum',               weight:'400', style:'normal', tag:'Lapidaire classique',     prev:'ABCDEF'},
+  {family:'Marcellus',         gname:'Marcellus',           weight:'400', style:'normal', tag:'Lapidaire fin',           prev:'ABCDEF'},
+  {family:'Marcellus SC',      gname:'Marcellus+SC',        weight:'400', style:'normal', tag:'Petites capitales',       prev:'ABCDEF'},
+  {family:'Cantata One',       gname:'Cantata+One',         weight:'400', style:'normal', tag:'Lapidaire epais',         prev:'ABCDEF'},
+
+  // === MEMORIAL / FUNERAIRE TRADITIONNEL ===
+  {family:'IM Fell English',   gname:'IM+Fell+English',     weight:'400', style:'normal', tag:'Gravure ancienne',        prev:'ABCDEF'},
+  {family:'IM Fell English SC',gname:'IM+Fell+English+SC',  weight:'400', style:'normal', tag:'Petites capitales anciennes',prev:'ABCDEF'},
+  {family:'IM Fell DW Pica',   gname:'IM+Fell+DW+Pica',     weight:'400', style:'normal', tag:'Gravure XVIIIe',          prev:'ABCDEF'},
+  {family:'IM Fell French Canon',gname:'IM+Fell+French+Canon',weight:'400', style:'normal', tag:'Gravure XVIIe',         prev:'ABCDEF'},
+  {family:'Almendra SC',       gname:'Almendra+SC',         weight:'400', style:'normal', tag:'Capitales gravees',       prev:'ABCDEF'},
+  {family:'Almendra',          gname:'Almendra',            weight:'700', style:'normal', tag:'Serif memorial gras',     prev:'ABCDEF'},
+
+  // === SERIFS ELEGANTS / NEOCLASSIQUES ===
+  {family:'Cormorant Garamond',gname:'Cormorant+Garamond',  weight:'600', style:'normal', tag:'Serif elegant',           prev:'ABCDEF'},
+  {family:'Cormorant SC',      gname:'Cormorant+SC',        weight:'600', style:'normal', tag:'Capitales elegantes',     prev:'ABCDEF'},
+  {family:'EB Garamond',       gname:'EB+Garamond',         weight:'400', style:'normal', tag:'Garamond classique',      prev:'ABCDEF'},
+  {family:'EB Garamond',       gname:'EB+Garamond',         weight:'700', style:'normal', tag:'Garamond gras',           prev:'ABCDEF'},
+  {family:'Cardo',             gname:'Cardo',               weight:'400', style:'normal', tag:'Serif scolaire',          prev:'ABCDEF'},
+  {family:'Cardo',             gname:'Cardo',               weight:'700', style:'normal', tag:'Serif scolaire gras',     prev:'ABCDEF'},
+  {family:'Tinos',             gname:'Tinos',               weight:'400', style:'normal', tag:'Serif lisible',           prev:'ABCDEF'},
+
+  // === SERIFS HAUT CONTRASTE ===
+  {family:'Playfair Display',  gname:'Playfair+Display',    weight:'400', style:'normal', tag:'Serif haut contraste',    prev:'ABCDEF'},
+  {family:'Playfair Display',  gname:'Playfair+Display',    weight:'900', style:'normal', tag:'Serif contraste noir',    prev:'ABCDEF'},
+  {family:'Playfair Display SC',gname:'Playfair+Display+SC',weight:'700', style:'normal', tag:'Capitales contraste',     prev:'ABCDEF'},
+  {family:'Libre Baskerville', gname:'Libre+Baskerville',   weight:'400', style:'normal', tag:'Serif traditionnel',      prev:'ABCDEF'},
+  {family:'Libre Baskerville', gname:'Libre+Baskerville',   weight:'700', style:'normal', tag:'Serif traditionnel gras', prev:'ABCDEF'},
+  {family:'Crimson Pro',       gname:'Crimson+Pro',         weight:'400', style:'normal', tag:'Serif editorial',         prev:'ABCDEF'},
+  {family:'Spectral',          gname:'Spectral',            weight:'400', style:'normal', tag:'Serif livre',             prev:'ABCDEF'},
+  {family:'Spectral SC',       gname:'Spectral+SC',         weight:'600', style:'normal', tag:'Capitales serif livre',   prev:'ABCDEF'},
+  {family:'Yeseva One',        gname:'Yeseva+One',          weight:'400', style:'normal', tag:'Serif feminin',           prev:'ABCDEF'},
+
+  // === ITALIQUES / SCRIPT ===
+  {family:'Cormorant Garamond',gname:'Cormorant+Garamond',  weight:'400', style:'italic', tag:'Italique elegant',        prev:'ABCDEF'},
+  {family:'IM Fell English',   gname:'IM+Fell+English',     weight:'400', style:'italic', tag:'Italique ancien',         prev:'ABCDEF'},
+  {family:'Italianno',         gname:'Italianno',           weight:'400', style:'normal', tag:'Calligraphie cursive',    prev:'ABCDEF'},
+
+  // === MEDIEVAL / GOTHIQUE ===
+  {family:'Uncial Antiqua',    gname:'Uncial+Antiqua',      weight:'400', style:'normal', tag:'Onciale medievale',       prev:'ABCDEF'},
+  {family:'UnifrakturMaguntia',gname:'UnifrakturMaguntia',  weight:'400', style:'normal', tag:'Gothique allemand',       prev:'ABCDEF'},
+  {family:'UnifrakturCook',    gname:'UnifrakturCook',      weight:'700', style:'normal', tag:'Gothique gras',           prev:'ABCDEF'},
+  {family:'Pirata One',        gname:'Pirata+One',          weight:'400', style:'normal', tag:'Gothique decoratif',      prev:'ABCDEF'},
+
+  // === SANS-SERIF MODERNES ===
+  {family:'Raleway',           gname:'Raleway',             weight:'400', style:'normal', tag:'Sans-serif fin',          prev:'ABCDEF'},
+  {family:'Raleway',           gname:'Raleway',             weight:'700', style:'normal', tag:'Sans-serif moderne',      prev:'ABCDEF'},
+  {family:'Josefin Sans',      gname:'Josefin+Sans',        weight:'400', style:'normal', tag:'Geometrique fin',         prev:'ABCDEF'},
+  {family:'Josefin Sans',      gname:'Josefin+Sans',        weight:'700', style:'normal', tag:'Geometrique gras',        prev:'ABCDEF'}
 ];
 
 // =============================================
@@ -325,8 +443,9 @@ var FONTS = [
 // =============================================
 var S = {
   origImg: null,
-  baseFont: null,   // base font object
-  custom: {         // customizer overrides
+  cropPreviewUrl: null,  // dataURL of cropped region for visual comparison
+  baseFont: null,
+  custom: {
     weight: null,
     italic: false,
     scaleX: 1.0,
@@ -345,6 +464,15 @@ function effectiveFont() {
     scaleX: S.custom.scaleX,
     textCase: S.custom.textCase
   };
+}
+
+// Measure natural width of a character in pixels at given font config
+function measureCharWidth(fontFamily, fontWeight, fontStyle, fontSizePx, sample) {
+  var cv = measureCharWidth._cv = measureCharWidth._cv || document.createElement('canvas');
+  var ctx = cv.getContext('2d');
+  ctx.font = fontStyle + ' ' + fontWeight + ' ' + fontSizePx + 'px ' + "\u0027" + fontFamily + "\u0027" + ', Georgia, serif';
+  var s = sample || 'M';
+  return ctx.measureText(s).width;
 }
 
 function applyCase(txt, tc) {
@@ -398,13 +526,38 @@ function showView(name) {
 // FILE INPUTS
 // =============================================
 ['iCam','iGal','iFile'].forEach(function(id){
-  document.getElementById(id).addEventListener('change',function(e){
-    var f=e.target.files&&e.target.files[0]; if(f) loadFile(f); this.value='';
-  });
+  var el = document.getElementById(id);
+  // Multiple event listeners — iOS Safari sometimes fires 'input' instead of 'change'
+  function handle(e){
+    var files = e.target.files;
+    if(files && files.length > 0 && files[0]){
+      loadFile(files[0]);
+      // Reset input value so same file can be re-selected
+      setTimeout(function(){ try{ el.value=''; }catch(x){} }, 100);
+    }
+  }
+  el.addEventListener('change', handle);
+  el.addEventListener('input', handle);
+});
+
+// Fallback: when the page regains focus after a file picker closed,
+// check if any input got files (iOS sometimes misses change event)
+window.addEventListener('focus', function(){
+  setTimeout(function(){
+    ['iCam','iGal','iFile'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el && el.files && el.files.length > 0 && el.files[0]){
+        loadFile(el.files[0]);
+        try{ el.value=''; }catch(x){}
+      }
+    });
+  }, 300);
 });
 
 function loadFile(file) {
-  var err=document.getElementById('herr'); err.classList.add('hidden');
+  var err=document.getElementById('herr');
+  err.classList.add('hidden');
+  if(!file){ err.textContent='Aucun fichier reçu.'; err.classList.remove('hidden'); return; }
   var reader=new FileReader();
   reader.onload=function(e){
     var url=e.target.result;
@@ -481,7 +634,49 @@ document.getElementById('btnReset').addEventListener('click',function(){
   document.getElementById('chint').textContent='Touchez et faites glisser pour selectionner';
   drawSel();
 });
-document.getElementById('btnOk').addEventListener('click',function(){buildFontPicker(); showView('fonts');});
+document.getElementById('btnOk').addEventListener('click',function(){
+  // Generate cropped preview image for comparison in font picker
+  generateCropPreview();
+  buildFontPicker();
+  showView('fonts');
+});
+
+function generateCropPreview(){
+  if(!S.origImg) return;
+  var img = S.origImg;
+  var ci = document.getElementById('cimg');
+  var wrap = document.getElementById('cwrap');
+  var dW = ci.clientWidth || ci.offsetWidth || 320;
+  var dH = ci.clientHeight || ci.offsetHeight || 400;
+  var ox = ((wrap.clientWidth || 320) - dW) / 2;
+  var oy = ((wrap.clientHeight || 400) - dH) / 2;
+  var sx = Math.max(0, Math.min(cr.sx, cr.ex) - ox);
+  var sy = Math.max(0, Math.min(cr.sy, cr.ey) - oy);
+  var sw = Math.abs(cr.ex - cr.sx);
+  var sh = Math.abs(cr.ey - cr.sy);
+  var rx = img.naturalWidth / dW;
+  var ry = img.naturalHeight / dH;
+  var srcX = sx * rx;
+  var srcY = sy * ry;
+  var srcW = sw * rx;
+  var srcH = sh * ry;
+  // Cap output size for performance
+  var MAX = 600;
+  var oW = srcW, oH = srcH;
+  if(oW > MAX || oH > MAX){
+    if(oW >= oH){ oH = Math.round(oH/oW*MAX); oW = MAX; }
+    else { oW = Math.round(oW/oH*MAX); oH = MAX; }
+  }
+  oW = Math.max(20, Math.round(oW));
+  oH = Math.max(20, Math.round(oH));
+  var cv = document.createElement('canvas');
+  cv.width = oW; cv.height = oH;
+  var ctx = cv.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, oW, oH);
+  ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, oW, oH);
+  S.cropPreviewUrl = cv.toDataURL('image/jpeg', 0.85);
+}
 window.addEventListener('resize',function(){
   if(document.getElementById('vCrop').classList.contains('on')) setTimeout(initCanvas,150);
 });
@@ -489,13 +684,45 @@ window.addEventListener('resize',function(){
 // =============================================
 // FONT PICKER
 // =============================================
+var FONT_CATS = [
+  {at:0,  label:'Gravure lapidaire / Romaine'},
+  {at:7,  label:'Memorial / Funeraire traditionnel'},
+  {at:13, label:'Serifs elegants / Neoclassiques'},
+  {at:20, label:'Serifs haut contraste'},
+  {at:28, label:'Italiques / Calligraphie'},
+  {at:31, label:'Medieval / Gothique'},
+  {at:35, label:'Sans-serif modernes'}
+];
+
 function buildFontPicker() {
-  var grid=document.getElementById('fontGrid'); grid.innerHTML='';
-  FONTS.forEach(function(f){
-    var card=document.createElement('div');
+  // Show the cropped reference image
+  var refBox = document.getElementById('refImgBox');
+  var refImg = document.getElementById('refImg');
+  if(S.cropPreviewUrl){
+    refImg.src = S.cropPreviewUrl;
+    refBox.style.display = 'flex';
+  } else {
+    refBox.style.display = 'none';
+  }
+  var container = document.getElementById('fontGrid');
+  container.innerHTML = '';
+
+  FONTS.forEach(function(f, i){
+    // Insert category header if this index starts a new category
+    var cat = FONT_CATS.find(function(c){return c.at === i;});
+    if(cat){
+      var hdr = document.createElement('div');
+      hdr.className = 'cat-hdr';
+      hdr.textContent = cat.label;
+      container.appendChild(hdr);
+    }
+
+    var previewTxt = (document.getElementById('previewText') && document.getElementById('previewText').value) || 'ESSAI';
+    if(previewTxt.length > 12) previewTxt = previewTxt.slice(0, 12);
+    var card = document.createElement('div');
     card.className='font-card'+(S.baseFont&&S.baseFont.family===f.family&&S.baseFont.tag===f.tag?' sel':'');
     card.innerHTML=
-      '<div class="fc-prev" style="font-family:\''+f.family+'\',serif;font-weight:'+f.weight+';font-style:'+f.style+'">'+f.prev+'</div>'+
+      '<div class="fc-prev" style="font-family:\''+f.family+'\',serif;font-weight:'+f.weight+';font-style:'+f.style+'">'+escHTML(previewTxt)+'</div>'+
       '<div class="fc-name">'+f.family+'</div>'+
       '<div class="fc-tag">'+f.tag+'</div>';
     card.addEventListener('click',function(){
@@ -506,7 +733,7 @@ function buildFontPicker() {
       document.getElementById('btnMain').disabled=false;
       openCust(f);
     });
-    grid.appendChild(card);
+    container.appendChild(card);
   });
 }
 
@@ -602,6 +829,7 @@ function updateCustPreview() {
   el.style.fontFamily="'"+f.family+"',serif";
   el.style.fontWeight=w;
   el.style.fontStyle=sty;
+  el.style.display='inline-block';
   el.style.transform='scaleX('+sc+')';
   el.style.transformOrigin='center center';
   el.textContent=txt;
@@ -646,19 +874,73 @@ function updatePreview() {
   var s=parseFloat(document.getElementById('sm').value)||0;
   var lines=txt.split('\n');
   var maxL=Math.max.apply(null,lines.map(function(l){return l.length;}).concat([1]));
-  var PX=3.7795,rawPx=h*PX,scale=Math.min(1,96/rawPx),fs=rawPx*0.78*scale;
-  var lsPx=s*PX*scale;
+  var PX=3.7795;
+  var rawPx=h*PX;
+  var scale=Math.min(1,96/rawPx);
+  var fs=rawPx*0.78*scale;
+
+  // Measure natural width of representative chars at this font-size
+  // Use "H" as a typical wide capital
+  var natW = measureCharWidth(ef.family, ef.weight, ef.style, fs, 'H');
+  if(!natW || natW < 1) natW = fs * 0.55;
+  var targetCellPx = w * PX * scale;
+  // Glyph horizontal stretch factor so each letter occupies w mm wide
+  var glyphScaleX = (targetCellPx / natW) * ef.scaleX;
+
+  var lsPx = s * PX * scale;
   var pv=document.getElementById('pvt');
-  pv.style.cssText=
+  // Wrap each line in inline-block span with horizontal scale
+  pv.style.cssText =
     'font-family:\''+ef.family+'\',Georgia,serif;'+
     'font-weight:'+ef.weight+';font-style:'+ef.style+';'+
     'font-size:'+fs+'px;line-height:'+(rawPx*scale)+'px;'+
     'white-space:pre;letter-spacing:'+lsPx+'px;overflow:hidden;'+
-    'transform:scaleX('+ef.scaleX+');transform-origin:left center;';
-  pv.textContent=txt;
+    'display:inline-block;transform:scaleX('+glyphScaleX+');transform-origin:left center;';
+  pv.textContent = txt;
+
   var tW=((w+s)*maxL-s).toFixed(1);
   var tH=(lines.length*h).toFixed(1);
   document.getElementById('dinfo').innerHTML='SVG : <strong>'+tW+' x '+tH+' mm</strong> &nbsp;&middot;&nbsp; '+w+'x'+h+'mm . esp. '+s+'mm';
+  updateOverlay();
+}
+
+function updateOverlay(){
+  var box = document.getElementById('overlayBox');
+  if(!box) return;
+  if(!S.cropPreviewUrl){ box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  var img = document.getElementById('overlayImg');
+  if(img.src !== S.cropPreviewUrl){ img.src = S.cropPreviewUrl; }
+  var ef = effectiveFont(); if(!ef) return;
+  var raw = document.getElementById('ta').value || 'Jorge';
+  var txt = applyCase(raw, ef.textCase);
+  var ot = document.getElementById('overlayText');
+  var showCb = document.getElementById('ovShowText');
+  var opSl = document.getElementById('ovOpacity');
+  if(showCb && !showCb.checked){ ot.style.display='none'; return; }
+  ot.style.display = 'flex';
+  var op = opSl ? (parseFloat(opSl.value)/100) : 1;
+  // Sizing: fit text to the image area
+  var stack = document.querySelector('.overlay-stack');
+  var availW = stack ? stack.clientWidth : 280;
+  var availH = stack ? stack.clientHeight : 140;
+  var maxL = Math.max.apply(null, txt.split('\n').map(function(l){return l.length;}).concat([1]));
+  var lines = txt.split('\n').length;
+  var fsByW = (availW * 0.9) / (maxL * 0.6 * ef.scaleX);
+  var fsByH = (availH * 0.7) / lines;
+  var fs = Math.min(fsByW, fsByH);
+  fs = Math.max(10, Math.min(80, fs));
+  // Stretch glyphs so each letter is w mm wide visually (proportional to height)
+  // In overlay: we don't have mm, but the relative ratio (w/h) is what matters
+  var hMm = parseFloat(document.getElementById('hm').value) || 20;
+  var wMm = parseFloat(document.getElementById('wm').value) || 15;
+  var natW2 = measureCharWidth(ef.family, ef.weight, ef.style, fs, 'H');
+  if(!natW2 || natW2 < 1) natW2 = fs * 0.55;
+  // Target visual cell width in px (relative to fs which = h ratio):
+  var targetCellPx = (wMm / hMm) * fs * 1.28; // 1.28 inverse of 0.78
+  var glyphSx = (targetCellPx / natW2) * ef.scaleX;
+  ot.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;white-space:pre;color:#000;text-shadow:0 0 6px rgba(255,255,255,.95),0 0 3px rgba(255,255,255,.95),1px 1px 0 rgba(255,255,255,.9),-1px -1px 0 rgba(255,255,255,.9);pointer-events:none;padding:8px;line-height:1.15;font-family:\''+ef.family+'\',Georgia,serif;font-weight:'+ef.weight+';font-style:'+ef.style+';font-size:'+fs+'px;opacity:'+op+';';
+  ot.innerHTML = '<span style="display:inline-block;transform:scaleX('+glyphSx+');transform-origin:center center;">' + escHTML(txt).replace(/\n/g,'<br>') + '</span>';
 }
 
 ['ta','hm','wm','sm'].forEach(function(id){
@@ -670,6 +952,11 @@ function updatePreview() {
 // =============================================
 function doExport() {
   var ef=effectiveFont(); if(!ef) return;
+  // Check if there are modified glyphs for this font
+  var hasModified = S._modifiedGlyphs &&
+                    S._modifiedGlyphsFont === ef.family + '-' + ef.weight + '-' + ef.style &&
+                    Object.keys(S._modifiedGlyphs).length > 0;
+  if(hasModified){ return doExportWithCustomGlyphs(ef); }
   var raw=document.getElementById('ta').value||'Jorge';
   var txt=applyCase(raw,ef.textCase);
   var h=parseFloat(document.getElementById('hm').value)||20;
@@ -677,85 +964,643 @@ function doExport() {
   var s=parseFloat(document.getElementById('sm').value)||0;
   var lines=txt.split('\n');
   var maxL=Math.max.apply(null,lines.map(function(l){return l.length;}).concat([1]));
-  var svgW=((w+s)*maxL-s).toFixed(3);
-  var svgH=(lines.length*h).toFixed(3);
-  var fs=(h*0.76).toFixed(3);
-  var base=(h*0.80).toFixed(3);
-  var gfu='https://fonts.googleapis.com/css2?family='+ef.gname+':ital,wght@0,'+ef.weight+';1,'+ef.weight+'&display=swap';
-  // Width transform
-  var gOpen='', gClose='';
-  if(ef.scaleX!==1.0){
-    gOpen='<g transform="scale('+ef.scaleX+',1)">';
-    gClose='</g>';
-    var adjW=(parseFloat(svgW)/ef.scaleX).toFixed(3);
-    gOpen='<g transform="scale('+ef.scaleX+',1) translate(0,0)">';
-  }
-  var els='';
-  lines.forEach(function(line,li){
-    var yB=(li*h+parseFloat(base)).toFixed(3);
-    var lineEls='';
-    line.split('').forEach(function(ch,ci){
-      var xC=(ci*(w+s)+w/2).toFixed(3);
-      lineEls+='\n    <text x="'+xC+'" y="'+yB+'" text-anchor="middle" font-family="'+xe(ef.family)+',Georgia,serif" font-size="'+fs+'" font-weight="'+ef.weight+'" font-style="'+ef.style+'" fill="#000000">'+xc(ch)+'</text>';
-    });
-    els+=lineEls;
-  });
-  var scaleBlock='';
-  if(ef.scaleX!==1.0){
-    scaleBlock='<g transform="scale('+ef.scaleX.toFixed(4)+',1)">';
-    els=scaleBlock+els+'\n  </g>';
-  }
-  var svg='<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="'+svgW+'mm" height="'+svgH+'mm" viewBox="0 0 '+svgW+' '+svgH+'">\n  <defs><style>@import url(\''+gfu+'\');</style></defs>\n  <rect width="'+svgW+'" height="'+svgH+'" fill="white"/>'+els+'\n</svg>';
 
-var fname=‘jorge_’+ef.family.replace(/\s+/g,’-’).toLowerCase()+’_’+w+‘x’+h+‘mm.svg’;
-saveSVG(svg,fname);
+  // SVG dimensions in mm
+  var svgW = ((w+s) * maxL - s).toFixed(3);
+  var svgH = (lines.length * h).toFixed(3);
+
+  // We'll render text at a base font-size = h * 0.76 (in mm units of viewBox)
+  // Then horizontally stretch each char so its visible width = w mm * customScaleX
+  var fsMm = h * 0.76;
+  var baseY = h * 0.80;
+
+  // Measure natural char width at this fsMm using canvas (works in mm too if we use the same units)
+  // Canvas works in pixels — but the ratio is what matters
+  var natW = measureCharWidth(ef.family, ef.weight, ef.style, fsMm, 'H');
+  if(!natW || natW < 1) natW = fsMm * 0.55;
+  // Horizontal scale per glyph: target visual cell width / natural char width
+  var visualCellW = w * ef.scaleX;
+  var glyphScaleX = visualCellW / natW;
+
+  var els = '';
+  lines.forEach(function(line, li){
+    var yB = (li * h + baseY).toFixed(3);
+    line.split('').forEach(function(ch, ci){
+      var xC = (ci * (w + s) + w/2).toFixed(3);
+      // Apply matrix: scale around xC,0
+      // matrix(a,0,0,1, tx, 0) where a=glyphScaleX, tx = xC*(1-a)
+      var tx = (parseFloat(xC) * (1 - glyphScaleX)).toFixed(3);
+      els += '\n  <text x="' + xC + '" y="' + yB + '"' +
+             ' text-anchor="middle"' +
+             ' font-family="' + xe(ef.family) + ',Georgia,serif"' +
+             ' font-size="' + fsMm.toFixed(3) + '"' +
+             ' font-weight="' + ef.weight + '"' +
+             ' font-style="' + ef.style + '"' +
+             ' transform="matrix(' + glyphScaleX.toFixed(4) + ',0,0,1,' + tx + ',0)"' +
+             ' fill="#000000">' + xc(ch) + '</text>';
+    });
+  });
+
+  var gfu = 'https://fonts.googleapis.com/css2?family=' + ef.gname + ':ital,wght@0,' + ef.weight + ';1,' + ef.weight + '&display=swap';
+  var svg = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<svg xmlns="http://www.w3.org/2000/svg" width="' + svgW + 'mm" height="' + svgH + 'mm" viewBox="0 0 ' + svgW + ' ' + svgH + '">\n' +
+    '  <defs><style>@import url(\'' + gfu + '\');</style></defs>\n' +
+    '  <rect width="' + svgW + '" height="' + svgH + '" fill="white"/>' + els + '\n</svg>';
+  var fname = 'jorge_' + ef.family.replace(/\s+/g, '-').toLowerCase() + '_' + w + 'x' + h + 'mm.svg';
+  saveSVG(svg, fname);
+}
+
+
+function doExportWithCustomGlyphs(ef){
+  var raw=document.getElementById('ta').value||'Jorge';
+  var txt=applyCase(raw,ef.textCase);
+  var h=parseFloat(document.getElementById('hm').value)||20;
+  var w=parseFloat(document.getElementById('wm').value)||15;
+  var s=parseFloat(document.getElementById('sm').value)||0;
+  var lines=txt.split('\n');
+  var maxL=Math.max.apply(null,lines.map(function(l){return l.length;}).concat([1]));
+  var svgW = ((w+s) * maxL - s).toFixed(3);
+  var svgH = (lines.length * h).toFixed(3);
+  var fsMm = h * 0.76;
+  var baseY = h * 0.80;
+  var natW = measureCharWidth(ef.family, ef.weight, ef.style, fsMm, 'H');
+  if(!natW || natW < 1) natW = fsMm * 0.55;
+  var visualCellW = w * ef.scaleX;
+  var glyphScaleX = visualCellW / natW;
+
+  var els = '';
+  var fontImport = '';
+  // For unmodified chars we still need the font
+  var anyUnmodified = false;
+  lines.forEach(function(line,li){
+    var yB = (li * h + baseY).toFixed(3);
+    line.split('').forEach(function(ch, ci){
+      var xC = (ci * (w + s) + w/2);
+      var modGlyph = S._modifiedGlyphs[ch];
+      if(modGlyph){
+        // Render as path. opentype Y-up; glyph baseline at y=0, ascends positive
+        // Scale: fsMm / unitsPerEm (vertical), * glyphScaleX horizontally
+        var sy = fsMm / modGlyph.unitsPerEm;
+        var sx = sy * glyphScaleX;
+        // Center horizontally on xC: glyph width = advanceWidth * sx
+        var glyphW = modGlyph.advanceWidth * sx;
+        var tx = xC - glyphW/2;
+        var ty = li * h + baseY;
+        var d = commandsToPathData(modGlyph.commands);
+        // Y must be flipped: scale(sx, -sy)
+        els += '\n  <g transform="translate(' + tx.toFixed(3) + ',' + ty.toFixed(3) + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')">' +
+               '<path d="' + d + '" fill="#000000"/></g>';
+      } else {
+        anyUnmodified = true;
+        var tx2 = (xC * (1 - glyphScaleX)).toFixed(3);
+        els += '\n  <text x="' + xC.toFixed(3) + '" y="' + yB + '"' +
+               ' text-anchor="middle"' +
+               ' font-family="' + xe(ef.family) + ',Georgia,serif"' +
+               ' font-size="' + fsMm.toFixed(3) + '"' +
+               ' font-weight="' + ef.weight + '"' +
+               ' font-style="' + ef.style + '"' +
+               ' transform="matrix(' + glyphScaleX.toFixed(4) + ',0,0,1,' + tx2 + ',0)"' +
+               ' fill="#000000">' + xc(ch) + '</text>';
+      }
+    });
+  });
+
+  if(anyUnmodified){
+    var gfu = 'https://fonts.googleapis.com/css2?family=' + ef.gname + ':ital,wght@0,' + ef.weight + ';1,' + ef.weight + '&display=swap';
+    fontImport = '<defs><style>@import url(\'' + gfu + '\');</style></defs>\n  ';
+  }
+
+  var svg = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<svg xmlns="http://www.w3.org/2000/svg" width="' + svgW + 'mm" height="' + svgH + 'mm" viewBox="0 0 ' + svgW + ' ' + svgH + '">\n  ' +
+    fontImport +
+    '<rect width="' + svgW + '" height="' + svgH + '" fill="white"/>' + els + '\n</svg>';
+  var fname = 'jorge_' + ef.family.replace(/\s+/g,'-').toLowerCase() + '_custom_' + w + 'x' + h + 'mm.svg';
+  saveSVG(svg, fname);
 }
 
 function saveSVG(content,filename) {
-var blob=new Blob([content],{type:‘image/svg+xml;charset=utf-8’});
-var bm=document.getElementById(‘btnMain’);
-function done(label){
-bm.textContent=’\u2713 ‘+label;
-bm.style.cssText=‘flex:1;background:#d0edda;color:#1a5c38;border-color:#5fa87a’;
-setTimeout(function(){bm.textContent=’\u2193 Enregistrer SVG’;bm.style.cssText=’’;bm.className=‘btn btn-g btn-f’;},3000);
-}
+  var blob=new Blob([content],{type:'image/svg+xml;charset=utf-8'});
+  var bm=document.getElementById('btnMain');
+  function done(label){
+    bm.textContent='\u2713 '+label;
+    bm.style.cssText='flex:1;background:#d0edda;color:#1a5c38;border-color:#5fa87a';
+    setTimeout(function(){bm.textContent='\u2193 Enregistrer SVG';bm.style.cssText='';bm.className='btn btn-g btn-f';},3000);
+  }
 
-// 1. File System Access API (Android Chrome, desktop)
-if(window.showSaveFilePicker){
-window.showSaveFilePicker({
-suggestedName:filename,
-types:[{description:‘SVG’,accept:{‘image/svg+xml’:[’.svg’]}}]
-}).then(function(handle){
-return handle.createWritable().then(function(w){return w.write(blob).then(function(){return w.close();});});
-}).then(function(){done(‘Enregistre’);})
-.catch(function(e){if(e.name!==‘AbortError’) fallback(blob,filename,done);});
-return;
-}
-// 2. Web Share (iOS Safari 15+)
-if(navigator.share&&navigator.canShare){
-var file=new File([blob],filename,{type:‘image/svg+xml’});
-if(navigator.canShare({files:[file]})){
-navigator.share({title:’Jorge — ’+filename,files:[file]})
-.then(function(){done(‘Partage’);})
-.catch(function(e){if(e.name!==‘AbortError’) fallback(blob,filename,done);});
-return;
-}
-}
-// 3. Standard download
-fallback(blob,filename,done);
+  // 1. File System Access API (Android Chrome, desktop)
+  if(window.showSaveFilePicker){
+    window.showSaveFilePicker({
+      suggestedName:filename,
+      types:[{description:'SVG',accept:{'image/svg+xml':['.svg']}}]
+    }).then(function(handle){
+      return handle.createWritable().then(function(w){return w.write(blob).then(function(){return w.close();});});
+    }).then(function(){done('Enregistre');})
+    .catch(function(e){if(e.name!=='AbortError') fallback(blob,filename,done);});
+    return;
+  }
+  // 2. Web Share (iOS Safari 15+)
+  if(navigator.share&&navigator.canShare){
+    var file=new File([blob],filename,{type:'image/svg+xml'});
+    if(navigator.canShare({files:[file]})){
+      navigator.share({title:'Jorge — '+filename,files:[file]})
+        .then(function(){done('Partage');})
+        .catch(function(e){if(e.name!=='AbortError') fallback(blob,filename,done);});
+      return;
+    }
+  }
+  // 3. Standard download
+  fallback(blob,filename,done);
 }
 
 function fallback(blob,filename,done){
-var url=URL.createObjectURL(blob);
-var a=document.createElement(‘a’); a.href=url; a.download=filename;
-document.body.appendChild(a); a.click(); document.body.removeChild(a);
-setTimeout(function(){URL.revokeObjectURL(url);},1000);
-done(‘Telecharge’);
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url);},1000);
+  done('Telecharge');
 }
 
-function xe(s){return(s||’’).replace(/”/g,’"’);}
-function xc(s){return(s||’’).replace(/&/g,’&’).replace(/</g,’<’).replace(/>/g,’>’).replace(/”/g,’"’).replace(/’/g,’'’);}
+function escHTML(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+function xe(s){return(s||'').replace(/"/g,'&quot;');}
+function xc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');}
+
+// Overlay toggle / opacity listeners
+(function(){
+  document.addEventListener('change', function(e){
+    if(e.target && (e.target.id === 'ovShowText')){ updateOverlay(); }
+  });
+  document.addEventListener('input', function(e){
+    if(e.target && e.target.id === 'ovOpacity'){ updateOverlay(); }
+  });
+})();
+
+// Rebuild font cards when preview text changes (debounced)
+(function(){
+  var t = null;
+  document.addEventListener('input', function(e){
+    if(e.target && e.target.id === 'previewText'){
+      clearTimeout(t);
+      t = setTimeout(function(){
+        if(document.getElementById('vFonts').classList.contains('on')){
+          buildFontPicker();
+        }
+      }, 250);
+    }
+  });
+})();
+
+
+// =================================================
+// GLYPH EDITOR — opentype.js based vector editing
+// =================================================
+var GE = {
+  font: null,             // opentype.Font
+  fontUrl: null,
+  letters: [],            // unique letters being edited
+  currentChar: null,
+  glyphs: {},             // char -> { path: opentype.Path, modified: bool, anchors: [{x,y,ctrlIn:{x,y}, ctrlOut:{x,y}, type}], commands: [...] }
+  dragging: null,         // { type:'anchor'|'in'|'out', idx, char }
+  showHandles: true,
+  showAnchors: true,
+  unitsPerEm: 1000,
+  baseFontSize: 600       // virtual em-square size for editing in SVG units
+};
+
+// Show editor button only on desktop
+function updateEditButtonVisibility(){
+  var btn = document.getElementById('btnEditGlyphs');
+  if(!btn) return;
+  btn.style.display = window.innerWidth >= 800 ? 'inline-flex' : 'none';
+}
+window.addEventListener('resize', updateEditButtonVisibility);
+updateEditButtonVisibility();
+
+// Open editor when button clicked
+document.getElementById('btnEditGlyphs').addEventListener('click', openGlyphEditor);
+
+function openGlyphEditor(){
+  var ef = effectiveFont(); if(!ef) return;
+  var raw = document.getElementById('ta').value || 'JORGE';
+  var txt = applyCase(raw, ef.textCase);
+  // Get unique letters (no spaces / newlines)
+  var seen = {};
+  GE.letters = [];
+  for(var i=0; i<txt.length; i++){
+    var ch = txt[i];
+    if(ch === ' ' || ch === '\n' || ch === '\r' || ch === '\t') continue;
+    if(!seen[ch]){ seen[ch] = true; GE.letters.push(ch); }
+  }
+  if(GE.letters.length === 0){
+    alert('Saisissez du texte avant de modifier les lettres.');
+    return;
+  }
+
+  document.getElementById('geTitle').textContent = 'Editeur de glyphes : ' + ef.family;
+  document.getElementById('glyphEditor').classList.add('on');
+  document.getElementById('geStatus').textContent = 'Chargement de la police...';
+
+  // Load the font via opentype.js
+  loadFontFile(ef).then(function(font){
+    GE.font = font;
+    GE.unitsPerEm = font.unitsPerEm || 1000;
+    GE.glyphs = S._modifiedGlyphs && S._modifiedGlyphsFont === ef.family + '-' + ef.weight + '-' + ef.style ? S._modifiedGlyphs : {};
+    buildLetterTabs();
+    if(GE.letters.length > 0) selectLetter(GE.letters[0]);
+  }).catch(function(e){
+    var msg = e.message || 'Erreur inconnue';
+    document.getElementById('geStatus').textContent = msg;
+    var wrap = document.getElementById('geCanvasWrap');
+    wrap.innerHTML = '<div style="color:#c0392b;font-size:13px;text-align:center;padding:30px;line-height:1.6;max-width:380px"><strong>Impossible de charger la police</strong><br><br>' + msg + '<br><br>Cette fonctionnalite necessite que Jorge soit ouvert depuis une URL en ligne (GitHub Pages), pas en fichier local. Ouvrez : <br><strong style="color:#1a5c38">https://vitald81.github.io/Jorge/</strong></div>';
+    console.error('[Jorge] font load error', e);
+  });
+}
+
+// Get the actual font file URL from Google Fonts CSS
+function loadFontFile(ef){
+  return new Promise(function(resolve, reject){
+    if(typeof opentype === 'undefined'){
+      reject(new Error('Bibliotheque opentype non chargee. Verifiez votre connexion internet.'));
+      return;
+    }
+    var fam = ef.gname.replace(/\+/g, ' ');
+    var weight = ef.weight;
+    var ital = ef.style === 'italic' ? 'italic' : '';
+    // Use the legacy Google Fonts API v1 which returns TTF for older user-agents
+    // Strategy: fetch CSS via a thirdparty CORS proxy that adds proper headers
+    var cssUrl1 = 'https://fonts.googleapis.com/css?family=' + encodeURIComponent(fam) + ':' + weight + ital + '&display=swap';
+    var cssUrl2 = 'https://fonts.googleapis.com/css2?family=' + ef.gname + ':ital,wght@' + (ital?1:0) + ',' + weight + '&display=swap';
+    var attempts = [cssUrl1, cssUrl2];
+    var idx = 0;
+
+    function tryNext(){
+      if(idx >= attempts.length){
+        reject(new Error('Impossible de charger la police. Essayez sur https://vitald81.github.io/Jorge/ (pas en fichier local).'));
+        return;
+      }
+      var url = attempts[idx++];
+      fetch(url, {
+        headers: {
+          // Force a user-agent that gets TTF (server-side check is on UA, this header may be stripped by browser)
+          'Accept': 'text/css,*/*;q=0.1'
+        },
+        mode: 'cors'
+      })
+      .then(function(r){
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      })
+      .then(function(css){
+        // Find ALL src urls (multiple formats may be present), prefer TTF then OTF then WOFF
+        var allUrls = [];
+        var rx = /url\((['"]?)([^)'"]+)\1\)/gi;
+        var match;
+        while((match = rx.exec(css)) !== null){
+          allUrls.push(match[2]);
+        }
+        // Sort: ttf > otf > woff > woff2
+        var prio = function(u){
+          var ul = u.toLowerCase();
+          if(ul.indexOf('.ttf') > -1) return 0;
+          if(ul.indexOf('.otf') > -1) return 1;
+          if(ul.indexOf('.woff2') > -1) return 3;
+          if(ul.indexOf('.woff') > -1) return 2;
+          return 4;
+        };
+        allUrls.sort(function(a,b){ return prio(a) - prio(b); });
+        if(allUrls.length === 0){
+          tryNext();
+          return;
+        }
+        // opentype.js supports ttf, otf, woff (not woff2)
+        var supported = allUrls.filter(function(u){
+          var ul = u.toLowerCase();
+          return ul.indexOf('.ttf') > -1 || ul.indexOf('.otf') > -1 || (ul.indexOf('.woff') > -1 && ul.indexOf('.woff2') === -1);
+        });
+        if(supported.length === 0){
+          tryNext();
+          return;
+        }
+        loadFromUrls(supported, 0, resolve, function(err){
+          tryNext();
+        });
+      })
+      .catch(function(e){
+        console.warn('[Jorge] CSS fetch failed:', e.message);
+        tryNext();
+      });
+    }
+
+    function loadFromUrls(urls, i, ok, fail){
+      if(i >= urls.length){ fail(new Error('Aucune URL de police chargeable')); return; }
+      opentype.load(urls[i], function(err, font){
+        if(err || !font){
+          console.warn('[Jorge] opentype.load failed for', urls[i], err);
+          loadFromUrls(urls, i+1, ok, fail);
+        } else {
+          ok(font);
+        }
+      });
+    }
+
+    tryNext();
+  });
+}
+
+function buildLetterTabs(){
+  var tabs = document.getElementById('geTabs');
+  tabs.innerHTML = '';
+  GE.letters.forEach(function(ch){
+    var b = document.createElement('button');
+    b.className = 'ge-tab' + (GE.currentChar === ch ? ' act' : '') + (GE.glyphs[ch] && GE.glyphs[ch].modified ? ' modified' : '');
+    b.textContent = ch;
+    b.addEventListener('click', function(){ selectLetter(ch); });
+    tabs.appendChild(b);
+  });
+}
+
+function selectLetter(ch){
+  GE.currentChar = ch;
+  // If we don't have a stored modified version, build from font
+  if(!GE.glyphs[ch]){
+    var glyph = GE.font.charToGlyph(ch);
+    if(!glyph || !glyph.path){
+      document.getElementById('geStatus').textContent = 'Glyphe absent dans la police';
+      return;
+    }
+    var path = glyph.path;
+    var commands = JSON.parse(JSON.stringify(path.commands));
+    GE.glyphs[ch] = {
+      commands: commands,
+      modified: false,
+      glyph: glyph,
+      advanceWidth: glyph.advanceWidth || GE.unitsPerEm * 0.6
+    };
+  }
+  buildLetterTabs();
+  renderEditor();
+}
+
+function renderEditor(){
+  var wrap = document.getElementById('geCanvasWrap');
+  if(!GE.currentChar || !GE.glyphs[GE.currentChar]){
+    wrap.innerHTML = '<div style="color:var(--mut);font-size:13px">Selectionnez une lettre dans les onglets</div>';
+    return;
+  }
+  var g = GE.glyphs[GE.currentChar];
+  var commands = g.commands;
+  var upem = GE.unitsPerEm;
+
+  // Compute bbox of path
+  var bb = computeBBox(commands);
+  var pad = upem * 0.1;
+  var vbX = bb.minX - pad;
+  var vbY = -(bb.maxY + pad);
+  var vbW = (bb.maxX - bb.minX) + pad*2;
+  var vbH = (bb.maxY - bb.minY) + pad*2;
+  if(vbW < upem*0.3) vbW = upem*0.3;
+  if(vbH < upem*0.3) vbH = upem*0.3;
+
+  // Build SVG: opentype uses Y-up so we flip Y in the viewBox transform
+  var d = commandsToPathData(commands);
+  var svg = '<svg viewBox="' + vbX + ' ' + vbY + ' ' + vbW + ' ' + vbH + '" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;max-height:60vh">';
+  svg += '<g transform="scale(1,-1)">';
+  // Baseline
+  svg += '<line x1="' + bb.minX + '" y1="0" x2="' + bb.maxX + '" y2="0" stroke="#cce0d4" stroke-width="' + (upem*0.005) + '" stroke-dasharray="' + (upem*0.02) + ',' + (upem*0.02) + '"/>';
+  // Glyph fill
+  svg += '<path d="' + d + '" fill="#0b1e12" fill-opacity="0.85" stroke="#1a5c38" stroke-width="' + (upem*0.003) + '" />';
+  svg += '</g>';
+
+  // Overlays (anchors + handles) — also in flipped coord
+  svg += '<g transform="scale(1,-1)">';
+  var prev = null;
+  for(var i=0; i<commands.length; i++){
+    var c = commands[i];
+    if(c.type === 'M' || c.type === 'L'){
+      if(GE.showAnchors){
+        svg += '<rect class="ge-anchor" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.012) + '" y="' + (c.y - upem*0.012) + '" width="' + (upem*0.024) + '" height="' + (upem*0.024) + '" fill="#3d8f58" stroke="#fff" stroke-width="' + (upem*0.003) + '"/>';
+      }
+    } else if(c.type === 'C'){
+      if(GE.showHandles && prev){
+        svg += '<line class="ge-ctrl-line" x1="' + prev.x + '" y1="' + prev.y + '" x2="' + c.x1 + '" y2="' + c.y1 + '"/>';
+        svg += '<line class="ge-ctrl-line" x1="' + c.x + '" y1="' + c.y + '" x2="' + c.x2 + '" y2="' + c.y2 + '"/>';
+        svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl1" cx="' + c.x1 + '" cy="' + c.y1 + '" r="' + (upem*0.014) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.003) + '"/>';
+        svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl2" cx="' + c.x2 + '" cy="' + c.y2 + '" r="' + (upem*0.014) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.003) + '"/>';
+      }
+      if(GE.showAnchors){
+        svg += '<rect class="ge-anchor" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.012) + '" y="' + (c.y - upem*0.012) + '" width="' + (upem*0.024) + '" height="' + (upem*0.024) + '" fill="#3d8f58" stroke="#fff" stroke-width="' + (upem*0.003) + '"/>';
+      }
+    } else if(c.type === 'Q'){
+      if(GE.showHandles && prev){
+        svg += '<line class="ge-ctrl-line" x1="' + prev.x + '" y1="' + prev.y + '" x2="' + c.x1 + '" y2="' + c.y1 + '"/>';
+        svg += '<line class="ge-ctrl-line" x1="' + c.x + '" y1="' + c.y + '" x2="' + c.x1 + '" y2="' + c.y1 + '"/>';
+        svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl1" cx="' + c.x1 + '" cy="' + c.y1 + '" r="' + (upem*0.014) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.003) + '"/>';
+      }
+      if(GE.showAnchors){
+        svg += '<rect class="ge-anchor" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.012) + '" y="' + (c.y - upem*0.012) + '" width="' + (upem*0.024) + '" height="' + (upem*0.024) + '" fill="#3d8f58" stroke="#fff" stroke-width="' + (upem*0.003) + '"/>';
+      }
+    }
+    if(c.type !== 'Z' && c.x !== undefined) prev = { x: c.x, y: c.y };
+  }
+  svg += '</g></svg>';
+
+  wrap.innerHTML = svg;
+
+  // Bind drag handlers
+  var svgEl = wrap.querySelector('svg');
+  bindDrag(svgEl);
+
+  document.getElementById('geStatus').textContent = 'Lettre "' + GE.currentChar + '" — ' + commands.length + ' segments';
+}
+
+function computeBBox(commands){
+  var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  commands.forEach(function(c){
+    if(c.x !== undefined){ if(c.x < minX) minX = c.x; if(c.x > maxX) maxX = c.x; }
+    if(c.y !== undefined){ if(c.y < minY) minY = c.y; if(c.y > maxY) maxY = c.y; }
+    if(c.x1 !== undefined){ if(c.x1 < minX) minX = c.x1; if(c.x1 > maxX) maxX = c.x1; }
+    if(c.y1 !== undefined){ if(c.y1 < minY) minY = c.y1; if(c.y1 > maxY) maxY = c.y1; }
+    if(c.x2 !== undefined){ if(c.x2 < minX) minX = c.x2; if(c.x2 > maxX) maxX = c.x2; }
+    if(c.y2 !== undefined){ if(c.y2 < minY) minY = c.y2; if(c.y2 > maxY) maxY = c.y2; }
+  });
+  if(!isFinite(minX)){ minX = 0; minY = 0; maxX = GE.unitsPerEm; maxY = GE.unitsPerEm; }
+  return { minX:minX, minY:minY, maxX:maxX, maxY:maxY };
+}
+
+function commandsToPathData(commands){
+  return commands.map(function(c){
+    if(c.type === 'M') return 'M' + c.x + ' ' + c.y;
+    if(c.type === 'L') return 'L' + c.x + ' ' + c.y;
+    if(c.type === 'C') return 'C' + c.x1 + ' ' + c.y1 + ' ' + c.x2 + ' ' + c.y2 + ' ' + c.x + ' ' + c.y;
+    if(c.type === 'Q') return 'Q' + c.x1 + ' ' + c.y1 + ' ' + c.x + ' ' + c.y;
+    if(c.type === 'Z') return 'Z';
+    return '';
+  }).join(' ');
+}
+
+function bindDrag(svgEl){
+  function getSvgPoint(evt){
+    var pt = svgEl.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    var ctm = svgEl.getScreenCTM();
+    if(!ctm) return { x:0, y:0 };
+    var inv = ctm.inverse();
+    var p = pt.matrixTransform(inv);
+    // Flip Y because we use scale(1,-1) inside
+    return { x: p.x, y: -p.y };
+  }
+
+  function onDown(e){
+    e.preventDefault();
+    var t = e.target;
+    var role = t.getAttribute('data-role');
+    var idx = parseInt(t.getAttribute('data-idx'), 10);
+    if(!role || isNaN(idx)) return;
+    GE.dragging = { role: role, idx: idx };
+    try { t.setPointerCapture(e.pointerId); } catch(x){}
+  }
+
+  function onMove(e){
+    if(!GE.dragging) return;
+    e.preventDefault();
+    var p = getSvgPoint(e);
+    var commands = GE.glyphs[GE.currentChar].commands;
+    var c = commands[GE.dragging.idx];
+    if(!c) return;
+    var role = GE.dragging.role;
+    if(role === 'point'){
+      // Move anchor: also shift control handles attached to it
+      var dx = p.x - c.x, dy = p.y - c.y;
+      // The next command's x1 (incoming) doesn't exist; instead, this segment's x2 is the in-handle of THIS endpoint
+      if(c.type === 'C'){
+        c.x2 += dx; c.y2 += dy;
+      } else if(c.type === 'Q'){
+        // Q has only x1; that's the curve's mid handle — leave it
+      }
+      // Next segment's x1 is the out-handle from THIS point
+      var next = commands[GE.dragging.idx + 1];
+      if(next && next.type === 'C'){
+        next.x1 += dx; next.y1 += dy;
+      } else if(next && next.type === 'Q'){
+        // skip
+      }
+      c.x = p.x; c.y = p.y;
+    } else if(role === 'ctrl1'){
+      c.x1 = p.x; c.y1 = p.y;
+    } else if(role === 'ctrl2'){
+      c.x2 = p.x; c.y2 = p.y;
+    }
+    GE.glyphs[GE.currentChar].modified = true;
+    renderEditor();
+  }
+
+  function onUp(e){
+    if(GE.dragging){
+      buildLetterTabs(); // refresh modified dot
+    }
+    GE.dragging = null;
+  }
+
+  svgEl.querySelectorAll('.ge-anchor, .ge-handle').forEach(function(el){
+    el.addEventListener('pointerdown', onDown);
+  });
+  svgEl.addEventListener('pointermove', onMove);
+  svgEl.addEventListener('pointerup', onUp);
+  svgEl.addEventListener('pointerleave', onUp);
+  svgEl.addEventListener('pointercancel', onUp);
+}
+
+document.getElementById('geShowHandles').addEventListener('change', function(e){
+  GE.showHandles = e.target.checked;
+  renderEditor();
+});
+document.getElementById('geShowAnchors').addEventListener('change', function(e){
+  GE.showAnchors = e.target.checked;
+  renderEditor();
+});
+
+document.getElementById('geReset').addEventListener('click', function(){
+  if(!GE.currentChar) return;
+  delete GE.glyphs[GE.currentChar];
+  selectLetter(GE.currentChar);
+});
+
+document.getElementById('geResetAll').addEventListener('click', function(){
+  if(!confirm('Reinitialiser toutes les lettres modifiees ?')) return;
+  GE.glyphs = {};
+  if(GE.letters.length > 0) selectLetter(GE.letters[0]);
+});
+
+document.getElementById('geClose').addEventListener('click', function(){
+  document.getElementById('glyphEditor').classList.remove('on');
+});
+document.getElementById('geCancel').addEventListener('click', function(){
+  document.getElementById('glyphEditor').classList.remove('on');
+});
+
+document.getElementById('geApply').addEventListener('click', function(){
+  // Save modified glyphs to global state
+  var ef = effectiveFont();
+  var modifiedOnly = {};
+  Object.keys(GE.glyphs).forEach(function(ch){
+    if(GE.glyphs[ch].modified){
+      modifiedOnly[ch] = {
+        commands: GE.glyphs[ch].commands,
+        advanceWidth: GE.glyphs[ch].advanceWidth,
+        unitsPerEm: GE.unitsPerEm
+      };
+    }
+  });
+  S._modifiedGlyphs = modifiedOnly;
+  S._modifiedGlyphsFont = ef.family + '-' + ef.weight + '-' + ef.style;
+  document.getElementById('glyphEditor').classList.remove('on');
+  // Show count in compose
+  var btn = document.getElementById('btnEditGlyphs');
+  var n = Object.keys(modifiedOnly).length;
+  if(n > 0){
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg> Modifier les lettres (' + n + ' modifiees)';
+  }
+});
+
 </script>
 
+<!-- GLYPH EDITOR -->
+<div id="glyphEditor">
+  <div class="ge-box">
+    <div class="ge-top">
+      <h2 id="geTitle">Editeur de glyphes</h2>
+      <button class="btn btn-sm btn-ghost" id="geClose">Fermer</button>
+    </div>
+    <div class="ge-tabs" id="geTabs"></div>
+    <div class="ge-main">
+      <div class="ge-canvas-wrap" id="geCanvasWrap"></div>
+      <div class="ge-tools">
+        <div class="ge-status" id="geStatus">Selectionnez une lettre</div>
+        <div class="ge-tool-row">
+          <div class="ge-tool-lbl">Modifications</div>
+          <button class="btn btn-sm" id="geReset">Reinitialiser cette lettre</button>
+          <button class="btn btn-sm" id="geResetAll">Tout reinitialiser</button>
+        </div>
+        <div class="ge-tool-row">
+          <div class="ge-tool-lbl">Affichage</div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mid)">
+            <input type="checkbox" id="geShowHandles" checked> Poignees Bezier
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mid)">
+            <input type="checkbox" id="geShowAnchors" checked> Points d'ancrage
+          </label>
+        </div>
+        <div class="ge-tool-row">
+          <div class="ge-tool-lbl">Aide</div>
+          <p style="font-size:11px;color:var(--mut);line-height:1.5">Glissez les <strong>carres bleus</strong> pour deplacer les points. Glissez les <strong>cercles</strong> pour courber les segments.</p>
+        </div>
+      </div>
+    </div>
+    <div class="ge-foot">
+      <button class="btn btn-f" id="geCancel">Annuler</button>
+      <button class="btn btn-g btn-f" id="geApply">Appliquer aux glyphes</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
