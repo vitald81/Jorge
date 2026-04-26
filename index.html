@@ -393,12 +393,27 @@ textarea::placeholder{color:var(--fnt)}
     <div class="ge-tabs" id="geTabs"></div>
     <div class="ge-main">
       <div class="ge-canvas-wrap" id="geCanvasWrap"></div>
-        <div class="ge-photo-ref" id="gePhotoRef">
-          <div class="ge-photo-lbl">PHOTO DE REFERENCE</div>
-          <img id="gePhotoImg" src="" alt="">
-        </div>
       <div class="ge-tools">
         <div class="ge-status" id="geStatus">Selectionnez une lettre</div>
+        <div class="ge-tool-row">
+          <div class="ge-tool-lbl">Calque photo</div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mid)">
+            <input type="checkbox" id="gePhotoEnabled" checked> Afficher la photo
+          </label>
+          <label style="font-size:11px;color:var(--mut);display:flex;flex-direction:column;gap:3px">
+            Opacite
+            <input type="range" id="gePhotoOpacity" min="10" max="100" value="50" step="5" style="accent-color:var(--g500)">
+          </label>
+          <label style="font-size:11px;color:var(--mut);display:flex;flex-direction:column;gap:3px">
+            Taille
+            <input type="range" id="gePhotoScale" min="20" max="300" value="100" step="5" style="accent-color:var(--g500)">
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mid)">
+            <input type="checkbox" id="gePhotoBehind" checked> Photo derriere la lettre
+          </label>
+          <button class="btn btn-sm" id="gePhotoCenter">Recentrer la photo</button>
+          <p style="font-size:10px;color:var(--mut);line-height:1.4;margin-top:4px">Glissez la photo dans le canevas avec le bouton droit ou la molette.</p>
+        </div>
         <div class="ge-tool-row">
           <div class="ge-tool-lbl">Modifications</div>
           <button class="btn btn-sm" id="geReset">Reinitialiser cette lettre</button>
@@ -412,10 +427,6 @@ textarea::placeholder{color:var(--fnt)}
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mid)">
             <input type="checkbox" id="geShowAnchors" checked> Points d'ancrage
           </label>
-        </div>
-        <div class="ge-tool-row">
-          <div class="ge-tool-lbl">Aide</div>
-          <p style="font-size:11px;color:var(--mut);line-height:1.5">Glissez les <strong>carres bleus</strong> pour deplacer les points. Glissez les <strong>cercles</strong> pour courber les segments.</p>
         </div>
       </div>
     </div>
@@ -915,29 +926,78 @@ function updatePreview() {
   var rawPx=h*PX;
   var scale=Math.min(1,96/rawPx);
   var fs=rawPx*0.78*scale;
-
-  // Measure natural width of representative chars at this font-size
-  // Use "H" as a typical wide capital
   var natW = measureCharWidth(ef.family, ef.weight, ef.style, fs, 'H');
   if(!natW || natW < 1) natW = fs * 0.55;
   var targetCellPx = w * PX * scale;
-  // Glyph horizontal stretch factor so each letter occupies w mm wide
   var glyphScaleX = (targetCellPx / natW) * ef.scaleX;
-
   var lsPx = s * PX * scale;
-  var pv=document.getElementById('pvt');
-  // Wrap each line in inline-block span with horizontal scale
-  pv.style.cssText =
-    'font-family:\''+ef.family+'\',Georgia,serif;'+
-    'font-weight:'+ef.weight+';font-style:'+ef.style+';'+
-    'font-size:'+fs+'px;line-height:'+(rawPx*scale)+'px;'+
-    'white-space:pre;letter-spacing:'+lsPx+'px;overflow:hidden;'+
-    'display:inline-block;transform:scaleX('+glyphScaleX+');transform-origin:left center;';
-  pv.textContent = txt;
+  var pv = document.getElementById('pvt');
+
+  // Check if there are modified glyphs for this font
+  var hasModified = S._modifiedGlyphs &&
+                    S._modifiedGlyphsFont === ef.family + '-' + ef.weight + '-' + ef.style &&
+                    Object.keys(S._modifiedGlyphs).length > 0;
+  // Check if the text contains any modified char
+  var anyModified = false;
+  if(hasModified){
+    for(var i=0;i<txt.length;i++){
+      if(S._modifiedGlyphs[txt[i]]){ anyModified = true; break; }
+    }
+  }
+
+  if(anyModified){
+    // Build SVG preview mixing modified glyph paths with text
+    pv.style.cssText = 'display:inline-block';
+    var cellPx = (w + s) * PX * scale;
+    var visualCellW = cellPx * ef.scaleX;
+    var totalW = (visualCellW * maxL) - (s * PX * scale * ef.scaleX);
+    var totalH = rawPx * scale * lines.length;
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + totalW.toFixed(1) + '" height="' + totalH.toFixed(1) + '" style="overflow:visible">';
+    lines.forEach(function(line, li){
+      var yBaseline = li * (rawPx * scale) + (rawPx * scale * 0.80);
+      line.split('').forEach(function(ch, ci){
+        var xCenter = ci * visualCellW + visualCellW/2;
+        var modGlyph = S._modifiedGlyphs && S._modifiedGlyphs[ch];
+        if(modGlyph){
+          // Render path. opentype Y-up, scale: fs/upem
+          var sy = (fs * 0.97) / modGlyph.unitsPerEm;
+          var sx = sy * glyphScaleX;
+          var glyphW = modGlyph.advanceWidth * sx;
+          var tx = xCenter - glyphW/2;
+          var ty = li * (rawPx * scale) + (rawPx * scale * 0.80);
+          var d = commandsToPathData(modGlyph.commands);
+          svg += '<g transform="translate(' + tx.toFixed(2) + ',' + ty.toFixed(2) + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')">' +
+                 '<path d="' + d + '" fill="#0b1e12"/></g>';
+        } else {
+          // Render normal text element
+          svg += '<text x="' + xCenter.toFixed(2) + '" y="' + yBaseline.toFixed(2) + '"' +
+                 ' text-anchor="middle"' +
+                 ' font-family="\'' + ef.family + '\',Georgia,serif"' +
+                 ' font-size="' + fs.toFixed(2) + '"' +
+                 ' font-weight="' + ef.weight + '"' +
+                 ' font-style="' + ef.style + '"' +
+                 ' transform="matrix(' + glyphScaleX.toFixed(4) + ',0,0,1,' + (xCenter * (1 - glyphScaleX)).toFixed(2) + ',0)"' +
+                 ' fill="#0b1e12">' + xc(ch) + '</text>';
+        }
+      });
+    });
+    svg += '</svg>';
+    pv.innerHTML = svg;
+  } else {
+    // Standard text rendering
+    pv.style.cssText =
+      'font-family:\''+ef.family+'\',Georgia,serif;'+
+      'font-weight:'+ef.weight+';font-style:'+ef.style+';'+
+      'font-size:'+fs+'px;line-height:'+(rawPx*scale)+'px;'+
+      'white-space:pre;letter-spacing:'+lsPx+'px;overflow:hidden;'+
+      'display:inline-block;transform:scaleX('+glyphScaleX+');transform-origin:left center;';
+    pv.textContent = txt;
+  }
 
   var tW=((w+s)*maxL-s).toFixed(1);
   var tH=(lines.length*h).toFixed(1);
-  document.getElementById('dinfo').innerHTML='SVG : <strong>'+tW+' x '+tH+' mm</strong> &nbsp;&middot;&nbsp; '+w+'x'+h+'mm . esp. '+s+'mm';
+  var modInfo = anyModified ? ' &nbsp;&middot;&nbsp; <strong style="color:var(--g500)">Glyphes modifies appliques</strong>' : '';
+  document.getElementById('dinfo').innerHTML='SVG : <strong>'+tW+' x '+tH+' mm</strong> &nbsp;&middot;&nbsp; '+w+'x'+h+'mm . esp. '+s+'mm' + modInfo;
   updateOverlay();
 }
 
@@ -1192,16 +1252,23 @@ function xc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(
 // GLYPH EDITOR — opentype.js based vector editing
 // =================================================
 var GE = {
-  font: null,             // opentype.Font
+  font: null,
   fontUrl: null,
-  letters: [],            // unique letters being edited
+  letters: [],
   currentChar: null,
-  glyphs: {},             // char -> { path: opentype.Path, modified: bool, anchors: [{x,y,ctrlIn:{x,y}, ctrlOut:{x,y}, type}], commands: [...] }
-  dragging: null,         // { type:'anchor'|'in'|'out', idx, char }
+  glyphs: {},
+  dragging: null,
   showHandles: true,
   showAnchors: true,
   unitsPerEm: 1000,
-  baseFontSize: 600       // virtual em-square size for editing in SVG units
+  baseFontSize: 600,
+  // Photo overlay (calque)
+  photoEnabled: true,
+  photoOpacity: 0.5,
+  photoScale: 1.0,
+  photoTx: 0,    // translation x in glyph units
+  photoTy: 0,    // translation y in glyph units
+  photoBehind: true  // photo behind the glyph (default) or in front
 };
 
 // Show editor button only on desktop
@@ -1404,7 +1471,23 @@ function renderEditor(){
 
   // Build SVG: opentype uses Y-up so we flip Y in the viewBox transform
   var d = commandsToPathData(commands);
-  var svg = '<svg viewBox="' + vbX + ' ' + vbY + ' ' + vbW + ' ' + vbH + '" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;max-height:60vh">';
+  var svg = '<svg id="geCanvasSvg" viewBox="' + vbX + ' ' + vbY + ' ' + vbW + ' ' + vbH + '" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;max-height:60vh">';
+
+  // Photo overlay BEHIND the glyph (default)
+  var photoLayerSvg = '';
+  if(GE.photoEnabled && S.cropPreviewUrl){
+    // Photo dimensions: scale photo to roughly the same height as the glyph (cap height)
+    // Default: photo width = bb width * scale, centered on glyph
+    var photoH = (bb.maxY - bb.minY) * GE.photoScale;
+    var photoW = photoH * 1.5; // approximate aspect; the image is then resized via preserveAspectRatio
+    var photoX = bb.minX + (bb.maxX - bb.minX)/2 - photoW/2 + GE.photoTx;
+    var photoY = -bb.maxY + (bb.maxY - bb.minY)/2 - photoH/2 + GE.photoTy;
+    photoLayerSvg = '<image id="gePhotoLayer" href="' + S.cropPreviewUrl + '" x="' + photoX + '" y="' + photoY + '" width="' + photoW + '" height="' + photoH + '" opacity="' + GE.photoOpacity + '" preserveAspectRatio="xMidYMid meet" style="cursor:move"/>';
+  }
+  if(GE.photoEnabled && GE.photoBehind){
+    svg += photoLayerSvg;
+  }
+
   svg += '<g transform="scale(1,-1)">';
   // Baseline
   svg += '<line x1="' + bb.minX + '" y1="0" x2="' + bb.maxX + '" y2="0" stroke="#cce0d4" stroke-width="' + (upem*0.005) + '" stroke-dasharray="' + (upem*0.02) + ',' + (upem*0.02) + '"/>';
@@ -1443,7 +1526,11 @@ function renderEditor(){
     }
     if(c.type !== 'Z' && c.x !== undefined) prev = { x: c.x, y: c.y };
   }
-  svg += '</g></svg>';
+  // Photo overlay IN FRONT of the glyph (alternative)
+  if(GE.photoEnabled && !GE.photoBehind){
+    svg += photoLayerSvg;
+  }
+  svg += '</svg>';
 
   wrap.innerHTML = svg;
 
@@ -1480,6 +1567,53 @@ function commandsToPathData(commands){
 }
 
 function bindDrag(svgEl){
+  // Photo drag — bind separately
+  var photoEl = svgEl.querySelector('#gePhotoLayer');
+  if(photoEl){
+    var pDragging = false;
+    var pStart = {x:0, y:0};
+    var pStartTx = 0, pStartTy = 0;
+    photoEl.addEventListener('pointerdown', function(e){
+      // Only when shift-click or right-click or just regular click on photo (not on anchor)
+      e.preventDefault();
+      e.stopPropagation();
+      pDragging = true;
+      pStart.x = e.clientX;
+      pStart.y = e.clientY;
+      pStartTx = GE.photoTx;
+      pStartTy = GE.photoTy;
+      try { photoEl.setPointerCapture(e.pointerId); } catch(x){}
+    });
+    photoEl.addEventListener('pointermove', function(e){
+      if(!pDragging) return;
+      e.preventDefault();
+      // Convert screen delta to SVG units
+      var ctm = svgEl.getScreenCTM();
+      if(!ctm) return;
+      var inv = ctm.inverse();
+      var p1 = svgEl.createSVGPoint(); p1.x = pStart.x; p1.y = pStart.y;
+      var p2 = svgEl.createSVGPoint(); p2.x = e.clientX; p2.y = e.clientY;
+      var s1 = p1.matrixTransform(inv);
+      var s2 = p2.matrixTransform(inv);
+      GE.photoTx = pStartTx + (s2.x - s1.x);
+      GE.photoTy = pStartTy + (s2.y - s1.y);
+      // Update without full re-render (faster)
+      var imgNow = document.getElementById('gePhotoLayer');
+      if(imgNow){
+        var bb = computeBBox(GE.glyphs[GE.currentChar].commands);
+        var photoH = (bb.maxY - bb.minY) * GE.photoScale;
+        var photoW = photoH * 1.5;
+        var photoX = bb.minX + (bb.maxX - bb.minX)/2 - photoW/2 + GE.photoTx;
+        var photoY = -bb.maxY + (bb.maxY - bb.minY)/2 - photoH/2 + GE.photoTy;
+        imgNow.setAttribute('x', photoX);
+        imgNow.setAttribute('y', photoY);
+      }
+    });
+    photoEl.addEventListener('pointerup', function(){ pDragging = false; });
+    photoEl.addEventListener('pointercancel', function(){ pDragging = false; });
+    photoEl.addEventListener('pointerleave', function(){ pDragging = false; });
+  }
+
   function getSvgPoint(evt){
     var pt = svgEl.createSVGPoint();
     pt.x = evt.clientX; pt.y = evt.clientY;
@@ -1588,6 +1722,38 @@ document.addEventListener('change', function(e){
     renderEditor();
   } else if(e.target.id === 'geShowAnchors'){
     GE.showAnchors = e.target.checked;
+    renderEditor();
+  } else if(e.target.id === 'gePhotoEnabled'){
+    GE.photoEnabled = e.target.checked;
+    renderEditor();
+  } else if(e.target.id === 'gePhotoBehind'){
+    GE.photoBehind = e.target.checked;
+    renderEditor();
+  }
+});
+
+// Range inputs (opacity, scale)
+document.addEventListener('input', function(e){
+  if(!e.target) return;
+  if(e.target.id === 'gePhotoOpacity'){
+    GE.photoOpacity = parseInt(e.target.value, 10) / 100;
+    var img = document.getElementById('gePhotoLayer');
+    if(img) img.setAttribute('opacity', GE.photoOpacity);
+  } else if(e.target.id === 'gePhotoScale'){
+    GE.photoScale = parseInt(e.target.value, 10) / 100;
+    renderEditor();
+  }
+});
+
+// Photo center button (delegation)
+document.addEventListener('click', function(e){
+  if(e.target && e.target.id === 'gePhotoCenter'){
+    e.preventDefault();
+    GE.photoTx = 0;
+    GE.photoTy = 0;
+    GE.photoScale = 1.0;
+    var sl = document.getElementById('gePhotoScale');
+    if(sl) sl.value = 100;
     renderEditor();
   }
 });
