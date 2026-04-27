@@ -203,6 +203,14 @@ textarea::placeholder{color:var(--fnt)}
 .fp-canvas svg{display:block}
 .fp-controls{display:flex;align-items:center;gap:14px;padding:10px 20px;border-top:1px solid var(--brd);background:var(--off)}
 .fp-foot{display:flex;gap:10px;padding:14px 20px;border-top:1px solid var(--brd);background:var(--wh)}
+
+.ge-mode-row{display:flex;gap:4px;margin-top:4px}
+.ge-mode-btn{flex:1;padding:7px 4px;background:var(--off);border:1.5px solid var(--brd2);border-radius:8px;font-size:11px;font-weight:600;color:var(--mid);cursor:pointer;text-align:center;transition:all .15s;font-family:var(--sans)}
+.ge-mode-btn.act{background:var(--g500);border-color:var(--g500);color:#fff}
+.ge-mode-btn:active{transform:scale(.96)}
+.ge-anchor-sel{fill:#f59e0b!important}
+.ge-handle-sel{fill:#fbbf24!important}
+.ge-sel-rect{fill:rgba(245,158,11,.15);stroke:#f59e0b;stroke-width:1px;stroke-dasharray:4,3;pointer-events:none}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
 </head>
@@ -436,6 +444,20 @@ textarea::placeholder{color:var(--fnt)}
       <div class="ge-canvas-wrap" id="geCanvasWrap"></div>
       <div class="ge-tools">
         <div class="ge-status" id="geStatus">Selectionnez une lettre</div>
+        <div class="ge-tool-row">
+          <div class="ge-tool-lbl">Mode</div>
+          <div class="ge-mode-row">
+            <button class="ge-mode-btn act" id="geModeEdit" type="button">Editer points</button>
+            <button class="ge-mode-btn" id="geModeSelect" type="button">Selectionner zone</button>
+          </div>
+          <div id="geSelInfo" style="font-size:11px;color:var(--mut);font-family:var(--mono);margin-top:4px"></div>
+          <button class="btn btn-sm" id="geMoveUp" type="button" style="display:none">&uarr; Monter de 10 unites</button>
+          <button class="btn btn-sm" id="geMoveDown" type="button" style="display:none">&darr; Descendre de 10 unites</button>
+          <button class="btn btn-sm" id="geMoveLeft" type="button" style="display:none">&larr; Gauche de 10 unites</button>
+          <button class="btn btn-sm" id="geMoveRight" type="button" style="display:none">&rarr; Droite de 10 unites</button>
+          <button class="btn btn-sm" id="geClearSel" type="button" style="display:none">Deselectionner</button>
+          <p style="font-size:10px;color:var(--mut);line-height:1.4;margin-top:4px">En mode <strong>Selectionner zone</strong>, glissez pour entourer plusieurs points. Glissez ensuite la selection pour deplacer tout le groupe.</p>
+        </div>
         <div class="ge-tool-row">
           <div class="ge-tool-lbl">Calque photo</div>
           <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mid)">
@@ -1308,9 +1330,14 @@ var GE = {
   photoEnabled: true,
   photoOpacity: 0.5,
   photoScale: 1.0,
-  photoTx: 0,    // translation x in glyph units
-  photoTy: 0,    // translation y in glyph units
-  photoBehind: true  // photo behind the glyph (default) or in front
+  photoTx: 0,
+  photoTy: 0,
+  photoBehind: true,
+  // Selection / group move
+  mode: 'edit',           // 'edit' or 'select'
+  selectedIdx: [],        // array of command indices currently selected
+  selBox: null,           // {x1,y1,x2,y2} during rubber-band selection
+  groupDrag: null         // {startX, startY, startPos: {idx: {x,y, x1,y1, x2,y2}}}
 };
 
 // Show editor button only on desktop
@@ -1354,6 +1381,15 @@ function openGlyphEditor(){
   document.getElementById('geTitle').textContent = 'Editeur de glyphes : ' + ef.family;
   document.getElementById('glyphEditor').classList.add('on');
   document.getElementById('geStatus').textContent = 'Chargement de la police...';
+  // Reset to edit mode
+  GE.mode = 'edit';
+  GE.selectedIdx = [];
+  GE.selBox = null;
+  var meBtn = document.getElementById('geModeEdit');
+  var msBtn = document.getElementById('geModeSelect');
+  if(meBtn) meBtn.classList.add('act');
+  if(msBtn) msBtn.classList.remove('act');
+  updateSelInfo();
 
   // Load the font via opentype.js
   loadFontFile(ef).then(function(font){
@@ -1471,6 +1507,9 @@ function buildLetterTabs(){
 
 function selectLetter(ch){
   GE.currentChar = ch;
+  GE.selectedIdx = [];
+  GE.selBox = null;
+  updateSelInfo();
   // If we don't have a stored modified version, build from font
   if(!GE.glyphs[ch]){
     var glyph = GE.font.charToGlyph(ch);
@@ -1544,7 +1583,7 @@ function renderEditor(){
     var c = commands[i];
     if(c.type === 'M' || c.type === 'L'){
       if(GE.showAnchors){
-        svg += '<rect class="ge-anchor" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.006) + '" y="' + (c.y - upem*0.006) + '" width="' + (upem*0.012) + '" height="' + (upem*0.012) + '" fill="#1a5c38" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
+        svg += '<rect class="ge-anchor' + (GE.selectedIdx.indexOf(i)>=0?' ge-anchor-sel':'') + '" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.006) + '" y="' + (c.y - upem*0.006) + '" width="' + (upem*0.012) + '" height="' + (upem*0.012) + '" fill="' + (GE.selectedIdx.indexOf(i)>=0?'#f59e0b':'#1a5c38') + '" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
       }
     } else if(c.type === 'C'){
       if(GE.showHandles && prev){
@@ -1554,7 +1593,7 @@ function renderEditor(){
         svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl2" cx="' + c.x2 + '" cy="' + c.y2 + '" r="' + (upem*0.007) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
       }
       if(GE.showAnchors){
-        svg += '<rect class="ge-anchor" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.006) + '" y="' + (c.y - upem*0.006) + '" width="' + (upem*0.012) + '" height="' + (upem*0.012) + '" fill="#1a5c38" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
+        svg += '<rect class="ge-anchor' + (GE.selectedIdx.indexOf(i)>=0?' ge-anchor-sel':'') + '" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.006) + '" y="' + (c.y - upem*0.006) + '" width="' + (upem*0.012) + '" height="' + (upem*0.012) + '" fill="' + (GE.selectedIdx.indexOf(i)>=0?'#f59e0b':'#1a5c38') + '" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
       }
     } else if(c.type === 'Q'){
       if(GE.showHandles && prev){
@@ -1563,7 +1602,7 @@ function renderEditor(){
         svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl1" cx="' + c.x1 + '" cy="' + c.y1 + '" r="' + (upem*0.007) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
       }
       if(GE.showAnchors){
-        svg += '<rect class="ge-anchor" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.006) + '" y="' + (c.y - upem*0.006) + '" width="' + (upem*0.012) + '" height="' + (upem*0.012) + '" fill="#1a5c38" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
+        svg += '<rect class="ge-anchor' + (GE.selectedIdx.indexOf(i)>=0?' ge-anchor-sel':'') + '" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.006) + '" y="' + (c.y - upem*0.006) + '" width="' + (upem*0.012) + '" height="' + (upem*0.012) + '" fill="' + (GE.selectedIdx.indexOf(i)>=0?'#f59e0b':'#1a5c38') + '" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
       }
     }
     if(c.type !== 'Z' && c.x !== undefined) prev = { x: c.x, y: c.y };
@@ -1571,6 +1610,14 @@ function renderEditor(){
   // Photo overlay IN FRONT of the glyph (alternative)
   if(GE.photoEnabled && !GE.photoBehind){
     svg += photoLayerSvg;
+  }
+  // Selection rubber-band
+  if(GE.selBox){
+    var rx = Math.min(GE.selBox.x1, GE.selBox.x2);
+    var ry = Math.min(GE.selBox.y1, GE.selBox.y2);
+    var rw = Math.abs(GE.selBox.x2 - GE.selBox.x1);
+    var rh = Math.abs(GE.selBox.y2 - GE.selBox.y1);
+    svg += '<rect class="ge-sel-rect" x="' + rx + '" y="' + ry + '" width="' + rw + '" height="' + rh + '"/>';
   }
   svg += '</svg>';
 
@@ -1609,6 +1656,11 @@ function commandsToPathData(commands){
 }
 
 function bindDrag(svgEl){
+  // SELECTION MODE: rubber-band and group drag
+  if(GE.mode === 'select'){
+    bindSelectMode(svgEl);
+    // Still bind photo drag below
+  }
   // Photo drag — bind separately
   var photoEl = svgEl.querySelector('#gePhotoLayer');
   if(photoEl){
@@ -1727,6 +1779,186 @@ function bindDrag(svgEl){
   svgEl.addEventListener('pointercancel', onUp);
 }
 
+// Selection mode: rubber-band selection + group drag
+function bindSelectMode(svgEl){
+  function getSvgPoint(evt){
+    var pt = svgEl.createSVGPoint();
+    pt.x = evt.clientX; pt.y = evt.clientY;
+    var ctm = svgEl.getScreenCTM();
+    if(!ctm) return {x:0, y:0};
+    var inv = ctm.inverse();
+    var p = pt.matrixTransform(inv);
+    // Glyph is rendered in scale(1,-1) wrapper, so flip Y for glyph-space coords
+    return {x: p.x, y: -p.y};
+  }
+
+  var rubberBand = false;
+  var groupDragging = false;
+  var groupStart = null;
+  var startPoint = null;
+
+  function isInSelection(idx){
+    return GE.selectedIdx.indexOf(idx) >= 0;
+  }
+
+  // Click on already-selected anchor -> start group drag
+  // Click elsewhere -> start rubber band
+  svgEl.addEventListener('pointerdown', function(e){
+    // Ignore clicks on photo
+    if(e.target && e.target.id === 'gePhotoLayer') return;
+    e.preventDefault();
+    var p = getSvgPoint(e);
+    var t = e.target;
+    var idxAttr = t && t.getAttribute && t.getAttribute('data-idx');
+    if(idxAttr !== null && idxAttr !== undefined){
+      var idx = parseInt(idxAttr, 10);
+      if(isInSelection(idx) && GE.selectedIdx.length > 0){
+        // Start group drag
+        groupDragging = true;
+        startPoint = p;
+        // Snapshot positions of all selected commands
+        groupStart = {};
+        var commands = GE.glyphs[GE.currentChar].commands;
+        GE.selectedIdx.forEach(function(i){
+          var c = commands[i];
+          groupStart[i] = { x: c.x, y: c.y };
+          if(c.x1 !== undefined) groupStart[i].x1 = c.x1;
+          if(c.y1 !== undefined) groupStart[i].y1 = c.y1;
+          if(c.x2 !== undefined) groupStart[i].x2 = c.x2;
+          if(c.y2 !== undefined) groupStart[i].y2 = c.y2;
+        });
+        try { svgEl.setPointerCapture(e.pointerId); } catch(x){}
+        return;
+      }
+    }
+    // Otherwise: start rubber band
+    rubberBand = true;
+    GE.selBox = { x1: p.x, y1: p.y, x2: p.x, y2: p.y };
+    try { svgEl.setPointerCapture(e.pointerId); } catch(x){}
+    renderEditor();
+  });
+
+  svgEl.addEventListener('pointermove', function(e){
+    if(rubberBand){
+      e.preventDefault();
+      var p = getSvgPoint(e);
+      GE.selBox.x2 = p.x;
+      GE.selBox.y2 = p.y;
+      renderEditor();
+    } else if(groupDragging){
+      e.preventDefault();
+      var p2 = getSvgPoint(e);
+      var dx = p2.x - startPoint.x;
+      var dy = p2.y - startPoint.y;
+      var commands = GE.glyphs[GE.currentChar].commands;
+      Object.keys(groupStart).forEach(function(idxStr){
+        var i = parseInt(idxStr, 10);
+        var c = commands[i];
+        var s = groupStart[idxStr];
+        if(c.x !== undefined && s.x !== undefined) c.x = s.x + dx;
+        if(c.y !== undefined && s.y !== undefined) c.y = s.y + dy;
+        if(c.x1 !== undefined && s.x1 !== undefined) c.x1 = s.x1 + dx;
+        if(c.y1 !== undefined && s.y1 !== undefined) c.y1 = s.y1 + dy;
+        if(c.x2 !== undefined && s.x2 !== undefined) c.x2 = s.x2 + dx;
+        if(c.y2 !== undefined && s.y2 !== undefined) c.y2 = s.y2 + dy;
+      });
+      GE.glyphs[GE.currentChar].modified = true;
+      renderEditor();
+    }
+  });
+
+  svgEl.addEventListener('pointerup', function(e){
+    if(rubberBand){
+      // Compute selection
+      var bx1 = Math.min(GE.selBox.x1, GE.selBox.x2);
+      var by1 = Math.min(GE.selBox.y1, GE.selBox.y2);
+      var bx2 = Math.max(GE.selBox.x1, GE.selBox.x2);
+      var by2 = Math.max(GE.selBox.y1, GE.selBox.y2);
+      var commands = GE.glyphs[GE.currentChar].commands;
+      var newSel = [];
+      // Only count anchor points (M/L/C/Q endpoints), not control handles
+      for(var i=0; i<commands.length; i++){
+        var c = commands[i];
+        if(c.type === 'Z') continue;
+        if(c.x === undefined || c.y === undefined) continue;
+        if(c.x >= bx1 && c.x <= bx2 && c.y >= by1 && c.y <= by2){
+          newSel.push(i);
+        }
+      }
+      // If the box was tiny (single click), clear selection
+      var tiny = Math.abs(GE.selBox.x2 - GE.selBox.x1) < GE.unitsPerEm*0.01 &&
+                 Math.abs(GE.selBox.y2 - GE.selBox.y1) < GE.unitsPerEm*0.01;
+      if(tiny){ newSel = []; }
+      GE.selectedIdx = newSel;
+      GE.selBox = null;
+      rubberBand = false;
+      updateSelInfo();
+      buildLetterTabs();
+      renderEditor();
+    } else if(groupDragging){
+      groupDragging = false;
+      groupStart = null;
+      buildLetterTabs();
+    }
+  });
+  svgEl.addEventListener('pointerleave', function(){
+    if(rubberBand){
+      GE.selBox = null; rubberBand = false; renderEditor();
+    }
+    if(groupDragging){ groupDragging = false; groupStart = null; }
+  });
+  svgEl.addEventListener('pointercancel', function(){
+    if(rubberBand){
+      GE.selBox = null; rubberBand = false; renderEditor();
+    }
+    if(groupDragging){ groupDragging = false; groupStart = null; }
+  });
+}
+
+function updateSelInfo(){
+  var info = document.getElementById('geSelInfo');
+  var btnUp = document.getElementById('geMoveUp');
+  var btnDn = document.getElementById('geMoveDown');
+  var btnL = document.getElementById('geMoveLeft');
+  var btnR = document.getElementById('geMoveRight');
+  var btnClr = document.getElementById('geClearSel');
+  if(!info) return;
+  var n = GE.selectedIdx.length;
+  if(n > 0){
+    info.textContent = n + ' point(s) selectionne(s)';
+    if(btnUp) btnUp.style.display = '';
+    if(btnDn) btnDn.style.display = '';
+    if(btnL) btnL.style.display = '';
+    if(btnR) btnR.style.display = '';
+    if(btnClr) btnClr.style.display = '';
+  } else {
+    info.textContent = '';
+    if(btnUp) btnUp.style.display = 'none';
+    if(btnDn) btnDn.style.display = 'none';
+    if(btnL) btnL.style.display = 'none';
+    if(btnR) btnR.style.display = 'none';
+    if(btnClr) btnClr.style.display = 'none';
+  }
+}
+
+// Move all selected points by (dx, dy)
+function moveSelectedBy(dx, dy){
+  if(GE.selectedIdx.length === 0 || !GE.currentChar) return;
+  var commands = GE.glyphs[GE.currentChar].commands;
+  GE.selectedIdx.forEach(function(i){
+    var c = commands[i];
+    if(c.x !== undefined) c.x += dx;
+    if(c.y !== undefined) c.y += dy;
+    if(c.x1 !== undefined) c.x1 += dx;
+    if(c.y1 !== undefined) c.y1 += dy;
+    if(c.x2 !== undefined) c.x2 += dx;
+    if(c.y2 !== undefined) c.y2 += dy;
+  });
+  GE.glyphs[GE.currentChar].modified = true;
+  buildLetterTabs();
+  renderEditor();
+}
+
 // Event delegation — works even if elements are added later
 document.addEventListener('click', function(e){
   if(!e.target) return;
@@ -1740,6 +1972,8 @@ document.addEventListener('click', function(e){
     e.preventDefault();
     if(!GE.currentChar) return;
     delete GE.glyphs[GE.currentChar];
+    GE.selectedIdx = [];
+    updateSelInfo();
     selectLetter(GE.currentChar);
     return;
   }
@@ -1747,12 +1981,46 @@ document.addEventListener('click', function(e){
     e.preventDefault();
     if(!confirm('Reinitialiser toutes les lettres modifiees ?')) return;
     GE.glyphs = {};
+    GE.selectedIdx = [];
+    updateSelInfo();
     if(GE.letters.length > 0) selectLetter(GE.letters[0]);
     return;
   }
   if(id === 'geApply'){
     e.preventDefault();
     geApplyGlyphs();
+    return;
+  }
+  // Mode toggle
+  if(id === 'geModeEdit'){
+    e.preventDefault();
+    GE.mode = 'edit';
+    document.getElementById('geModeEdit').classList.add('act');
+    document.getElementById('geModeSelect').classList.remove('act');
+    GE.selectedIdx = [];
+    GE.selBox = null;
+    updateSelInfo();
+    renderEditor();
+    return;
+  }
+  if(id === 'geModeSelect'){
+    e.preventDefault();
+    GE.mode = 'select';
+    document.getElementById('geModeSelect').classList.add('act');
+    document.getElementById('geModeEdit').classList.remove('act');
+    renderEditor();
+    return;
+  }
+  // Group movement (10 unit steps, since shifted points feel responsive)
+  if(id === 'geMoveUp'){ e.preventDefault(); moveSelectedBy(0, 10); return; }
+  if(id === 'geMoveDown'){ e.preventDefault(); moveSelectedBy(0, -10); return; }
+  if(id === 'geMoveLeft'){ e.preventDefault(); moveSelectedBy(-10, 0); return; }
+  if(id === 'geMoveRight'){ e.preventDefault(); moveSelectedBy(10, 0); return; }
+  if(id === 'geClearSel'){
+    e.preventDefault();
+    GE.selectedIdx = [];
+    updateSelInfo();
+    renderEditor();
     return;
   }
 });
