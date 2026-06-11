@@ -217,13 +217,21 @@ textarea::placeholder{color:var(--fnt)}
 .ge-draw-preview-path{stroke:#1a5c38;stroke-width:6;fill:none;opacity:0.85;stroke-linecap:round;stroke-linejoin:round}
 .ge-drawn-path{fill:#0b1e12;fill-opacity:0.7;stroke:#0b1e12;stroke-width:2}
 
+.ge-canvas-wrap[data-mode="draw-line"],
+.ge-canvas-wrap[data-mode="draw-arc"],
+.ge-canvas-wrap[data-mode="draw-free"],
 .ge-canvas-wrap[data-mode="draw-line"] svg,
 .ge-canvas-wrap[data-mode="draw-arc"] svg,
-.ge-canvas-wrap[data-mode="draw-free"] svg{
-  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%231a5c38" stroke="%23fff" stroke-width="1.2" d="M3 21l3.75-.75 11.5-11.5-3-3L3.75 17.25 3 21zm14.4-15.4l2.6-2.6a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4l-2.6 2.6-3-3z"/></svg>') 2 22, crosshair;
+.ge-canvas-wrap[data-mode="draw-free"] svg,
+.ge-canvas-wrap[data-mode="draw-line"] svg *,
+.ge-canvas-wrap[data-mode="draw-arc"] svg *,
+.ge-canvas-wrap[data-mode="draw-free"] svg *{
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%231a5c38" stroke="%23fff" stroke-width="1.2" d="M3 21l3.75-.75 11.5-11.5-3-3L3.75 17.25 3 21zm14.4-15.4l2.6-2.6a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4l-2.6 2.6-3-3z"/></svg>') 2 22, crosshair !important;
 }
-.ge-canvas-wrap[data-mode="select"] svg{
-  cursor: crosshair;
+.ge-canvas-wrap[data-mode="select"],
+.ge-canvas-wrap[data-mode="select"] svg,
+.ge-canvas-wrap[data-mode="select"] svg *{
+  cursor: crosshair !important;
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
@@ -1569,6 +1577,7 @@ function renderEditor(){
     wrap.innerHTML = '<div style="color:var(--mut);font-size:13px">Selectionnez une lettre dans les onglets</div>';
     return;
   }
+  var drawModeActive = (GE.mode === 'draw-line' || GE.mode === 'draw-arc' || GE.mode === 'draw-free');
   var g = GE.glyphs[GE.currentChar];
   var commands = g.commands;
   var upem = GE.unitsPerEm;
@@ -1601,7 +1610,9 @@ function renderEditor(){
     var photoW = photoH * 1.5; // approximate aspect; the image is then resized via preserveAspectRatio
     var photoX = bb.minX + (bb.maxX - bb.minX)/2 - photoW/2 + GE.photoTx;
     var photoY = -bb.maxY + (bb.maxY - bb.minY)/2 - photoH/2 + GE.photoTy;
-    photoLayerSvg = '<image id="gePhotoLayer" href="' + S.cropPreviewUrl + '" x="' + photoX + '" y="' + photoY + '" width="' + photoW + '" height="' + photoH + '" opacity="' + GE.photoOpacity + '" preserveAspectRatio="xMidYMid meet" style="cursor:move"/>';
+    var photoPE = (GE.mode === 'draw-line' || GE.mode === 'draw-arc' || GE.mode === 'draw-free') ? 'none' : 'auto';
+    var photoCursor = (GE.mode === 'select') ? 'crosshair' : 'move';
+    photoLayerSvg = '<image id="gePhotoLayer" href="' + S.cropPreviewUrl + '" x="' + photoX + '" y="' + photoY + '" width="' + photoW + '" height="' + photoH + '" opacity="' + GE.photoOpacity + '" preserveAspectRatio="xMidYMid meet" style="cursor:' + photoCursor + ';pointer-events:' + photoPE + '"/>';
   }
   if(GE.photoEnabled && GE.photoBehind){
     svg += photoLayerSvg;
@@ -1611,7 +1622,7 @@ function renderEditor(){
   // Baseline
   svg += '<line x1="' + bb.minX + '" y1="0" x2="' + bb.maxX + '" y2="0" stroke="#cce0d4" stroke-width="' + (upem*0.005) + '" stroke-dasharray="' + (upem*0.02) + ',' + (upem*0.02) + '"/>';
   // Glyph fill
-  svg += '<path d="' + d + '" fill="#0b1e12" fill-opacity="0.45" stroke="#0b1e12" stroke-width="' + (upem*0.004) + '" />';
+  svg += '<path d="' + d + '" fill="#0b1e12" fill-opacity="0.45" stroke="#0b1e12" stroke-width="' + (upem*0.004) + '" style="' + (drawModeActive?'pointer-events:none':'') + '"/>';
   svg += '</g>';
 
   // Overlays (anchors + handles) — also in flipped coord
@@ -1621,26 +1632,26 @@ function renderEditor(){
     var c = commands[i];
     if(c.type === 'M' || c.type === 'L'){
       if(GE.showAnchors){
-        svg += '<rect class="ge-anchor' + (GE.selectedIdx.indexOf(i)>=0?' ge-anchor-sel':'') + '" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.006) + '" y="' + (c.y - upem*0.006) + '" width="' + (upem*0.012) + '" height="' + (upem*0.012) + '" fill="' + (GE.selectedIdx.indexOf(i)>=0?'#f59e0b':'#1a5c38') + '" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
+        svg += '<rect class="ge-anchor' + (GE.selectedIdx.indexOf(i)>=0?' ge-anchor-sel':'') + '" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.006) + '" y="' + (c.y - upem*0.006) + '" width="' + (upem*0.012) + '" height="' + (upem*0.012) + '" fill="' + (GE.selectedIdx.indexOf(i)>=0?'#f59e0b':'#1a5c38') + '" stroke="#fff" stroke-width="' + (upem*0.0018) + '" style="' + (drawModeActive?'pointer-events:none':'') + '"/>';
       }
     } else if(c.type === 'C'){
       if(GE.showHandles && prev){
         svg += '<line class="ge-ctrl-line" x1="' + prev.x + '" y1="' + prev.y + '" x2="' + c.x1 + '" y2="' + c.y1 + '"/>';
         svg += '<line class="ge-ctrl-line" x1="' + c.x + '" y1="' + c.y + '" x2="' + c.x2 + '" y2="' + c.y2 + '"/>';
-        svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl1" cx="' + c.x1 + '" cy="' + c.y1 + '" r="' + (upem*0.007) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
-        svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl2" cx="' + c.x2 + '" cy="' + c.y2 + '" r="' + (upem*0.007) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
+        svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl1" cx="' + c.x1 + '" cy="' + c.y1 + '" r="' + (upem*0.007) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.0018) + '" style="' + (drawModeActive?'pointer-events:none':'') + '"/>';
+        svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl2" cx="' + c.x2 + '" cy="' + c.y2 + '" r="' + (upem*0.007) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.0018) + '" style="' + (drawModeActive?'pointer-events:none':'') + '"/>';
       }
       if(GE.showAnchors){
-        svg += '<rect class="ge-anchor' + (GE.selectedIdx.indexOf(i)>=0?' ge-anchor-sel':'') + '" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.006) + '" y="' + (c.y - upem*0.006) + '" width="' + (upem*0.012) + '" height="' + (upem*0.012) + '" fill="' + (GE.selectedIdx.indexOf(i)>=0?'#f59e0b':'#1a5c38') + '" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
+        svg += '<rect class="ge-anchor' + (GE.selectedIdx.indexOf(i)>=0?' ge-anchor-sel':'') + '" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.006) + '" y="' + (c.y - upem*0.006) + '" width="' + (upem*0.012) + '" height="' + (upem*0.012) + '" fill="' + (GE.selectedIdx.indexOf(i)>=0?'#f59e0b':'#1a5c38') + '" stroke="#fff" stroke-width="' + (upem*0.0018) + '" style="' + (drawModeActive?'pointer-events:none':'') + '"/>';
       }
     } else if(c.type === 'Q'){
       if(GE.showHandles && prev){
         svg += '<line class="ge-ctrl-line" x1="' + prev.x + '" y1="' + prev.y + '" x2="' + c.x1 + '" y2="' + c.y1 + '"/>';
         svg += '<line class="ge-ctrl-line" x1="' + c.x + '" y1="' + c.y + '" x2="' + c.x1 + '" y2="' + c.y1 + '"/>';
-        svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl1" cx="' + c.x1 + '" cy="' + c.y1 + '" r="' + (upem*0.007) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
+        svg += '<circle class="ge-handle" data-idx="' + i + '" data-role="ctrl1" cx="' + c.x1 + '" cy="' + c.y1 + '" r="' + (upem*0.007) + '" fill="#5fa87a" stroke="#fff" stroke-width="' + (upem*0.0018) + '" style="' + (drawModeActive?'pointer-events:none':'') + '"/>';
       }
       if(GE.showAnchors){
-        svg += '<rect class="ge-anchor' + (GE.selectedIdx.indexOf(i)>=0?' ge-anchor-sel':'') + '" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.006) + '" y="' + (c.y - upem*0.006) + '" width="' + (upem*0.012) + '" height="' + (upem*0.012) + '" fill="' + (GE.selectedIdx.indexOf(i)>=0?'#f59e0b':'#1a5c38') + '" stroke="#fff" stroke-width="' + (upem*0.0018) + '"/>';
+        svg += '<rect class="ge-anchor' + (GE.selectedIdx.indexOf(i)>=0?' ge-anchor-sel':'') + '" data-idx="' + i + '" data-role="point" x="' + (c.x - upem*0.006) + '" y="' + (c.y - upem*0.006) + '" width="' + (upem*0.012) + '" height="' + (upem*0.012) + '" fill="' + (GE.selectedIdx.indexOf(i)>=0?'#f59e0b':'#1a5c38') + '" stroke="#fff" stroke-width="' + (upem*0.0018) + '" style="' + (drawModeActive?'pointer-events:none':'') + '"/>';
       }
     }
     if(c.type !== 'Z' && c.x !== undefined) prev = { x: c.x, y: c.y };
