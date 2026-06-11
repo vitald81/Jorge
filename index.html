@@ -211,6 +211,20 @@ textarea::placeholder{color:var(--fnt)}
 .ge-anchor-sel{fill:#f59e0b!important}
 .ge-handle-sel{fill:#fbbf24!important}
 .ge-sel-rect{fill:rgba(245,158,11,.15);stroke:#f59e0b;stroke-width:1px;stroke-dasharray:4,3;pointer-events:none}
+
+.ge-draw-marker{fill:#1a5c38;stroke:#fff;stroke-width:1.5}
+.ge-draw-preview-line{stroke:#1a5c38;stroke-width:6;fill:none;opacity:0.85}
+.ge-draw-preview-path{stroke:#1a5c38;stroke-width:6;fill:none;opacity:0.85;stroke-linecap:round;stroke-linejoin:round}
+.ge-drawn-path{fill:#0b1e12;fill-opacity:0.7;stroke:#0b1e12;stroke-width:2}
+
+.ge-canvas-wrap[data-mode="draw-line"] svg,
+.ge-canvas-wrap[data-mode="draw-arc"] svg,
+.ge-canvas-wrap[data-mode="draw-free"] svg{
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="%231a5c38" stroke="%23fff" stroke-width="1.2" d="M3 21l3.75-.75 11.5-11.5-3-3L3.75 17.25 3 21zm14.4-15.4l2.6-2.6a1 1 0 0 1 1.4 0l1.6 1.6a1 1 0 0 1 0 1.4l-2.6 2.6-3-3z"/></svg>') 2 22, crosshair;
+}
+.ge-canvas-wrap[data-mode="select"] svg{
+  cursor: crosshair;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
 </head>
@@ -447,16 +461,24 @@ textarea::placeholder{color:var(--fnt)}
         <div class="ge-tool-row">
           <div class="ge-tool-lbl">Mode</div>
           <div class="ge-mode-row">
-            <button class="ge-mode-btn act" id="geModeEdit" type="button">Editer points</button>
-            <button class="ge-mode-btn" id="geModeSelect" type="button">Selectionner zone</button>
+            <button class="ge-mode-btn act" id="geModeEdit" type="button">Editer</button>
+            <button class="ge-mode-btn" id="geModeSelect" type="button">Selection</button>
           </div>
+          <div class="ge-mode-row" style="margin-top:4px">
+            <button class="ge-mode-btn" id="geModeLine" type="button">Ligne</button>
+            <button class="ge-mode-btn" id="geModeArc" type="button">Arc</button>
+            <button class="ge-mode-btn" id="geModeFree" type="button">Crayon libre</button>
+          </div>
+          <div id="geDrawInfo" style="font-size:11px;color:var(--mut);font-family:var(--mono);margin-top:6px;line-height:1.4"></div>
+          <button class="btn btn-sm" id="geFinishDraw" type="button" style="display:none">Valider le trace</button>
+          <button class="btn btn-sm" id="geCancelDraw" type="button" style="display:none">Annuler le trace</button>
           <div id="geSelInfo" style="font-size:11px;color:var(--mut);font-family:var(--mono);margin-top:4px"></div>
           <button class="btn btn-sm" id="geMoveUp" type="button" style="display:none">&uarr; Monter de 10 unites</button>
           <button class="btn btn-sm" id="geMoveDown" type="button" style="display:none">&darr; Descendre de 10 unites</button>
           <button class="btn btn-sm" id="geMoveLeft" type="button" style="display:none">&larr; Gauche de 10 unites</button>
           <button class="btn btn-sm" id="geMoveRight" type="button" style="display:none">&rarr; Droite de 10 unites</button>
           <button class="btn btn-sm" id="geClearSel" type="button" style="display:none">Deselectionner</button>
-          <p style="font-size:10px;color:var(--mut);line-height:1.4;margin-top:4px">En mode <strong>Selectionner zone</strong>, glissez pour entourer plusieurs points. Glissez ensuite la selection pour deplacer tout le groupe.</p>
+          <p style="font-size:10px;color:var(--mut);line-height:1.4;margin-top:4px"><strong>Selection</strong> : encadrez des points, deplacez-les en groupe. <strong>Ligne</strong> : 2 clics. <strong>Arc</strong> : 3 clics (debut, sommet, fin). <strong>Crayon libre</strong> : maintenez et tracez.</p>
         </div>
         <div class="ge-tool-row">
           <div class="ge-tool-lbl">Calque photo</div>
@@ -1334,10 +1356,14 @@ var GE = {
   photoTy: 0,
   photoBehind: true,
   // Selection / group move
-  mode: 'edit',           // 'edit' or 'select'
-  selectedIdx: [],        // array of command indices currently selected
-  selBox: null,           // {x1,y1,x2,y2} during rubber-band selection
-  groupDrag: null         // {startX, startY, startPos: {idx: {x,y, x1,y1, x2,y2}}}
+  mode: 'edit',           // 'edit', 'select', 'draw-line', 'draw-arc', 'draw-free'
+  selectedIdx: [],
+  selBox: null,
+  groupDrag: null,
+  // Drawing state
+  drawPoints: [],         // accumulated points for current drawing operation
+  drawPreview: null,      // {type, points} live preview
+  drawnPaths: []          // {type, commands} list of paths drawn (will be merged into glyph)
 };
 
 // Show editor button only on desktop
@@ -1385,6 +1411,9 @@ function openGlyphEditor(){
   GE.mode = 'edit';
   GE.selectedIdx = [];
   GE.selBox = null;
+  GE.drawPoints = [];
+  GE.drawPreview = null;
+  GE.drawnPaths = [];
   var meBtn = document.getElementById('geModeEdit');
   var msBtn = document.getElementById('geModeSelect');
   if(meBtn) meBtn.classList.add('act');
@@ -1509,7 +1538,11 @@ function selectLetter(ch){
   GE.currentChar = ch;
   GE.selectedIdx = [];
   GE.selBox = null;
+  GE.drawPoints = [];
+  GE.drawPreview = null;
+  GE.drawnPaths = [];
   updateSelInfo();
+  if(typeof updateDrawInfo === 'function') updateDrawInfo();
   // If we don't have a stored modified version, build from font
   if(!GE.glyphs[ch]){
     var glyph = GE.font.charToGlyph(ch);
@@ -1552,7 +1585,12 @@ function renderEditor(){
 
   // Build SVG: opentype uses Y-up so we flip Y in the viewBox transform
   var d = commandsToPathData(commands);
-  var svg = '<svg id="geCanvasSvg" viewBox="' + vbX + ' ' + vbY + ' ' + vbW + ' ' + vbH + '" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;max-height:60vh">';
+  var svgCursor = 'default';
+  if(GE.mode === 'draw-line' || GE.mode === 'draw-arc' || GE.mode === 'draw-free') svgCursor = 'crosshair';
+  else if(GE.mode === 'select') svgCursor = 'cell';
+  var svg = '<svg id="geCanvasSvg" viewBox="' + vbX + ' ' + vbY + ' ' + vbW + ' ' + vbH + '" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;max-height:60vh;cursor:' + svgCursor + '">';
+  // Transparent background to capture clicks in empty areas (essential for drawing modes)
+  svg += '<rect id="geBgCatcher" x="' + vbX + '" y="' + vbY + '" width="' + vbW + '" height="' + vbH + '" fill="transparent" pointer-events="all"/>';
 
   // Photo overlay BEHIND the glyph (default)
   var photoLayerSvg = '';
@@ -1619,9 +1657,14 @@ function renderEditor(){
     var rh = Math.abs(GE.selBox.y2 - GE.selBox.y1);
     svg += '<rect class="ge-sel-rect" x="' + rx + '" y="' + ry + '" width="' + rw + '" height="' + rh + '"/>';
   }
+  // Drawn paths (already committed but not yet validated)
+  svg += renderDrawnPaths();
+  // Live drawing preview
+  svg += renderDrawPreview();
   svg += '</svg>';
 
   wrap.innerHTML = svg;
+  wrap.setAttribute('data-mode', GE.mode);
 
   // Bind drag handlers
   var svgEl = wrap.querySelector('svg');
@@ -1659,7 +1702,10 @@ function bindDrag(svgEl){
   // SELECTION MODE: rubber-band and group drag
   if(GE.mode === 'select'){
     bindSelectMode(svgEl);
-    // Still bind photo drag below
+  }
+  // DRAWING MODES
+  if(GE.mode === 'draw-line' || GE.mode === 'draw-arc' || GE.mode === 'draw-free'){
+    bindDrawMode(svgEl);
   }
   // Photo drag — bind separately
   var photoEl = svgEl.querySelector('#gePhotoLayer');
@@ -1770,8 +1816,9 @@ function bindDrag(svgEl){
     GE.dragging = null;
   }
 
-  // In select mode, skip individual anchor binding — bindSelectMode handles all interactions
-  if(GE.mode !== 'select'){
+  // Skip normal anchor binding in select and draw modes
+  var skipModes = ['select','draw-line','draw-arc','draw-free'];
+  if(skipModes.indexOf(GE.mode) === -1){
     svgEl.querySelectorAll('.ge-anchor, .ge-handle').forEach(function(el){
       el.addEventListener('pointerdown', onDown);
     });
@@ -2001,25 +2048,29 @@ document.addEventListener('click', function(e){
     return;
   }
   // Mode toggle
-  if(id === 'geModeEdit'){
-    e.preventDefault();
-    GE.mode = 'edit';
-    document.getElementById('geModeEdit').classList.add('act');
-    document.getElementById('geModeSelect').classList.remove('act');
+  function setMode(modeName){
+    GE.mode = modeName;
     GE.selectedIdx = [];
     GE.selBox = null;
+    GE.drawPoints = [];
+    GE.drawPreview = null;
+    var allBtns = ['geModeEdit','geModeSelect','geModeLine','geModeArc','geModeFree'];
+    var actBtn = ({'edit':'geModeEdit','select':'geModeSelect','draw-line':'geModeLine','draw-arc':'geModeArc','draw-free':'geModeFree'})[modeName];
+    allBtns.forEach(function(b){
+      var el = document.getElementById(b);
+      if(el) el.classList[b === actBtn ? 'add' : 'remove']('act');
+    });
     updateSelInfo();
+    updateDrawInfo();
     renderEditor();
-    return;
   }
-  if(id === 'geModeSelect'){
-    e.preventDefault();
-    GE.mode = 'select';
-    document.getElementById('geModeSelect').classList.add('act');
-    document.getElementById('geModeEdit').classList.remove('act');
-    renderEditor();
-    return;
-  }
+  if(id === 'geModeEdit'){ e.preventDefault(); setMode('edit'); return; }
+  if(id === 'geModeSelect'){ e.preventDefault(); setMode('select'); return; }
+  if(id === 'geModeLine'){ e.preventDefault(); setMode('draw-line'); return; }
+  if(id === 'geModeArc'){ e.preventDefault(); setMode('draw-arc'); return; }
+  if(id === 'geModeFree'){ e.preventDefault(); setMode('draw-free'); return; }
+  if(id === 'geFinishDraw'){ e.preventDefault(); finalizeDrawing(); return; }
+  if(id === 'geCancelDraw'){ e.preventDefault(); cancelDrawing(); return; }
   // Group movement (10 unit steps, since shifted points feel responsive)
   if(id === 'geMoveUp'){ e.preventDefault(); moveSelectedBy(0, 10); return; }
   if(id === 'geMoveDown'){ e.preventDefault(); moveSelectedBy(0, -10); return; }
@@ -2240,6 +2291,321 @@ document.addEventListener('input', function(e){
   }
 });
 
+
+// =================================================
+// DRAWING TOOLS — Line / Arc / Free pencil
+// =================================================
+function renderDrawPreview(){
+  var s = '';
+  var pts = GE.drawPoints;
+  var upem = GE.unitsPerEm;
+  var markerR = upem * 0.012;
+  // Draw existing click markers
+  pts.forEach(function(p){
+    s += '<circle class="ge-draw-marker" cx="' + p.x + '" cy="' + (-p.y) + '" r="' + markerR + '"/>';
+  });
+  if(!GE.drawPreview) return s;
+  if(GE.drawPreview.type === 'line' && GE.drawPreview.points.length === 2){
+    var p1 = GE.drawPreview.points[0];
+    var p2 = GE.drawPreview.points[1];
+    s += '<line class="ge-draw-preview-line" x1="' + p1.x + '" y1="' + (-p1.y) + '" x2="' + p2.x + '" y2="' + (-p2.y) + '"/>';
+  } else if(GE.drawPreview.type === 'arc' && GE.drawPreview.points.length === 3){
+    // Quadratic Bezier through start, control, end (control as middle approximation)
+    var a = GE.drawPreview.points[0];
+    var c = GE.drawPreview.points[1];
+    var b = GE.drawPreview.points[2];
+    var d = 'M' + a.x + ' ' + (-a.y) + ' Q ' + c.x + ' ' + (-c.y) + ' ' + b.x + ' ' + (-b.y);
+    s += '<path class="ge-draw-preview-path" d="' + d + '"/>';
+  } else if(GE.drawPreview.type === 'free' && GE.drawPreview.points.length >= 2){
+    var d2 = 'M' + GE.drawPreview.points[0].x + ' ' + (-GE.drawPreview.points[0].y);
+    for(var i=1; i<GE.drawPreview.points.length; i++){
+      d2 += ' L ' + GE.drawPreview.points[i].x + ' ' + (-GE.drawPreview.points[i].y);
+    }
+    s += '<path class="ge-draw-preview-path" d="' + d2 + '"/>';
+  }
+  return s;
+}
+
+function renderDrawnPaths(){
+  // Render the paths that have been committed in this session but not yet merged
+  var s = '';
+  GE.drawnPaths.forEach(function(p){
+    var d = commandsToPathData(p.commands);
+    s += '<g transform="scale(1,-1)"><path class="ge-drawn-path" d="' + d + '"/></g>';
+  });
+  return s;
+}
+
+function updateDrawInfo(){
+  var info = document.getElementById('geDrawInfo');
+  var btnFinish = document.getElementById('geFinishDraw');
+  var btnCancel = document.getElementById('geCancelDraw');
+  if(!info) return;
+  if(GE.mode === 'draw-line'){
+    if(GE.drawPoints.length === 0){
+      info.textContent = 'LIGNE : cliquez le 1er point';
+    } else if(GE.drawPoints.length === 1){
+      info.textContent = 'LIGNE : cliquez le 2e point pour valider';
+    }
+  } else if(GE.mode === 'draw-arc'){
+    if(GE.drawPoints.length === 0){
+      info.textContent = 'ARC : cliquez le 1er point (debut)';
+    } else if(GE.drawPoints.length === 1){
+      info.textContent = 'ARC : cliquez le 2e point (sommet de courbure)';
+    } else if(GE.drawPoints.length === 2){
+      info.textContent = 'ARC : cliquez le 3e point (fin)';
+    }
+  } else if(GE.mode === 'draw-free'){
+    info.textContent = 'CRAYON LIBRE : maintenez le clic et tracez';
+  } else {
+    info.textContent = '';
+  }
+  // Show validate/cancel buttons when at least one drawn path exists
+  if(GE.drawnPaths.length > 0){
+    if(btnFinish) btnFinish.style.display = '';
+    if(btnCancel) btnCancel.style.display = '';
+  } else {
+    if(btnFinish) btnFinish.style.display = 'none';
+    if(btnCancel) btnCancel.style.display = 'none';
+  }
+}
+
+// Add a line segment from p1 to p2 as 2 commands (M+L)
+function addLinePath(p1, p2){
+  GE.drawnPaths.push({
+    type: 'line',
+    commands: [
+      { type: 'M', x: p1.x, y: p1.y },
+      { type: 'L', x: p2.x, y: p2.y }
+    ]
+  });
+}
+
+// Add a quadratic arc through 3 points (start, control, end)
+function addArcPath(a, c, b){
+  GE.drawnPaths.push({
+    type: 'arc',
+    commands: [
+      { type: 'M', x: a.x, y: a.y },
+      { type: 'Q', x1: c.x, y1: c.y, x: b.x, y: b.y }
+    ]
+  });
+}
+
+// Add a free-hand path simplified via Ramer-Douglas-Peucker
+function addFreePath(points){
+  if(points.length < 2) return;
+  var simplified = simplifyRDP(points, GE.unitsPerEm * 0.008);
+  var cmds = [{ type: 'M', x: simplified[0].x, y: simplified[0].y }];
+  // Build smooth bezier through consecutive points
+  for(var i=1; i<simplified.length-1; i++){
+    var p0 = simplified[i-1];
+    var p1 = simplified[i];
+    var p2 = simplified[i+1];
+    // Catmull-Rom-style tangent for smooth curve
+    var x1 = p0.x + (p1.x - p0.x) * 0.6;
+    var y1 = p0.y + (p1.y - p0.y) * 0.6;
+    var x2 = p1.x - (p2.x - p0.x) * 0.2;
+    var y2 = p1.y - (p2.y - p0.y) * 0.2;
+    cmds.push({ type: 'C', x1: x1, y1: y1, x2: x2, y2: y2, x: p1.x, y: p1.y });
+  }
+  // Final segment
+  if(simplified.length >= 2){
+    var last = simplified[simplified.length-1];
+    cmds.push({ type: 'L', x: last.x, y: last.y });
+  }
+  GE.drawnPaths.push({ type: 'free', commands: cmds });
+}
+
+// Simple Ramer-Douglas-Peucker line simplification
+function simplifyRDP(points, tolerance){
+  if(points.length < 3) return points.slice();
+  function perpDist(p, a, b){
+    var dx = b.x - a.x, dy = b.y - a.y;
+    var len2 = dx*dx + dy*dy;
+    if(len2 === 0){
+      var ddx = p.x - a.x, ddy = p.y - a.y;
+      return Math.sqrt(ddx*ddx + ddy*ddy);
+    }
+    var t = ((p.x - a.x)*dx + (p.y - a.y)*dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    var px = a.x + t*dx, py = a.y + t*dy;
+    var ex = p.x - px, ey = p.y - py;
+    return Math.sqrt(ex*ex + ey*ey);
+  }
+  function rec(start, end, keep){
+    var maxD = 0, idx = -1;
+    for(var i=start+1; i<end; i++){
+      var d = perpDist(points[i], points[start], points[end]);
+      if(d > maxD){ maxD = d; idx = i; }
+    }
+    if(maxD > tolerance && idx >= 0){
+      rec(start, idx, keep);
+      keep.push(points[idx]);
+      rec(idx, end, keep);
+    }
+  }
+  var keep = [points[0]];
+  rec(0, points.length - 1, keep);
+  keep.push(points[points.length - 1]);
+  return keep;
+}
+
+// Merge all drawn paths into the current glyph and clear drawing state
+function finalizeDrawing(){
+  if(GE.drawnPaths.length === 0 || !GE.currentChar) return;
+  var glyph = GE.glyphs[GE.currentChar];
+  if(!glyph) return;
+  // Append each drawn path's commands to the glyph
+  GE.drawnPaths.forEach(function(p){
+    p.commands.forEach(function(c){
+      glyph.commands.push(c);
+    });
+  });
+  glyph.modified = true;
+  GE.drawnPaths = [];
+  GE.drawPoints = [];
+  GE.drawPreview = null;
+  buildLetterTabs();
+  updateDrawInfo();
+  renderEditor();
+}
+
+function cancelDrawing(){
+  GE.drawnPaths = [];
+  GE.drawPoints = [];
+  GE.drawPreview = null;
+  updateDrawInfo();
+  renderEditor();
+}
+
+// Bind drawing handlers when in a draw mode
+function bindDrawMode(svgEl){
+  var wrap = document.getElementById('geCanvasWrap');
+  if(!wrap) return;
+  if(wrap._drawDelegated) return;
+  wrap._drawDelegated = true;
+
+  function currentSvg(){ return wrap.querySelector('svg'); }
+
+  function getGlyphPointFromXY(clientX, clientY){
+    var sv = currentSvg();
+    if(!sv) return {x:0, y:0};
+    var pt = sv.createSVGPoint();
+    pt.x = clientX; pt.y = clientY;
+    var ctm = sv.getScreenCTM();
+    if(!ctm) return {x:0, y:0};
+    var inv = ctm.inverse();
+    var p = pt.matrixTransform(inv);
+    return {x: p.x, y: -p.y};
+  }
+
+  function getXY(e){
+    if(e.touches && e.touches.length > 0){
+      return {x: e.touches[0].clientX, y: e.touches[0].clientY};
+    }
+    if(e.changedTouches && e.changedTouches.length > 0){
+      return {x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY};
+    }
+    return {x: e.clientX, y: e.clientY};
+  }
+
+  var freeDragging = false;
+  var freePts = [];
+
+  function onDown(e){
+    var modes = ['draw-line','draw-arc','draw-free'];
+    if(modes.indexOf(GE.mode) === -1) return;
+    var tgt = e.target;
+    if(tgt && tgt.id === 'gePhotoLayer') return;
+    if(!wrap.contains(tgt)) return;
+    e.preventDefault();
+
+    var xy = getXY(e);
+    var p = getGlyphPointFromXY(xy.x, xy.y);
+    console.log('[Jorge] DRAW DOWN:', GE.mode, 'point:', p, 'event type:', e.type);
+
+    if(GE.mode === 'draw-line'){
+      GE.drawPoints.push(p);
+      if(GE.drawPoints.length === 2){
+        addLinePath(GE.drawPoints[0], GE.drawPoints[1]);
+        GE.drawPoints = [];
+        GE.drawPreview = null;
+      } else {
+        GE.drawPreview = null;
+      }
+      updateDrawInfo();
+      renderEditor();
+    } else if(GE.mode === 'draw-arc'){
+      GE.drawPoints.push(p);
+      if(GE.drawPoints.length === 3){
+        addArcPath(GE.drawPoints[0], GE.drawPoints[1], GE.drawPoints[2]);
+        GE.drawPoints = [];
+        GE.drawPreview = null;
+      }
+      updateDrawInfo();
+      renderEditor();
+    } else if(GE.mode === 'draw-free'){
+      freeDragging = true;
+      freePts = [p];
+      GE.drawPreview = { type: 'free', points: freePts.slice() };
+      renderEditor();
+    }
+  }
+
+  function onMove(e){
+    var modes = ['draw-line','draw-arc','draw-free'];
+    if(modes.indexOf(GE.mode) === -1) return;
+    if(!wrap.contains(e.target)) return;
+
+    var xy = getXY(e);
+    var p = getGlyphPointFromXY(xy.x, xy.y);
+
+    if(GE.mode === 'draw-line' && GE.drawPoints.length === 1){
+      GE.drawPreview = { type: 'line', points: [GE.drawPoints[0], p] };
+      renderEditor();
+    } else if(GE.mode === 'draw-arc' && GE.drawPoints.length > 0){
+      if(GE.drawPoints.length === 1){
+        GE.drawPreview = { type: 'line', points: [GE.drawPoints[0], p] };
+      } else if(GE.drawPoints.length === 2){
+        GE.drawPreview = { type: 'arc', points: [GE.drawPoints[0], GE.drawPoints[1], p] };
+      }
+      renderEditor();
+    } else if(GE.mode === 'draw-free' && freeDragging){
+      e.preventDefault();
+      var last = freePts[freePts.length - 1];
+      var dx = p.x - last.x, dy = p.y - last.y;
+      if(dx*dx + dy*dy < (GE.unitsPerEm * 0.003) * (GE.unitsPerEm * 0.003)) return;
+      freePts.push(p);
+      GE.drawPreview = { type: 'free', points: freePts.slice() };
+      renderEditor();
+    }
+  }
+
+  function onUp(e){
+    if(GE.mode !== 'draw-free') return;
+    if(!freeDragging) return;
+    freeDragging = false;
+    if(freePts.length >= 2){
+      addFreePath(freePts);
+    }
+    freePts = [];
+    GE.drawPreview = null;
+    updateDrawInfo();
+    renderEditor();
+  }
+
+  // Use mouse events for Safari/desktop
+  wrap.addEventListener('mousedown', onDown);
+  wrap.addEventListener('mousemove', onMove);
+  wrap.addEventListener('mouseup', onUp);
+  wrap.addEventListener('mouseleave', onUp);
+  // Use touch events for iOS/iPad
+  wrap.addEventListener('touchstart', onDown, {passive:false});
+  wrap.addEventListener('touchmove', onMove, {passive:false});
+  wrap.addEventListener('touchend', onUp);
+  wrap.addEventListener('touchcancel', onUp);
+}
 </script>
 
 
