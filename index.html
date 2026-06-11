@@ -2310,39 +2310,42 @@ function renderDrawPreview(){
   var s = '';
   var pts = GE.drawPoints;
   var upem = GE.unitsPerEm;
-  var markerR = upem * 0.012;
+  var markerR = upem * 0.018;
+  var strokeW = upem * 0.025;  // ~25 units thick — visible at font scale
   // Draw existing click markers
   pts.forEach(function(p){
-    s += '<circle class="ge-draw-marker" cx="' + p.x + '" cy="' + (-p.y) + '" r="' + markerR + '"/>';
+    s += '<circle cx="' + p.x + '" cy="' + (-p.y) + '" r="' + markerR + '" fill="#1a5c38" stroke="#fff" stroke-width="' + (upem*0.004) + '"/>';
   });
   if(!GE.drawPreview) return s;
   if(GE.drawPreview.type === 'line' && GE.drawPreview.points.length === 2){
     var p1 = GE.drawPreview.points[0];
     var p2 = GE.drawPreview.points[1];
-    s += '<line class="ge-draw-preview-line" x1="' + p1.x + '" y1="' + (-p1.y) + '" x2="' + p2.x + '" y2="' + (-p2.y) + '"/>';
+    s += '<line x1="' + p1.x + '" y1="' + (-p1.y) + '" x2="' + p2.x + '" y2="' + (-p2.y) + '" stroke="#1a5c38" stroke-width="' + strokeW + '" stroke-linecap="round" fill="none" opacity="0.85"/>';
   } else if(GE.drawPreview.type === 'arc' && GE.drawPreview.points.length === 3){
-    // Quadratic Bezier through start, control, end (control as middle approximation)
     var a = GE.drawPreview.points[0];
     var c = GE.drawPreview.points[1];
     var b = GE.drawPreview.points[2];
     var d = 'M' + a.x + ' ' + (-a.y) + ' Q ' + c.x + ' ' + (-c.y) + ' ' + b.x + ' ' + (-b.y);
-    s += '<path class="ge-draw-preview-path" d="' + d + '"/>';
+    s += '<path d="' + d + '" stroke="#1a5c38" stroke-width="' + strokeW + '" stroke-linecap="round" fill="none" opacity="0.85"/>';
   } else if(GE.drawPreview.type === 'free' && GE.drawPreview.points.length >= 2){
     var d2 = 'M' + GE.drawPreview.points[0].x + ' ' + (-GE.drawPreview.points[0].y);
     for(var i=1; i<GE.drawPreview.points.length; i++){
       d2 += ' L ' + GE.drawPreview.points[i].x + ' ' + (-GE.drawPreview.points[i].y);
     }
-    s += '<path class="ge-draw-preview-path" d="' + d2 + '"/>';
+    s += '<path d="' + d2 + '" stroke="#1a5c38" stroke-width="' + strokeW + '" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.85"/>';
   }
   return s;
 }
 
 function renderDrawnPaths(){
-  // Render the paths that have been committed in this session but not yet merged
   var s = '';
+  var upem = GE.unitsPerEm;
+  var strokeW = upem * 0.025;
   GE.drawnPaths.forEach(function(p){
     var d = commandsToPathData(p.commands);
-    s += '<g transform="scale(1,-1)"><path class="ge-drawn-path" d="' + d + '"/></g>';
+    // Render OUTSIDE the scale(1,-1) wrapper, with Y already flipped in coordinates
+    // We need to flip Y on each command — easier: wrap in scale(1,-1) which flips back to glyph-space
+    s += '<g transform="scale(1,-1)"><path d="' + d + '" stroke="#0b1e12" stroke-width="' + strokeW + '" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>';
   });
   return s;
 }
