@@ -1770,25 +1770,33 @@ function bindDrag(svgEl){
     GE.dragging = null;
   }
 
-  svgEl.querySelectorAll('.ge-anchor, .ge-handle').forEach(function(el){
-    el.addEventListener('pointerdown', onDown);
-  });
-  svgEl.addEventListener('pointermove', onMove);
-  svgEl.addEventListener('pointerup', onUp);
-  svgEl.addEventListener('pointerleave', onUp);
-  svgEl.addEventListener('pointercancel', onUp);
+  // In select mode, skip individual anchor binding — bindSelectMode handles all interactions
+  if(GE.mode !== 'select'){
+    svgEl.querySelectorAll('.ge-anchor, .ge-handle').forEach(function(el){
+      el.addEventListener('pointerdown', onDown);
+    });
+    svgEl.addEventListener('pointermove', onMove);
+    svgEl.addEventListener('pointerup', onUp);
+    svgEl.addEventListener('pointerleave', onUp);
+    svgEl.addEventListener('pointercancel', onUp);
+  }
 }
 
 // Selection mode: rubber-band selection + group drag
 function bindSelectMode(svgEl){
-  function getSvgPoint(evt){
+  // Returns RAW SVG coordinates (Y-down, viewBox space)
+  function getRawPoint(evt){
     var pt = svgEl.createSVGPoint();
     pt.x = evt.clientX; pt.y = evt.clientY;
     var ctm = svgEl.getScreenCTM();
     if(!ctm) return {x:0, y:0};
     var inv = ctm.inverse();
     var p = pt.matrixTransform(inv);
-    // Glyph is rendered in scale(1,-1) wrapper, so flip Y for glyph-space coords
+    return {x: p.x, y: p.y};
+  }
+  // Returns GLYPH-SPACE coordinates (Y-up)
+  function getGlyphPoint(evt){
+    var p = getRawPoint(evt);
     return {x: p.x, y: -p.y};
   }
 
@@ -1804,19 +1812,19 @@ function bindSelectMode(svgEl){
   // Click on already-selected anchor -> start group drag
   // Click elsewhere -> start rubber band
   svgEl.addEventListener('pointerdown', function(e){
-    // Ignore clicks on photo
     if(e.target && e.target.id === 'gePhotoLayer') return;
     e.preventDefault();
-    var p = getSvgPoint(e);
+    // Use RAW SVG coordinates for selBox (matches the rendered rubber-band rect coords)
+    var rawP = getRawPoint(e);
+    var glyphP = getGlyphPoint(e);
     var t = e.target;
     var idxAttr = t && t.getAttribute && t.getAttribute('data-idx');
     if(idxAttr !== null && idxAttr !== undefined){
       var idx = parseInt(idxAttr, 10);
       if(isInSelection(idx) && GE.selectedIdx.length > 0){
-        // Start group drag
+        // Start group drag using glyph-space coords
         groupDragging = true;
-        startPoint = p;
-        // Snapshot positions of all selected commands
+        startPoint = glyphP;
         groupStart = {};
         var commands = GE.glyphs[GE.currentChar].commands;
         GE.selectedIdx.forEach(function(i){
@@ -1831,9 +1839,9 @@ function bindSelectMode(svgEl){
         return;
       }
     }
-    // Otherwise: start rubber band
+    // Start rubber-band using RAW coords
     rubberBand = true;
-    GE.selBox = { x1: p.x, y1: p.y, x2: p.x, y2: p.y };
+    GE.selBox = { x1: rawP.x, y1: rawP.y, x2: rawP.x, y2: rawP.y };
     try { svgEl.setPointerCapture(e.pointerId); } catch(x){}
     renderEditor();
   });
@@ -1841,13 +1849,13 @@ function bindSelectMode(svgEl){
   svgEl.addEventListener('pointermove', function(e){
     if(rubberBand){
       e.preventDefault();
-      var p = getSvgPoint(e);
-      GE.selBox.x2 = p.x;
-      GE.selBox.y2 = p.y;
+      var rp = getRawPoint(e);
+      GE.selBox.x2 = rp.x;
+      GE.selBox.y2 = rp.y;
       renderEditor();
     } else if(groupDragging){
       e.preventDefault();
-      var p2 = getSvgPoint(e);
+      var p2 = getGlyphPoint(e);
       var dx = p2.x - startPoint.x;
       var dy = p2.y - startPoint.y;
       var commands = GE.glyphs[GE.currentChar].commands;
@@ -1869,23 +1877,24 @@ function bindSelectMode(svgEl){
 
   svgEl.addEventListener('pointerup', function(e){
     if(rubberBand){
-      // Compute selection
+      // selBox is in raw SVG space (Y-down). Anchor points in commands are in glyph-space (Y-up).
+      // To compare, we convert the box bounds: a glyph point (c.x, c.y) maps to raw (c.x, -c.y).
       var bx1 = Math.min(GE.selBox.x1, GE.selBox.x2);
       var by1 = Math.min(GE.selBox.y1, GE.selBox.y2);
       var bx2 = Math.max(GE.selBox.x1, GE.selBox.x2);
       var by2 = Math.max(GE.selBox.y1, GE.selBox.y2);
       var commands = GE.glyphs[GE.currentChar].commands;
       var newSel = [];
-      // Only count anchor points (M/L/C/Q endpoints), not control handles
       for(var i=0; i<commands.length; i++){
         var c = commands[i];
         if(c.type === 'Z') continue;
         if(c.x === undefined || c.y === undefined) continue;
-        if(c.x >= bx1 && c.x <= bx2 && c.y >= by1 && c.y <= by2){
+        // Convert anchor's raw position
+        var rawY = -c.y;
+        if(c.x >= bx1 && c.x <= bx2 && rawY >= by1 && rawY <= by2){
           newSel.push(i);
         }
       }
-      // If the box was tiny (single click), clear selection
       var tiny = Math.abs(GE.selBox.x2 - GE.selBox.x1) < GE.unitsPerEm*0.01 &&
                  Math.abs(GE.selBox.y2 - GE.selBox.y1) < GE.unitsPerEm*0.01;
       if(tiny){ newSel = []; }
