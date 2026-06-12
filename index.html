@@ -1344,6 +1344,13 @@ function xc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(
 // =================================================
 // GLYPH EDITOR — opentype.js based vector editing
 // =================================================
+// Global mouse tracker — updated by passive listeners, read by RAF loop
+var _mouseX = 0, _mouseY = 0;
+window.addEventListener('mousemove', function(e){ _mouseX = e.clientX; _mouseY = e.clientY; }, true);
+window.addEventListener('touchmove', function(e){ 
+  if(e.touches && e.touches[0]){ _mouseX = e.touches[0].clientX; _mouseY = e.touches[0].clientY; } 
+}, {passive:true, capture:true});
+
 var GE = {
   font: null,
   fontUrl: null,
@@ -1873,6 +1880,50 @@ function bindSelectMode(svgEl){
   var groupDragging = false;
   var groupStart = null;
   var dragStartGlyph = null;
+  var rafId = null;
+  var trackingActive = false;
+
+  function startTracking(){
+    if(trackingActive) return;
+    trackingActive = true;
+    function tick(){
+      if(!trackingActive){ rafId = null; return; }
+      if(rubberBand){
+        var rp = getRawPoint(_mouseX, _mouseY);
+        GE.selBox.x2 = rp.x;
+        GE.selBox.y2 = rp.y;
+        renderEditor();
+      } else if(groupDragging){
+        var gp = getGlyphPoint(_mouseX, _mouseY);
+        var dx = gp.x - dragStartGlyph.x;
+        var dy = gp.y - dragStartGlyph.y;
+        var commands = GE.glyphs[GE.currentChar].commands;
+        Object.keys(groupStart).forEach(function(idxStr){
+          var i = parseInt(idxStr, 10);
+          var c = commands[i];
+          var s = groupStart[idxStr];
+          if(c.x !== undefined && s.x !== undefined) c.x = s.x + dx;
+          if(c.y !== undefined && s.y !== undefined) c.y = s.y + dy;
+          if(c.x1 !== undefined && s.x1 !== undefined) c.x1 = s.x1 + dx;
+          if(c.y1 !== undefined && s.y1 !== undefined) c.y1 = s.y1 + dy;
+          if(c.x2 !== undefined && s.x2 !== undefined) c.x2 = s.x2 + dx;
+          if(c.y2 !== undefined && s.y2 !== undefined) c.y2 = s.y2 + dy;
+        });
+        GE.glyphs[GE.currentChar].modified = true;
+        renderEditor();
+      } else {
+        trackingActive = false;
+        rafId = null;
+        return;
+      }
+      rafId = requestAnimationFrame(tick);
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+  function stopTracking(){
+    trackingActive = false;
+    if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+  }
 
   function onDown(e){
     if(GE.mode !== 'select') return;
@@ -1882,6 +1933,7 @@ function bindSelectMode(svgEl){
     e.preventDefault();
 
     var xy = getXY(e);
+    _mouseX = xy.x; _mouseY = xy.y;
     var rawP = getRawPoint(xy.x, xy.y);
     var glyphP = getGlyphPoint(xy.x, xy.y);
     var idxAttr = tgt && tgt.getAttribute && tgt.getAttribute('data-idx');
@@ -1902,51 +1954,20 @@ function bindSelectMode(svgEl){
           if(c.x2 !== undefined) groupStart[i].x2 = c.x2;
           if(c.y2 !== undefined) groupStart[i].y2 = c.y2;
         });
+        startTracking();
         return;
       }
     }
     rubberBand = true;
     GE.selBox = { x1: rawP.x, y1: rawP.y, x2: rawP.x, y2: rawP.y };
+    startTracking();
     renderEditor();
-  }
-
-  function onMove(e){
-    if(GE.mode !== 'select') return;
-    if(!rubberBand && !groupDragging) return;
-
-    var xy = getXY(e);
-
-    if(rubberBand){
-      e.preventDefault();
-      var rp = getRawPoint(xy.x, xy.y);
-      GE.selBox.x2 = rp.x;
-      GE.selBox.y2 = rp.y;
-      renderEditor();
-    } else if(groupDragging){
-      e.preventDefault();
-      var gp = getGlyphPoint(xy.x, xy.y);
-      var dx = gp.x - dragStartGlyph.x;
-      var dy = gp.y - dragStartGlyph.y;
-      var commands = GE.glyphs[GE.currentChar].commands;
-      Object.keys(groupStart).forEach(function(idxStr){
-        var i = parseInt(idxStr, 10);
-        var c = commands[i];
-        var s = groupStart[idxStr];
-        if(c.x !== undefined && s.x !== undefined) c.x = s.x + dx;
-        if(c.y !== undefined && s.y !== undefined) c.y = s.y + dy;
-        if(c.x1 !== undefined && s.x1 !== undefined) c.x1 = s.x1 + dx;
-        if(c.y1 !== undefined && s.y1 !== undefined) c.y1 = s.y1 + dy;
-        if(c.x2 !== undefined && s.x2 !== undefined) c.x2 = s.x2 + dx;
-        if(c.y2 !== undefined && s.y2 !== undefined) c.y2 = s.y2 + dy;
-      });
-      GE.glyphs[GE.currentChar].modified = true;
-      renderEditor();
-    }
   }
 
   function onUp(e){
     if(GE.mode !== 'select') return;
     if(rubberBand){
+      stopTracking();
       var bx1 = Math.min(GE.selBox.x1, GE.selBox.x2);
       var by1 = Math.min(GE.selBox.y1, GE.selBox.y2);
       var bx2 = Math.max(GE.selBox.x1, GE.selBox.x2);
@@ -1973,6 +1994,7 @@ function bindSelectMode(svgEl){
       buildLetterTabs();
       renderEditor();
     } else if(groupDragging){
+      stopTracking();
       groupDragging = false;
       groupStart = null;
       dragStartGlyph = null;
@@ -1982,11 +2004,8 @@ function bindSelectMode(svgEl){
 
   wrap.addEventListener('mousedown', onDown);
   wrap.addEventListener('touchstart', onDown, {passive:false});
-  window.addEventListener('mousemove', onMove, true);
-  window.addEventListener('touchmove', onMove, {passive:false, capture:true});
   window.addEventListener('mouseup', onUp, true);
   window.addEventListener('touchend', onUp, true);
-  window.addEventListener('touchcancel', onUp, true);
 }
 
 function updateSelInfo(){
@@ -2505,6 +2524,48 @@ function bindDrawMode(svgEl){
 
   var freeDragging = false;
   var freePts = [];
+  var rafId = null;
+  var trackingActive = false;
+
+  function startTracking(){
+    if(trackingActive) return;
+    trackingActive = true;
+    function tick(){
+      if(!trackingActive){ rafId = null; return; }
+      // Read latest mouse pos and update preview
+      var p = getGlyphPointFromXY(_mouseX, _mouseY);
+      if(GE.mode === 'draw-line' && GE.drawPoints.length === 1){
+        GE.drawPreview = { type: 'line', points: [GE.drawPoints[0], p] };
+        renderEditor();
+      } else if(GE.mode === 'draw-arc' && GE.drawPoints.length === 1){
+        GE.drawPreview = { type: 'line', points: [GE.drawPoints[0], p] };
+        renderEditor();
+      } else if(GE.mode === 'draw-arc' && GE.drawPoints.length === 2){
+        GE.drawPreview = { type: 'arc', points: [GE.drawPoints[0], GE.drawPoints[1], p] };
+        renderEditor();
+      } else if(GE.mode === 'draw-free' && freeDragging){
+        var last = freePts[freePts.length - 1];
+        var dx = p.x - last.x, dy = p.y - last.y;
+        if(dx*dx + dy*dy >= (GE.unitsPerEm * 0.003) * (GE.unitsPerEm * 0.003)){
+          freePts.push(p);
+        }
+        GE.drawPreview = { type: 'free', points: freePts.slice() };
+        renderEditor();
+      } else {
+        // No active tracking needed, stop the loop
+        trackingActive = false;
+        rafId = null;
+        return;
+      }
+      rafId = requestAnimationFrame(tick);
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function stopTracking(){
+    trackingActive = false;
+    if(rafId){ cancelAnimationFrame(rafId); rafId = null; }
+  }
 
   function onDown(e){
     var modes = ['draw-line','draw-arc','draw-free'];
@@ -2515,6 +2576,7 @@ function bindDrawMode(svgEl){
     e.preventDefault();
 
     var xy = getXY(e);
+    _mouseX = xy.x; _mouseY = xy.y;
     var p = getGlyphPointFromXY(xy.x, xy.y);
     console.log('[Jorge] DRAW DOWN:', GE.mode, p);
 
@@ -2524,9 +2586,10 @@ function bindDrawMode(svgEl){
         addLinePath(GE.drawPoints[0], GE.drawPoints[1]);
         GE.drawPoints = [];
         GE.drawPreview = null;
+        stopTracking();
       } else {
-        // Set preview from first point to itself (will be updated on move)
         GE.drawPreview = { type: 'line', points: [GE.drawPoints[0], GE.drawPoints[0]] };
+        startTracking();
       }
       updateDrawInfo();
       renderEditor();
@@ -2536,10 +2599,14 @@ function bindDrawMode(svgEl){
         addArcPath(GE.drawPoints[0], GE.drawPoints[1], GE.drawPoints[2]);
         GE.drawPoints = [];
         GE.drawPreview = null;
-      } else if(GE.drawPoints.length === 1){
-        GE.drawPreview = { type: 'line', points: [GE.drawPoints[0], GE.drawPoints[0]] };
-      } else if(GE.drawPoints.length === 2){
-        GE.drawPreview = { type: 'arc', points: [GE.drawPoints[0], GE.drawPoints[1], GE.drawPoints[1]] };
+        stopTracking();
+      } else {
+        if(GE.drawPoints.length === 1){
+          GE.drawPreview = { type: 'line', points: [GE.drawPoints[0], GE.drawPoints[0]] };
+        } else {
+          GE.drawPreview = { type: 'arc', points: [GE.drawPoints[0], GE.drawPoints[1], GE.drawPoints[1]] };
+        }
+        startTracking();
       }
       updateDrawInfo();
       renderEditor();
@@ -2547,39 +2614,7 @@ function bindDrawMode(svgEl){
       freeDragging = true;
       freePts = [p];
       GE.drawPreview = { type: 'free', points: freePts.slice() };
-      renderEditor();
-    }
-  }
-
-  function onMove(e){
-    var modes = ['draw-line','draw-arc','draw-free'];
-    if(modes.indexOf(GE.mode) === -1) return;
-
-    var xy = getXY(e);
-    var p = getGlyphPointFromXY(xy.x, xy.y);
-
-    // DEBUG: log a sample of moves (every ~20th)
-    if(!window._mvc) window._mvc = 0;
-    window._mvc++;
-    if(window._mvc % 10 === 0) console.log('[Jorge] DRAW MOVE', GE.mode, 'pts:', GE.drawPoints.length, 'p:', p.x.toFixed(0), p.y.toFixed(0));
-
-    if(GE.mode === 'draw-line' && GE.drawPoints.length === 1){
-      GE.drawPreview = { type: 'line', points: [GE.drawPoints[0], p] };
-      renderEditor();
-    } else if(GE.mode === 'draw-arc' && GE.drawPoints.length > 0){
-      if(GE.drawPoints.length === 1){
-        GE.drawPreview = { type: 'line', points: [GE.drawPoints[0], p] };
-      } else if(GE.drawPoints.length === 2){
-        GE.drawPreview = { type: 'arc', points: [GE.drawPoints[0], GE.drawPoints[1], p] };
-      }
-      renderEditor();
-    } else if(GE.mode === 'draw-free' && freeDragging){
-      e.preventDefault();
-      var last = freePts[freePts.length - 1];
-      var dx = p.x - last.x, dy = p.y - last.y;
-      if(dx*dx + dy*dy < (GE.unitsPerEm * 0.003) * (GE.unitsPerEm * 0.003)) return;
-      freePts.push(p);
-      GE.drawPreview = { type: 'free', points: freePts.slice() };
+      startTracking();
       renderEditor();
     }
   }
@@ -2588,6 +2623,7 @@ function bindDrawMode(svgEl){
     if(GE.mode !== 'draw-free') return;
     if(!freeDragging) return;
     freeDragging = false;
+    stopTracking();
     if(freePts.length >= 2){
       addFreePath(freePts);
     }
@@ -2597,26 +2633,10 @@ function bindDrawMode(svgEl){
     renderEditor();
   }
 
-  // Mousedown on wrap (only when clicking inside canvas)
   wrap.addEventListener('mousedown', onDown);
   wrap.addEventListener('touchstart', onDown, {passive:false});
-
-  // Mousemove on WINDOW with capture=true to ensure firing during DOM rebuilds
-  window.addEventListener('mousemove', onMove, true);
-  window.addEventListener('touchmove', onMove, {passive:false, capture:true});
-
-  // Mouseup on window
   window.addEventListener('mouseup', onUp, true);
   window.addEventListener('touchend', onUp, true);
-  window.addEventListener('touchcancel', onUp, true);
-
-  // DEBUG: log every move while in draw mode
-  window._jorgeMoveCounter = window._jorgeMoveCounter || 0;
-  var debugInterval = setInterval(function(){
-    if(GE.mode === 'draw-line' || GE.mode === 'draw-arc' || GE.mode === 'draw-free'){
-      // optional debug
-    }
-  }, 1000);
 }
 </script>
 
