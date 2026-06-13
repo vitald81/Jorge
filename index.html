@@ -42,7 +42,7 @@ input[type=range]{accent-color:var(--accent)}
   input[type=checkbox]{accent-color:var(--accent)}
 }
 html,body{height:100%;background:#f5f9f6!important;color:#0b1e12!important;font-family:var(--sans);-webkit-font-smoothing:antialiased}
-@media(prefers-color-scheme:dark){html,body{background:#f5f9f6!important;color:#0b1e12!important}#hdr,#botbar,.panel-box{background:rgba(255,255,255,.98)!important}.font-card,.cbox,.upload-lbl,.upload-row{background:#fff!important}}
+@media(prefers-color-scheme:dark){html,body{background:#f5f9f6!important;color:#0b1e12!important}#hdr,#botbar,.panel-box{background:rgba(255,255,255,.98)!important}.font-card,.cbox,.upload-row{background:#fff!important}}
 body{display:flex;flex-direction:column;overflow:hidden}
 input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .hidden{display:none!important}
@@ -599,6 +599,8 @@ textarea::placeholder{color:var(--fnt)}
         <button class="ws-tool-btn" id="wsToolLine" type="button">Ligne</button>
         <button class="ws-tool-btn" id="wsToolArc" type="button">Arc</button>
         <button class="ws-tool-btn" id="wsToolFree" type="button">Crayon libre</button>
+        <div style="display:flex;align-items:center;gap:4px;padding:0 6px;background:#1f1f1f;border-radius:4px"><span class="ws-tool-lbl" style="font-size:10px">Trait</span><input type="range" id="wsDrawStrokeWidth" min="2" max="50" value="10" step="1" style="width:65px;accent-color:var(--accent)" title="Epaisseur du trait"><span id="wsDrawStrokeWidthVal" class="ws-tool-lbl" style="font-size:10px;min-width:36px">1.0mm</span></div>
+        <label class="ws-tool-btn" style="background:#1f1f1f;cursor:pointer" title="Si le dessin est ferme, le remplir en noir"><input type="checkbox" id="wsDrawFill" style="margin-right:4px;accent-color:var(--accent)"> Remplir</label>
         <div class="ws-tool-sep"></div>
         <label class="ws-tool-btn" style="background:#1f1f1f;cursor:pointer"><input type="checkbox" id="wsEditShowPhoto" style="margin-right:4px;accent-color:var(--accent)" checked> Photo</label>
         <label class="ws-tool-btn" style="background:#1f1f1f;cursor:pointer"><input type="checkbox" id="wsEditLockPhoto" style="margin-right:4px;accent-color:var(--accent)"> Verrouiller</label>
@@ -3212,7 +3214,10 @@ var WS = {
   editPhotoOffsetY: 0,
   _editFreeDragging: false,
   _editFreePts: [],
-  _editTransform: null
+  _editTransform: null,
+  // Drawing tool settings (millimeters)
+  drawStrokeWidthMm: 1.0,
+  drawFillClosed: false
 };
 
 // ========== OPEN / CLOSE ==========
@@ -3774,16 +3779,19 @@ function wsRenderEditMode(){
     });
   }
   if(WS.editDrawPreview){
+    // Stroke width: convert mm to PX (canvas px) using WS.scale
+    var prevWmm = WS.editDrawPreview.widthMm || WS.drawStrokeWidthMm;
+    var prevWpx = Math.max(1, prevWmm * WS.scale);
     if(WS.editDrawPreview.type === 'line'){
       var p1 = gpToPx(WS.editDrawPreview.points[0].x, WS.editDrawPreview.points[0].y);
       var p2 = gpToPx(WS.editDrawPreview.points[1].x, WS.editDrawPreview.points[1].y);
-      out += '<line x1="' + p1.x + '" y1="' + p1.y + '" x2="' + p2.x + '" y2="' + p2.y + '" stroke="#1473e6" stroke-width="2" opacity="0.8" pointer-events="none"/>';
+      out += '<line x1="' + p1.x + '" y1="' + p1.y + '" x2="' + p2.x + '" y2="' + p2.y + '" stroke="#000" stroke-width="' + prevWpx + '" stroke-linecap="butt" opacity="0.85" pointer-events="none"/>';
     } else if(WS.editDrawPreview.type === 'arc'){
       var pts = WS.editDrawPreview.points;
       var a = gpToPx(pts[0].x, pts[0].y);
       var ctrl = gpToPx(pts[1].x, pts[1].y);
       var b = gpToPx(pts[2].x, pts[2].y);
-      out += '<path d="M' + a.x + ' ' + a.y + ' Q ' + ctrl.x + ' ' + ctrl.y + ' ' + b.x + ' ' + b.y + '" stroke="#1473e6" stroke-width="2" fill="none" opacity="0.8" pointer-events="none"/>';
+      out += '<path d="M' + a.x + ' ' + a.y + ' Q ' + ctrl.x + ' ' + ctrl.y + ' ' + b.x + ' ' + b.y + '" stroke="#000" stroke-width="' + prevWpx + '" fill="none" stroke-linecap="butt" opacity="0.85" pointer-events="none"/>';
     } else if(WS.editDrawPreview.type === 'free' && WS.editDrawPreview.points.length >= 2){
       var p0 = gpToPx(WS.editDrawPreview.points[0].x, WS.editDrawPreview.points[0].y);
       var d2 = 'M' + p0.x + ' ' + p0.y;
@@ -3791,7 +3799,7 @@ function wsRenderEditMode(){
         var pp2 = gpToPx(WS.editDrawPreview.points[i].x, WS.editDrawPreview.points[i].y);
         d2 += ' L ' + pp2.x + ' ' + pp2.y;
       }
-      out += '<path d="' + d2 + '" stroke="#1473e6" stroke-width="2" fill="none" opacity="0.8" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>';
+      out += '<path d="' + d2 + '" stroke="#000" stroke-width="' + prevWpx + '" fill="none" opacity="0.85" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>';
     }
   }
   return out;
@@ -4118,6 +4126,26 @@ function wsBindEvents(){
     WS.editPhotoZoom = Math.max(0.2, WS.editPhotoZoom / 1.2);
     wsRender();
   });
+  // Drawing tool: stroke width slider
+  var swEl = document.getElementById('wsDrawStrokeWidth');
+  var swVal = document.getElementById('wsDrawStrokeWidthVal');
+  if(swEl){
+    function syncSW(){
+      WS.drawStrokeWidthMm = parseInt(swEl.value, 10) / 10;
+      if(swVal) swVal.textContent = WS.drawStrokeWidthMm.toFixed(1) + 'mm';
+    }
+    swEl.addEventListener('input', syncSW);
+    syncSW();
+  }
+  // Drawing tool: fill toggle
+  var fillEl = document.getElementById('wsDrawFill');
+  if(fillEl){
+    fillEl.checked = WS.drawFillClosed;
+    fillEl.addEventListener('change', function(e){
+      WS.drawFillClosed = e.target.checked;
+    });
+  }
+
   // Photo opacity slider
   var epoEl = document.getElementById('wsEditPhotoOpacity');
   if(epoEl){
@@ -4196,24 +4224,48 @@ function wsBindEvents(){
       wsRender(); wsRefreshTable();
       return;
     }
-    // Arrow keys move the selection
+    // Arrow keys
     var isArrow = (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown');
-    if(isArrow && WS.editingLetter < 0){
-      if(WS.selectedLetters.length === 0) return;
-      var step = e.shiftKey ? 5 : 0.5;
-      var dx=0, dy=0;
-      if(e.key === 'ArrowLeft') dx = -step;
-      else if(e.key === 'ArrowRight') dx = step;
-      else if(e.key === 'ArrowUp') dy = -step;
-      else if(e.key === 'ArrowDown') dy = step;
-      e.preventDefault();
-      WS.selectedLetters.forEach(function(i){
-        if(WS.letters[i]){
-          WS.letters[i].x += dx;
-          WS.letters[i].y += dy;
-        }
-      });
-      wsRender(); wsRefreshTable();
+    if(isArrow){
+      if(WS.editingLetter < 0){
+        // Normal mode — move selected letters by 0.5mm (5mm with shift)
+        if(WS.selectedLetters.length === 0) return;
+        var step = e.shiftKey ? 5 : 0.5;
+        var dx=0, dy=0;
+        if(e.key === 'ArrowLeft') dx = -step;
+        else if(e.key === 'ArrowRight') dx = step;
+        else if(e.key === 'ArrowUp') dy = -step;
+        else if(e.key === 'ArrowDown') dy = step;
+        e.preventDefault();
+        WS.selectedLetters.forEach(function(i){
+          if(WS.letters[i]){
+            WS.letters[i].x += dx;
+            WS.letters[i].y += dy;
+          }
+        });
+        wsRender(); wsRefreshTable();
+      } else if(WS.editTool === 'select' && WS.editSelected.length > 0){
+        // Edit-select mode — move selected anchor points in glyph space
+        var stepMm = e.shiftKey ? 5 : 0.5;
+        var stepG = wsMmToGlyphUnits(stepMm);
+        var dxg=0, dyg=0;
+        if(e.key === 'ArrowLeft') dxg = -stepG;
+        else if(e.key === 'ArrowRight') dxg = stepG;
+        else if(e.key === 'ArrowUp') dyg = stepG;
+        else if(e.key === 'ArrowDown') dyg = -stepG;
+        e.preventDefault();
+        WS.editSelected.forEach(function(idx){
+          var c = WS.editGlyph.commands[idx];
+          if(!c) return;
+          if(c.x !== undefined) c.x += dxg;
+          if(c.y !== undefined) c.y += dyg;
+          if(c.x1 !== undefined) c.x1 += dxg;
+          if(c.y1 !== undefined) c.y1 += dyg;
+          if(c.x2 !== undefined) c.x2 += dxg;
+          if(c.y2 !== undefined) c.y2 += dyg;
+        });
+        wsRender();
+      }
     }
   });
 
@@ -4228,6 +4280,85 @@ function wsBindEvents(){
 }
 
 // ========== EDIT MODE MOUSE HANDLERS ==========
+// Convert millimeters (in workspace) to glyph units for the currently-edited letter
+function wsMmToGlyphUnits(mm){
+  if(WS.editingLetter < 0 || !WS.editGlyph || !WS.editGlyph.origBBox) return mm;
+  var L = WS.letters[WS.editingLetter];
+  var bb = WS.editGlyph.origBBox;
+  return mm * (bb.maxY - bb.minY) / L.h;
+}
+
+// Convert a stroke segment (line) to a filled polygon (4 corners)
+function wsLineToPolygon(p1, p2, widthGlyph){
+  var dx = p2.x - p1.x, dy = p2.y - p1.y;
+  var len = Math.sqrt(dx*dx + dy*dy);
+  if(len < 0.001) return null;
+  var nx = -dy / len, ny = dx / len;
+  var h = widthGlyph / 2;
+  return [
+    {type:'M', x: p1.x + nx*h, y: p1.y + ny*h},
+    {type:'L', x: p2.x + nx*h, y: p2.y + ny*h},
+    {type:'L', x: p2.x - nx*h, y: p2.y - ny*h},
+    {type:'L', x: p1.x - nx*h, y: p1.y - ny*h},
+    {type:'Z'}
+  ];
+}
+
+// Convert a quadratic Bezier curve (3 control points) with width to a filled polygon
+function wsQuadToPolygon(p0, p1, p2, widthGlyph){
+  var N = 32;
+  var topPts = [], botPts = [];
+  var h = widthGlyph / 2;
+  for(var i=0; i<=N; i++){
+    var t = i / N;
+    var omt = 1 - t;
+    var x = omt*omt*p0.x + 2*omt*t*p1.x + t*t*p2.x;
+    var y = omt*omt*p0.y + 2*omt*t*p1.y + t*t*p2.y;
+    var tx = 2*omt*(p1.x-p0.x) + 2*t*(p2.x-p1.x);
+    var ty = 2*omt*(p1.y-p0.y) + 2*t*(p2.y-p1.y);
+    var tlen = Math.sqrt(tx*tx + ty*ty);
+    if(tlen < 0.001){ tx = 1; ty = 0; tlen = 1; }
+    var nx = -ty / tlen, ny = tx / tlen;
+    topPts.push({ x: x + nx*h, y: y + ny*h });
+    botPts.push({ x: x - nx*h, y: y - ny*h });
+  }
+  var cmds = [{type:'M', x: topPts[0].x, y: topPts[0].y}];
+  for(var i=1; i<topPts.length; i++) cmds.push({type:'L', x: topPts[i].x, y: topPts[i].y});
+  for(var i=botPts.length-1; i>=0; i--) cmds.push({type:'L', x: botPts[i].x, y: botPts[i].y});
+  cmds.push({type:'Z'});
+  return cmds;
+}
+
+// Convert a polyline to a filled polygon (offset both sides) or closed fill
+function wsPolylineToPolygon(pts, widthGlyph, closed){
+  if(pts.length < 2) return null;
+  if(closed){
+    var cmds = [{type:'M', x: pts[0].x, y: pts[0].y}];
+    for(var i=1; i<pts.length; i++) cmds.push({type:'L', x: pts[i].x, y: pts[i].y});
+    cmds.push({type:'Z'});
+    return cmds;
+  }
+  // Offset polyline both sides
+  var h = widthGlyph / 2;
+  var topPts = [], botPts = [];
+  for(var i=0; i<pts.length; i++){
+    var dx, dy;
+    if(i === 0){ dx = pts[1].x - pts[0].x; dy = pts[1].y - pts[0].y; }
+    else if(i === pts.length-1){ dx = pts[i].x - pts[i-1].x; dy = pts[i].y - pts[i-1].y; }
+    else { dx = pts[i+1].x - pts[i-1].x; dy = pts[i+1].y - pts[i-1].y; }
+    var len = Math.sqrt(dx*dx + dy*dy);
+    if(len < 0.001){ dx = 1; dy = 0; len = 1; }
+    var nx = -dy / len, ny = dx / len;
+    topPts.push({ x: pts[i].x + nx*h, y: pts[i].y + ny*h });
+    botPts.push({ x: pts[i].x - nx*h, y: pts[i].y - ny*h });
+  }
+  var out = [{type:'M', x: topPts[0].x, y: topPts[0].y}];
+  for(var i=1; i<topPts.length; i++) out.push({type:'L', x: topPts[i].x, y: topPts[i].y});
+  for(var i=botPts.length-1; i>=0; i--) out.push({type:'L', x: botPts[i].x, y: botPts[i].y});
+  out.push({type:'Z'});
+  return out;
+}
+
 function wsEditMouseDown(e, xy, tgt){
   e.preventDefault();
   var role = tgt && tgt.getAttribute && tgt.getAttribute('data-edit-role');
@@ -4263,31 +4394,33 @@ function wsEditMouseDown(e, xy, tgt){
   } else if(WS.editTool === 'draw-line'){
     WS.editDrawPoints.push(glyphP);
     if(WS.editDrawPoints.length === 2){
-      WS.editGlyph.commands.push({ type: 'M', x: WS.editDrawPoints[0].x, y: WS.editDrawPoints[0].y });
-      WS.editGlyph.commands.push({ type: 'L', x: WS.editDrawPoints[1].x, y: WS.editDrawPoints[1].y });
+      var swG = wsMmToGlyphUnits(WS.drawStrokeWidthMm);
+      var cmds = wsLineToPolygon(WS.editDrawPoints[0], WS.editDrawPoints[1], swG);
+      if(cmds){ cmds.forEach(function(c){ WS.editGlyph.commands.push(c); }); }
       WS.editDrawPoints = [];
       WS.editDrawPreview = null;
     } else {
-      WS.editDrawPreview = { type: 'line', points: [WS.editDrawPoints[0], glyphP] };
+      WS.editDrawPreview = { type: 'line', points: [WS.editDrawPoints[0], glyphP], widthMm: WS.drawStrokeWidthMm };
     }
     wsRender();
   } else if(WS.editTool === 'draw-arc'){
     WS.editDrawPoints.push(glyphP);
     if(WS.editDrawPoints.length === 3){
-      WS.editGlyph.commands.push({ type: 'M', x: WS.editDrawPoints[0].x, y: WS.editDrawPoints[0].y });
-      WS.editGlyph.commands.push({ type: 'Q', x1: WS.editDrawPoints[1].x, y1: WS.editDrawPoints[1].y, x: WS.editDrawPoints[2].x, y: WS.editDrawPoints[2].y });
+      var swG2 = wsMmToGlyphUnits(WS.drawStrokeWidthMm);
+      var cmds2 = wsQuadToPolygon(WS.editDrawPoints[0], WS.editDrawPoints[1], WS.editDrawPoints[2], swG2);
+      if(cmds2){ cmds2.forEach(function(c){ WS.editGlyph.commands.push(c); }); }
       WS.editDrawPoints = [];
       WS.editDrawPreview = null;
     } else if(WS.editDrawPoints.length === 1){
-      WS.editDrawPreview = { type: 'line', points: [WS.editDrawPoints[0], glyphP] };
+      WS.editDrawPreview = { type: 'line', points: [WS.editDrawPoints[0], glyphP], widthMm: WS.drawStrokeWidthMm };
     } else {
-      WS.editDrawPreview = { type: 'arc', points: [WS.editDrawPoints[0], WS.editDrawPoints[1], glyphP] };
+      WS.editDrawPreview = { type: 'arc', points: [WS.editDrawPoints[0], WS.editDrawPoints[1], glyphP], widthMm: WS.drawStrokeWidthMm };
     }
     wsRender();
   } else if(WS.editTool === 'draw-free'){
     WS._editFreeDragging = true;
     WS._editFreePts = [glyphP];
-    WS.editDrawPreview = { type: 'free', points: WS._editFreePts.slice() };
+    WS.editDrawPreview = { type: 'free', points: WS._editFreePts.slice(), widthMm: WS.drawStrokeWidthMm };
     wsRender();
   }
 }
@@ -4381,10 +4514,19 @@ function wsEditMouseUp(e){
   } else if(WS.editTool === 'draw-free' && WS._editFreeDragging){
     WS._editFreeDragging = false;
     if(WS._editFreePts.length >= 2){
-      WS.editGlyph.commands.push({ type: 'M', x: WS._editFreePts[0].x, y: WS._editFreePts[0].y });
-      for(var i=1; i<WS._editFreePts.length; i++){
-        WS.editGlyph.commands.push({ type: 'L', x: WS._editFreePts[i].x, y: WS._editFreePts[i].y });
-      }
+      var swG3 = wsMmToGlyphUnits(WS.drawStrokeWidthMm);
+      // Auto-detect closed if last point close to first
+      var first = WS._editFreePts[0];
+      var last = WS._editFreePts[WS._editFreePts.length - 1];
+      var ddx = last.x - first.x, ddy = last.y - first.y;
+      var bb = WS.editGlyph.origBBox;
+      var bbSize = Math.max((bb.maxX - bb.minX), (bb.maxY - bb.minY));
+      var threshold = bbSize * 0.08; // 8% of bbox
+      var isClosed = (ddx*ddx + ddy*ddy) < (threshold * threshold);
+      // Fill only if user wants AND the shape is closed
+      var doFill = (isClosed && WS.drawFillClosed);
+      var cmds3 = wsPolylineToPolygon(WS._editFreePts, swG3, doFill);
+      if(cmds3){ cmds3.forEach(function(c){ WS.editGlyph.commands.push(c); }); }
     }
     WS._editFreePts = [];
     WS.editDrawPreview = null;
