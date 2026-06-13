@@ -860,8 +860,9 @@ function showView(name) {
 // =============================================
 // FILE INPUTS
 // =============================================
-['iCam','iGal','iFile'].forEach(function(id){
+['iCam','iGal'].forEach(function(id){
   var el = document.getElementById(id);
+  if(!el) return;
   // Multiple event listeners — iOS Safari sometimes fires 'input' instead of 'change'
   function handle(e){
     var files = e.target.files;
@@ -879,7 +880,7 @@ function showView(name) {
 // check if any input got files (iOS sometimes misses change event)
 window.addEventListener('focus', function(){
   setTimeout(function(){
-    ['iCam','iGal','iFile'].forEach(function(id){
+    ['iCam','iGal'].forEach(function(id){
       var el = document.getElementById(id);
       if(el && el.files && el.files.length > 0 && el.files[0]){
         loadFile(el.files[0]);
