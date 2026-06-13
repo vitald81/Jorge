@@ -1478,47 +1478,89 @@ function doExportWithCustomGlyphs(ef){
   saveSVG(svg, fname);
 }
 
-function saveSVG(content,filename) {
-  var blob=new Blob([content],{type:'image/svg+xml;charset=utf-8'});
-  var bm=document.getElementById('btnMain');
-  function done(label){
-    bm.textContent='\u2713 '+label;
-    bm.style.cssText='flex:1;background:#d0edda;color:#1a5c38;border-color:#5fa87a';
-    setTimeout(function(){bm.textContent='\u2193 Enregistrer SVG';bm.style.cssText='';bm.className='btn btn-g btn-f';},3000);
+function saveBlob(blob, filename, mime, acceptDesc, acceptExt){
+  // Universal save:
+  // 1. File System Access API (Chrome/Edge/Brave desktop) — shows folder picker
+  // 2. iOS Web Share API — for mobile share sheet
+  // 3. Plain anchor download fallback
+
+  function showSuccess(label){
+    var bm = document.getElementById('btnMain');
+    if(!bm) return;
+    var origText = bm.textContent;
+    var origClass = bm.className;
+    var origStyle = bm.style.cssText;
+    bm.textContent = '\u2713 ' + label;
+    bm.style.cssText = 'flex:1;background:#d0edda;color:#1a5c38;border-color:#5fa87a';
+    setTimeout(function(){
+      bm.textContent = origText;
+      bm.style.cssText = origStyle;
+      bm.className = origClass;
+    }, 3000);
   }
 
-  // 1. File System Access API (Android Chrome, desktop)
+  // 1. showSaveFilePicker (preferred on desktop Chrome/Brave/Edge)
   if(window.showSaveFilePicker){
     window.showSaveFilePicker({
-      suggestedName:filename,
-      types:[{description:'SVG',accept:{'image/svg+xml':['.svg']}}]
+      suggestedName: filename,
+      types: [{ description: acceptDesc, accept: (function(){var a={}; a[mime] = ['.'+acceptExt]; return a;})() }]
     }).then(function(handle){
-      return handle.createWritable().then(function(w){return w.write(blob).then(function(){return w.close();});});
-    }).then(function(){done('Enregistre');})
-    .catch(function(e){if(e.name!=='AbortError') fallback(blob,filename,done);});
+      return handle.createWritable().then(function(w){
+        return w.write(blob).then(function(){ return w.close(); });
+      });
+    }).then(function(){ showSuccess('Enregistre'); })
+    .catch(function(e){
+      if(e && e.name !== 'AbortError'){
+        console.warn('[Jorge] showSaveFilePicker failed, falling back:', e);
+        plainDownload(blob, filename);
+        showSuccess('Telecharge');
+      }
+    });
     return;
   }
-  // 2. Web Share (iOS Safari 15+)
-  if(navigator.share&&navigator.canShare){
-    var file=new File([blob],filename,{type:'image/svg+xml'});
-    if(navigator.canShare({files:[file]})){
-      navigator.share({title:'Jorge — '+filename,files:[file]})
-        .then(function(){done('Partage');})
-        .catch(function(e){if(e.name!=='AbortError') fallback(blob,filename,done);});
-      return;
+
+  // 2. iOS Safari — Web Share with file
+  if(navigator.share && navigator.canShare){
+    try {
+      var f = new File([blob], filename, { type: mime });
+      if(navigator.canShare({ files: [f] })){
+        navigator.share({ title: 'Jorge — ' + filename, files: [f] })
+          .then(function(){ showSuccess('Partage'); })
+          .catch(function(e){
+            if(e && e.name !== 'AbortError'){
+              plainDownload(blob, filename);
+              showSuccess('Telecharge');
+            }
+          });
+        return;
+      }
+    } catch(err){
+      console.warn('[Jorge] Web Share unavailable:', err);
     }
   }
-  // 3. Standard download
-  fallback(blob,filename,done);
+
+  // 3. Plain anchor download
+  plainDownload(blob, filename);
+  showSuccess('Telecharge');
 }
 
-function fallback(blob,filename,done){
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a'); a.href=url; a.download=filename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(function(){URL.revokeObjectURL(url);},1000);
-  done('Telecharge');
+function plainDownload(blob, filename){
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
 }
+
+function saveSVG(content, filename){
+  var blob = new Blob([content], { type: 'image/svg+xml;charset=utf-8' });
+  saveBlob(blob, filename, 'image/svg+xml', 'Image SVG', 'svg');
+}
+
+
 
 function escHTML(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 
@@ -2990,51 +3032,63 @@ setInterval(function(){
 
 // =============================================================
 // WORKSPACE / Plan de travail — Illustrator-style canvas
+// Clean implementation
 // =============================================================
 var WS = {
-  scale: 1,
-  baseScale: 1,          // base scale (computed in fit) — zoom is relative to this
-  zoomFactor: 1,         // current zoom multiplier (1 = adapted)
-  centerX: 0, centerY: 0, // canvas center in px (always centered, no pan)
+  // View
+  scale: 1,                  // px per mm
+  baseScale: 1,
+  zoomFactor: 1,
+  centerX: 0, centerY: 0,
   canvasW: 0, canvasH: 0,
+  // Workspace dimensions in mm
+  workMmW: 0, workMmH: 0,
+  // Photo (workspace mm)
   photoMmW: 0, photoMmH: 0,
   photoX: 0, photoY: 0,
   photoScale: 1,
   photoOpacity: 1,
   showPhoto: true,
   lockPhoto: false,
+  // Grid
   showGrid: false,
   gridOpacity: 0.3,
-  workMmW: 0, workMmH: 0,
+  // Letters
   letters: [],
-  selectedLetterIdx: -1,       // primary selected letter (for backward compat)
-  selectedLetters: [],          // array of selected letter indices (multi-select)
-  dragMode: null,
+  selectedLetters: [],
+  // Interaction
+  dragMode: null,            // 'photo'|'group'|'handle'|'rubber'
   dragStart: null,
+  rubberBand: null,          // {x1,y1,x2,y2} in px during rubber-band drag
   resizingHandle: null,
-  rubberBand: null,             // {x1, y1, x2, y2} in canvas px while dragging selection rect
-  groupDragSnapshot: null,      // {i: {x,y}, ...} positions at start of group drag
-  // Curve editing state
-  editingLetter: -1,         // index of letter being edited; -1 = no edit mode
-  editGlyph: null,           // {commands, unitsPerEm, advanceWidth, baselineFsMm}
+  // === EDIT MODE ===
+  editingLetter: -1,
+  editGlyph: null,           // {commands, unitsPerEm, advanceWidth, origBBox}
   editTool: 'edit',          // 'edit'|'select'|'draw-line'|'draw-arc'|'draw-free'
-  editDragging: null,        // dragging anchor info {idx, role}
+  editDragging: null,
   editSelected: [],
   editSelBox: null,
   editDrawPoints: [],
   editDrawPreview: null,
-  // Photo state during edit mode (independent from workspace photo)
+  // Edit mode photo (independent of workspace photo)
   editShowPhoto: true,
   editLockPhoto: false,
   editPhotoZoom: 1,
+  editPhotoOpacity: 0.45,
   editPhotoOffsetX: 0,
-  editPhotoOffsetY: 0
+  editPhotoOffsetY: 0,
+  _editFreeDragging: false,
+  _editFreePts: [],
+  _editTransform: null
 };
 
+// ========== OPEN / CLOSE ==========
 function openWorkspace(){
   var ef = effectiveFont();
   if(!ef){ alert('Choisissez une police avant'); return; }
   if(!S.cropPreviewUrl){ alert("Importez d'abord une photo"); return; }
+  loadGlyphFontIfNeeded(ef);
+
   var photoWmm = (S.cropMm && S.cropMm.wMm) ? S.cropMm.wMm : 150;
   var photoHmm = (S.cropMm && S.cropMm.hMm) ? S.cropMm.hMm : 50;
   WS.photoMmW = photoWmm;
@@ -3045,7 +3099,6 @@ function openWorkspace(){
   WS.lockPhoto = false;
   WS.showGrid = false;
   WS.gridOpacity = 0.3;
-  WS.selectedLetterIdx = -1;
   WS.selectedLetters = [];
   WS.editingLetter = -1;
   WS.zoomFactor = 1;
@@ -3057,7 +3110,6 @@ function openWorkspace(){
   WS.photoX = marginMm;
   WS.photoY = marginMm;
 
-  // Build letters
   var raw = document.getElementById('ta').value || 'Jorge';
   var txt = applyCase(raw, ef.textCase);
   var lineHmm = parseFloat(document.getElementById('hm').value) || 20;
@@ -3069,33 +3121,24 @@ function openWorkspace(){
   var lineY = WS.photoY + photoHmm / 2 - lineHmm / 2;
   WS.letters = [];
   for(var i=0; i<line.length; i++){
-    var ch = line[i];
-    WS.letters.push({
-      ch: ch,
-      x: startX + i * (lineWmm + spacing),
-      y: lineY,
-      w: lineWmm,
-      h: lineHmm,
-      w0: lineWmm,
-      h0: lineHmm
-    });
+    WS.letters.push({ ch: line[i], x: startX + i*(lineWmm+spacing), y: lineY, w: lineWmm, h: lineHmm });
   }
-
-  // Restore prior layout if exists
+  // Restore prior layout if matches
   if(S._wsLettersLayout && S._wsLettersLayout.length === line.length){
-    S._wsLettersLayout.forEach(function(saved, i){
-      if(WS.letters[i] && WS.letters[i].ch === saved.ch){
-        WS.letters[i].x = saved.x;
-        WS.letters[i].y = saved.y;
-        WS.letters[i].w = saved.w;
-        WS.letters[i].h = saved.h;
-      }
-    });
+    var match = S._wsLettersLayout.every(function(s, i){ return s.ch === WS.letters[i].ch; });
+    if(match){
+      S._wsLettersLayout.forEach(function(s, i){
+        WS.letters[i].x = s.x; WS.letters[i].y = s.y;
+        WS.letters[i].w = s.w; WS.letters[i].h = s.h;
+      });
+    }
   }
 
   document.getElementById('workspace').classList.add('on');
   document.getElementById('wsEditToolbar').style.display = 'none';
   document.getElementById('wsToolbar').style.display = '';
+  var egb = document.getElementById('wsEditGlyphBox');
+  if(egb) egb.style.display = '';
 
   setTimeout(function(){
     wsFit();
@@ -3108,21 +3151,17 @@ function wsClose(){
   document.getElementById('workspace').classList.remove('on');
 }
 
-function wsCancel(){
-  wsClose();
-}
+function wsCancel(){ wsClose(); }
 
 function wsApply(){
   S._wsLettersLayout = WS.letters.map(function(L){
     return { ch: L.ch, x: L.x, y: L.y, w: L.w, h: L.h };
   });
-  S._wsWorkSize = { wMm: WS.workMmW, hMm: WS.workMmH };
-  S._wsPhotoLayout = { x: WS.photoX, y: WS.photoY, scale: WS.photoScale };
   updatePreview();
   wsClose();
 }
 
-// Compute scale to fit and center; canvas is always centered (no pan)
+// ========== GEOMETRY ==========
 function wsFit(){
   var wrap = document.getElementById('wsCanvasWrap');
   if(!wrap) return;
@@ -3133,37 +3172,33 @@ function wsFit(){
   var sy = WS.canvasH / WS.workMmH;
   WS.baseScale = Math.min(sx, sy) * 0.85;
   WS.zoomFactor = 1;
-  WS.scale = WS.baseScale * WS.zoomFactor;
-  WS.centerX = WS.canvasW / 2;
-  WS.centerY = WS.canvasH / 2;
-}
-
-// Recompute scale based on zoom factor (always centered)
-function wsApplyZoom(){
-  WS.scale = WS.baseScale * WS.zoomFactor;
+  WS.scale = WS.baseScale;
   WS.centerX = WS.canvasW / 2;
   WS.centerY = WS.canvasH / 2;
 }
 
 function wsZoom(delta){
   WS.zoomFactor = Math.max(0.1, Math.min(20, WS.zoomFactor * delta));
-  wsApplyZoom();
+  WS.scale = WS.baseScale * WS.zoomFactor;
+  WS.centerX = WS.canvasW / 2;
+  WS.centerY = WS.canvasH / 2;
 }
 
-// Convert mm to canvas px, always centered around the workspace center
 function wsMmToPx(mmX, mmY){
-  // Workspace mm coordinate (mmX, mmY) is mapped such that (workMmW/2, workMmH/2) is at canvas center
-  var px = WS.centerX + (mmX - WS.workMmW/2) * WS.scale;
-  var py = WS.centerY + (mmY - WS.workMmH/2) * WS.scale;
-  return { x: px, y: py };
+  return {
+    x: WS.centerX + (mmX - WS.workMmW/2) * WS.scale,
+    y: WS.centerY + (mmY - WS.workMmH/2) * WS.scale
+  };
 }
 
 function wsPxToMm(pxX, pxY){
-  var mmX = (pxX - WS.centerX) / WS.scale + WS.workMmW/2;
-  var mmY = (pxY - WS.centerY) / WS.scale + WS.workMmH/2;
-  return { x: mmX, y: mmY };
+  return {
+    x: (pxX - WS.centerX) / WS.scale + WS.workMmW/2,
+    y: (pxY - WS.centerY) / WS.scale + WS.workMmH/2
+  };
 }
 
+// ========== UI SYNC ==========
 function wsSyncUI(){
   document.getElementById('wsZoomVal').value = Math.round(WS.zoomFactor * 100) + '%';
   document.getElementById('wsShowPhoto').checked = WS.showPhoto;
@@ -3181,34 +3216,32 @@ function wsSyncUI(){
 function wsRefreshTable(){
   var tbody = document.getElementById('wsLettersTbody');
   if(!tbody) return;
-  var html = '';
+  var rows = '';
   WS.letters.forEach(function(L, i){
-    var isPrim = (i === WS.selectedLetterIdx);
-    var isSec = !isPrim && WS.selectedLetters.indexOf(i) >= 0;
-    var cls = isPrim ? ' class="sel"' : (isSec ? ' class="sel" style="opacity:.7"' : '');
-    html += '<tr' + cls + ' data-i="' + i + '"><td class="ch">' + xc(L.ch) + '</td><td>' + L.w.toFixed(1) + ' mm</td><td>' + L.h.toFixed(1) + ' mm</td></tr>';
+    var sel = WS.selectedLetters.indexOf(i) >= 0 ? ' class="sel"' : '';
+    rows += '<tr' + sel + ' data-i="' + i + '"><td class="ch">' + xc(L.ch) + '</td><td>' + L.w.toFixed(1) + ' mm</td><td>' + L.h.toFixed(1) + ' mm</td></tr>';
   });
-  tbody.innerHTML = html;
+  tbody.innerHTML = rows;
   var btn = document.getElementById('wsEditGlyph');
-  if(btn) btn.disabled = (WS.selectedLetterIdx < 0);
-  // Arrows box visible only when there's a selection AND we're not in edit mode
-  var arrows = document.getElementById('wsArrowsBox');
-  if(arrows){
-    arrows.style.display = (WS.selectedLetters.length > 0 && WS.editingLetter < 0) ? '' : 'none';
+  if(btn) btn.disabled = (WS.selectedLetters.length !== 1);
+  var arrowsBox = document.getElementById('wsArrowsBox');
+  if(arrowsBox){
+    arrowsBox.style.display = (WS.selectedLetters.length > 0 && WS.editingLetter < 0) ? '' : 'none';
   }
   var info = document.getElementById('wsSelInfo');
   if(info){
-    if(WS.selectedLetters.length > 1){
+    if(WS.selectedLetters.length === 1){
+      var L = WS.letters[WS.selectedLetters[0]];
+      info.textContent = '"' + L.ch + '" : ' + L.w.toFixed(1) + 'x' + L.h.toFixed(1) + 'mm @ (' + L.x.toFixed(1) + ',' + L.y.toFixed(1) + ')';
+    } else if(WS.selectedLetters.length > 1){
       info.textContent = WS.selectedLetters.length + ' lettres selectionnees';
-    } else if(WS.selectedLetterIdx >= 0){
-      var L = WS.letters[WS.selectedLetterIdx];
-      info.textContent = 'Lettre "' + L.ch + '" : ' + L.w.toFixed(1) + 'x' + L.h.toFixed(1) + 'mm @ (' + L.x.toFixed(1) + ', ' + L.y.toFixed(1) + ')';
     } else {
       info.textContent = 'Aucune lettre selectionnee';
     }
   }
 }
 
+// ========== RENDERING ==========
 function wsRender(){
   var svg = document.getElementById('wsSvg');
   if(!svg) return;
@@ -3216,81 +3249,75 @@ function wsRender(){
   svg.setAttribute('width', WS.canvasW);
   svg.setAttribute('height', WS.canvasH);
 
-  var s = '';
-
+  var out = '';
   if(WS.editingLetter >= 0){
-    // EDIT MODE: show the single letter zoomed up to fill canvas
-    s += wsRenderEditMode();
+    out += wsRenderEditMode();
   } else {
-    // Normal mode: show photo + all letters
-    // Workspace background (white sheet)
-    var wsTL = wsMmToPx(0, 0);
-    var wsBR = wsMmToPx(WS.workMmW, WS.workMmH);
-    s += '<rect x="' + wsTL.x + '" y="' + wsTL.y + '" width="' + (wsBR.x - wsTL.x) + '" height="' + (wsBR.y - wsTL.y) + '" fill="#fafafa" stroke="#3a3a3a" stroke-width="1"/>';
+    out += wsRenderNormal();
+  }
+  svg.innerHTML = out;
+}
 
-    if(WS.showPhoto && S.cropPreviewUrl){
-      var pTL = wsMmToPx(WS.photoX, WS.photoY);
-      var pW = WS.photoMmW * WS.photoScale * WS.scale;
-      var pH = WS.photoMmH * WS.photoScale * WS.scale;
-      s += '<image id="wsPhoto" href="' + S.cropPreviewUrl + '" x="' + pTL.x + '" y="' + pTL.y + '" width="' + pW + '" height="' + pH + '" preserveAspectRatio="none" opacity="' + WS.photoOpacity + '" style="cursor:' + (WS.lockPhoto ? 'default' : 'move') + '"/>';
-    }
+function wsRenderNormal(){
+  var out = '';
+  var wsTL = wsMmToPx(0, 0);
+  var wsBR = wsMmToPx(WS.workMmW, WS.workMmH);
+  out += '<rect x="' + wsTL.x + '" y="' + wsTL.y + '" width="' + (wsBR.x - wsTL.x) + '" height="' + (wsBR.y - wsTL.y) + '" fill="#fafafa" stroke="#3a3a3a" stroke-width="1"/>';
 
-    if(WS.showGrid){
-      s += wsBuildGrid();
-    }
-
-    WS.letters.forEach(function(L, i){
-      s += wsBuildLetter(L, i);
-    });
-
-    // Multi-selection: show light highlight on all selected letters
-    WS.selectedLetters.forEach(function(idx){
-      if(idx !== WS.selectedLetterIdx){
-        s += wsBuildSelectionOverlay(WS.letters[idx], idx, true);
-      }
-    });
-    // Primary selection with full handles
-    if(WS.selectedLetterIdx >= 0){
-      s += wsBuildSelectionOverlay(WS.letters[WS.selectedLetterIdx], WS.selectedLetterIdx, false);
-    }
-    // Rubber band rectangle
-    if(WS.rubberBand){
-      var rx = Math.min(WS.rubberBand.x1, WS.rubberBand.x2);
-      var ry = Math.min(WS.rubberBand.y1, WS.rubberBand.y2);
-      var rw = Math.abs(WS.rubberBand.x2 - WS.rubberBand.x1);
-      var rh = Math.abs(WS.rubberBand.y2 - WS.rubberBand.y1);
-      s += '<rect x="' + rx + '" y="' + ry + '" width="' + rw + '" height="' + rh + '" fill="rgba(232,127,0,0.10)" stroke="#e87f00" stroke-width="1" stroke-dasharray="4,3" pointer-events="none"/>';
-    }
+  if(WS.showPhoto && S.cropPreviewUrl){
+    var pTL = wsMmToPx(WS.photoX, WS.photoY);
+    var pW = WS.photoMmW * WS.photoScale * WS.scale;
+    var pH = WS.photoMmH * WS.photoScale * WS.scale;
+    out += '<image id="wsPhoto" href="' + S.cropPreviewUrl + '" x="' + pTL.x + '" y="' + pTL.y + '" width="' + pW + '" height="' + pH + '" preserveAspectRatio="none" opacity="' + WS.photoOpacity + '" style="cursor:' + (WS.lockPhoto ? 'default' : 'move') + '"/>';
   }
 
-  svg.innerHTML = s;
+  if(WS.showGrid){
+    out += wsBuildGrid();
+  }
+
+  WS.letters.forEach(function(L, i){
+    out += wsBuildLetterShape(L, i);
+  });
+
+  // Selection overlays — one per selected letter
+  WS.selectedLetters.forEach(function(idx, n){
+    var L = WS.letters[idx];
+    if(!L) return;
+    var only = (WS.selectedLetters.length === 1);
+    out += wsBuildSelOverlay(L, idx, only);
+  });
+
+  // Rubber-band
+  if(WS.rubberBand){
+    var r = WS.rubberBand;
+    var rx = Math.min(r.x1, r.x2), ry = Math.min(r.y1, r.y2);
+    var rw = Math.abs(r.x2 - r.x1), rh = Math.abs(r.y2 - r.y1);
+    out += '<rect x="' + rx + '" y="' + ry + '" width="' + rw + '" height="' + rh + '" fill="rgba(20,115,230,0.10)" stroke="#1473e6" stroke-width="1" stroke-dasharray="4,3" pointer-events="none"/>';
+  }
+  return out;
 }
 
 function wsBuildGrid(){
-  var s = '<g opacity="' + WS.gridOpacity + '" pointer-events="none">';
-  var fineCol = '#666666';
-  var thickCol = '#999999';
-  for(var mm = 0; mm <= WS.workMmW; mm += 1){
+  var out = '<g opacity="' + WS.gridOpacity + '" pointer-events="none">';
+  var fine = '#666', thick = '#999';
+  for(var mm=0; mm<=WS.workMmW; mm++){
     var x = wsMmToPx(mm, 0).x;
-    var y0 = wsMmToPx(0, 0).y;
-    var y1 = wsMmToPx(0, WS.workMmH).y;
-    var col = (mm % 10 === 0) ? thickCol : fineCol;
-    var sw = (mm % 10 === 0) ? 0.7 : 0.3;
-    s += '<line x1="' + x + '" y1="' + y0 + '" x2="' + x + '" y2="' + y1 + '" stroke="' + col + '" stroke-width="' + sw + '"/>';
+    var y0 = wsMmToPx(0, 0).y, y1 = wsMmToPx(0, WS.workMmH).y;
+    var c = (mm%10===0)?thick:fine, w = (mm%10===0)?0.7:0.3;
+    out += '<line x1="'+x+'" y1="'+y0+'" x2="'+x+'" y2="'+y1+'" stroke="'+c+'" stroke-width="'+w+'"/>';
   }
-  for(var mmy = 0; mmy <= WS.workMmH; mmy += 1){
-    var y = wsMmToPx(0, mmy).y;
-    var x0 = wsMmToPx(0, 0).x;
-    var x1 = wsMmToPx(WS.workMmW, 0).x;
-    var col2 = (mmy % 10 === 0) ? thickCol : fineCol;
-    var sw2 = (mmy % 10 === 0) ? 0.7 : 0.3;
-    s += '<line x1="' + x0 + '" y1="' + y + '" x2="' + x1 + '" y2="' + y + '" stroke="' + col2 + '" stroke-width="' + sw2 + '"/>';
+  for(var my=0; my<=WS.workMmH; my++){
+    var y = wsMmToPx(0, my).y;
+    var x0 = wsMmToPx(0, 0).x, x1 = wsMmToPx(WS.workMmW, 0).x;
+    var c2 = (my%10===0)?thick:fine, w2 = (my%10===0)?0.7:0.3;
+    out += '<line x1="'+x0+'" y1="'+y+'" x2="'+x1+'" y2="'+y+'" stroke="'+c2+'" stroke-width="'+w2+'"/>';
   }
-  s += '</g>';
-  return s;
+  out += '</g>';
+  return out;
 }
 
-function wsBuildLetter(L, i){
+// Builds one letter — invisible bbox catcher + visible glyph rendering
+function wsBuildLetterShape(L, i){
   var ef = effectiveFont();
   if(!ef) return '';
   var pTL = wsMmToPx(L.x, L.y);
@@ -3298,113 +3325,105 @@ function wsBuildLetter(L, i){
   var px = pTL.x, py = pTL.y;
   var pw = pBR.x - pTL.x, ph = pBR.y - pTL.y;
 
+  // Invisible bbox click-catcher (covers full letter rectangle so hollow letters can be selected)
+  var hitBox = '<rect data-letter="' + i + '" x="' + px + '" y="' + py + '" width="' + pw + '" height="' + ph + '" fill="rgba(0,0,0,0.001)" style="cursor:move"/>';
+
   var hasModified = S._modifiedGlyphs &&
                     S._modifiedGlyphsFont === ef.family + '-' + ef.weight + '-' + ef.style &&
                     S._modifiedGlyphs[L.ch];
-  var fsMm = L.h * 0.76;
-  var baseY_mm = L.y + L.h * 0.80;
-  var baseY_px = wsMmToPx(0, baseY_mm).y;
-  var cxMm = L.x + L.w / 2;
-  var cxPx = wsMmToPx(cxMm, 0).x;
 
-  // Invisible clickable bounding box — sits behind/on top to ensure ANY click within
-  // the letter's mm rectangle selects it (even on hollow letters like O, A, R)
-  var hitBox = '<rect data-letter="' + i + '" data-hit="1" x="' + px + '" y="' + py + '" width="' + pw + '" height="' + ph + '" fill="rgba(0,0,0,0.001)" style="cursor:move"/>';
-
+  var glyphShape;
   if(hasModified){
     var g = S._modifiedGlyphs[L.ch];
-    // Compute the modified glyph's bounding box in font units
-    var gbb = computeBBox(g.commands);
-    var gW_units = (gbb && isFinite(gbb.minX)) ? (gbb.maxX - gbb.minX) : g.advanceWidth;
-    var gH_units = (gbb && isFinite(gbb.minY)) ? (gbb.maxY - gbb.minY) : (g.unitsPerEm * 0.7);
-    if(!gW_units || gW_units < 1) gW_units = g.advanceWidth || g.unitsPerEm;
-    if(!gH_units || gH_units < 1) gH_units = g.unitsPerEm * 0.7;
-    // Scale: fit the glyph bbox to L.w x L.h (in px units)
-    var sx_fit = (L.w * WS.scale) / gW_units;
-    var sy_fit = (L.h * WS.scale * 0.95) / gH_units;
-    // Center the glyph in the letter box
-    var gCenterX_units = (gbb.minX + gbb.maxX) / 2;
-    var gCenterY_units = (gbb.minY + gbb.maxY) / 2;
-    var boxCenterX_px = cxPx;
-    var boxCenterY_px = wsMmToPx(0, L.y + L.h * 0.5).y;
-    // Y is flipped (font Y-up vs screen Y-down)
-    var tx = boxCenterX_px - gCenterX_units * sx_fit;
-    var ty = boxCenterY_px + gCenterY_units * sy_fit;
+    // Use stored origBBox so the glyph fills the EXACT same bounding box every time
+    var bb = g.origBBox;
+    if(!bb){
+      bb = computeBBox(g.commands);
+      if(!bb || !isFinite(bb.minX)) bb = {minX:0, minY:0, maxX:g.unitsPerEm, maxY:g.unitsPerEm};
+    }
+    var gW = (bb.maxX - bb.minX) || g.unitsPerEm;
+    var gH = (bb.maxY - bb.minY) || g.unitsPerEm;
+    var sx = (L.w * WS.scale) / gW;
+    var sy = (L.h * WS.scale) / gH;
+    var tx = px - bb.minX * sx;
+    var ty = py + bb.maxY * sy;
     var d = commandsToPathData(g.commands);
-    return '<g data-letter="' + i + '">' + hitBox + '<path d="' + d + '" fill="#0a0a0a" transform="translate(' + tx + ',' + ty + ') scale(' + sx_fit.toFixed(5) + ',' + (-sy_fit).toFixed(5) + ')" style="pointer-events:none"/></g>';
+    glyphShape = '<path d="' + d + '" fill="#0a0a0a" transform="translate(' + tx + ',' + ty + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')" pointer-events="none"/>';
   } else {
+    var fsMm = L.h * 0.76;
     var fsPx = fsMm * WS.scale;
     var natW = measureCharWidth(ef.family, ef.weight, ef.style, fsMm, L.ch);
     if(!natW || natW < 1) natW = fsMm * 0.55;
     var natWpx = natW * WS.scale;
     var glyphScaleX = pw / natWpx;
+    var cxPx = px + pw/2;
+    var baseY_px = py + ph * 0.80 / 1;
+    // Actually use L baseline: y = L.y + L.h*0.80
+    baseY_px = wsMmToPx(0, L.y + L.h * 0.80).y;
     var tx2 = cxPx * (1 - glyphScaleX);
-    return '<g data-letter="' + i + '">' + hitBox + '<text x="' + cxPx + '" y="' + baseY_px + '" text-anchor="middle" font-family="' + xe(ef.family) + ',Georgia,serif" font-size="' + fsPx + '" font-weight="' + ef.weight + '" font-style="' + ef.style + '" transform="matrix(' + glyphScaleX.toFixed(4) + ',0,0,1,' + tx2 + ',0)" fill="#0a0a0a" style="pointer-events:none">' + xc(L.ch) + '</text></g>';
+    glyphShape = '<text x="' + cxPx + '" y="' + baseY_px + '" text-anchor="middle" font-family="' + xe(ef.family) + ',Georgia,serif" font-size="' + fsPx + '" font-weight="' + ef.weight + '" font-style="' + ef.style + '" transform="matrix(' + glyphScaleX.toFixed(4) + ',0,0,1,' + tx2 + ',0)" fill="#0a0a0a" pointer-events="none">' + xc(L.ch) + '</text>';
   }
+
+  return '<g>' + hitBox + glyphShape + '</g>';
 }
 
-function wsBuildSelectionOverlay(L, i, secondary){
+function wsBuildSelOverlay(L, idx, withHandles){
   var pTL = wsMmToPx(L.x, L.y);
   var pBR = wsMmToPx(L.x + L.w, L.y + L.h);
   var x = pTL.x, y = pTL.y;
   var w = pBR.x - pTL.x, h = pBR.y - pTL.y;
-  var hs = 6;
-  var s = '';
-  if(secondary){
-    // Secondary selection — light blue dashed outline, no handles
-    s += '<rect data-sel-secondary="1" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="rgba(20,115,230,0.06)" stroke="#5fa8e8" stroke-width="1" stroke-dasharray="2,2" pointer-events="none"/>';
-    return s;
+  var out = '';
+  out += '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="rgba(232,127,0,0.06)" stroke="#e87f00" stroke-width="1" stroke-dasharray="3,2" pointer-events="none"/>';
+  if(withHandles){
+    var hs = 6;
+    function H(cx, cy, role){
+      return '<rect class="ws-letter-handle ' + role + '" data-handle="' + role + '" x="' + (cx - hs/2) + '" y="' + (cy - hs/2) + '" width="' + hs + '" height="' + hs + '"/>';
+    }
+    out += H(x, y, 'nw');
+    out += H(x + w/2, y, 'n');
+    out += H(x + w, y, 'ne');
+    out += H(x + w, y + h/2, 'e');
+    out += H(x + w, y + h, 'se');
+    out += H(x + w/2, y + h, 's');
+    out += H(x, y + h, 'sw');
+    out += H(x, y + h/2, 'w');
   }
-  // Primary selection — orange dashed with 8 handles
-  s += '<rect data-sel-box="1" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="rgba(232,127,0,0.06)" stroke="#e87f00" stroke-width="1" stroke-dasharray="3,2"/>';
-  function H(cx, cy, role){
-    return '<rect class="ws-letter-handle ' + role + '" data-handle="' + role + '" x="' + (cx - hs/2) + '" y="' + (cy - hs/2) + '" width="' + hs + '" height="' + hs + '"/>';
-  }
-  s += H(x, y, 'nw');
-  s += H(x + w/2, y, 'n');
-  s += H(x + w, y, 'ne');
-  s += H(x + w, y + h/2, 'e');
-  s += H(x + w, y + h, 'se');
-  s += H(x + w/2, y + h, 's');
-  s += H(x, y + h, 'sw');
-  s += H(x, y + h/2, 'w');
-  return s;
+  return out;
 }
 
-// ============= CURVE EDIT MODE =============
-
+// ========== EDIT MODE ==========
 function wsEnterEditMode(letterIdx){
   if(letterIdx < 0 || letterIdx >= WS.letters.length) return;
   var L = WS.letters[letterIdx];
   var ef = effectiveFont();
   if(!ef){ alert('Police non chargee'); return; }
-
-  // Load the glyph for this character — first check modified, else load from font
   var glyphKey = ef.family + '-' + ef.weight + '-' + ef.style;
   var glyph = null;
   if(S._modifiedGlyphs && S._modifiedGlyphsFont === glyphKey && S._modifiedGlyphs[L.ch]){
-    // Already modified — clone it
     var src = S._modifiedGlyphs[L.ch];
     glyph = {
       commands: JSON.parse(JSON.stringify(src.commands)),
       unitsPerEm: src.unitsPerEm,
-      advanceWidth: src.advanceWidth
+      advanceWidth: src.advanceWidth,
+      origBBox: src.origBBox  // keep original bbox to preserve size
     };
   } else {
-    // Load from font using opentype.js
     if(!window._otFonts || !window._otFonts[glyphKey]){
-      alert('Police pas encore chargee pour edition. Re-essayez dans une seconde.');
-      // Trigger font load
+      alert('Police pas encore chargee. Re-essayez dans une seconde.');
       loadGlyphFontIfNeeded(ef);
       return;
     }
     var font = window._otFonts[glyphKey];
     var otGlyph = font.charToGlyph(L.ch);
     if(!otGlyph){ alert('Glyphe introuvable pour ' + L.ch); return; }
+    var commands = otGlyph.path.commands.map(function(c){ return Object.assign({}, c); });
+    var bb = computeBBox(commands);
+    if(!bb || !isFinite(bb.minX)) bb = {minX:0, minY:0, maxX:font.unitsPerEm, maxY:font.unitsPerEm};
     glyph = {
-      commands: otGlyph.path.commands.map(function(c){ return Object.assign({}, c); }),
+      commands: commands,
       unitsPerEm: font.unitsPerEm || 1000,
-      advanceWidth: otGlyph.advanceWidth || font.unitsPerEm
+      advanceWidth: otGlyph.advanceWidth || font.unitsPerEm,
+      origBBox: { minX: bb.minX, minY: bb.minY, maxX: bb.maxX, maxY: bb.maxY }
     };
   }
 
@@ -3420,6 +3439,8 @@ function wsEnterEditMode(letterIdx){
   WS.editPhotoZoom = 1;
   WS.editPhotoOffsetX = 0;
   WS.editPhotoOffsetY = 0;
+  WS._editFreeDragging = false;
+  WS._editFreePts = [];
 
   document.getElementById('wsToolbar').style.display = 'none';
   document.getElementById('wsEditToolbar').style.display = '';
@@ -3429,14 +3450,17 @@ function wsEnterEditMode(letterIdx){
   if(egb) egb.style.display = 'none';
   var arrB = document.getElementById('wsArrowsBox');
   if(arrB) arrB.style.display = 'none';
-  // Highlight active tool
-  wsHighlightTool();
+  // Sync the edit photo toggles
+  var esp = document.getElementById('wsEditShowPhoto');
+  if(esp) esp.checked = true;
+  var elp = document.getElementById('wsEditLockPhoto');
+  if(elp) elp.checked = false;
 
+  wsHighlightTool();
   wsRender();
 }
 
 function wsExitEditMode(){
-  // Commit the edited glyph into S._modifiedGlyphs
   if(WS.editingLetter >= 0 && WS.editGlyph){
     var ef = effectiveFont();
     var glyphKey = ef.family + '-' + ef.weight + '-' + ef.style;
@@ -3449,9 +3473,9 @@ function wsExitEditMode(){
     S._modifiedGlyphs[L.ch] = {
       commands: WS.editGlyph.commands,
       unitsPerEm: WS.editGlyph.unitsPerEm,
-      advanceWidth: WS.editGlyph.advanceWidth
+      advanceWidth: WS.editGlyph.advanceWidth,
+      origBBox: WS.editGlyph.origBBox  // preserve to keep exact size
     };
-    // Update the modified counter UI
     if(typeof updateModifyButtonLabel === 'function') updateModifyButtonLabel();
   }
   WS.editingLetter = -1;
@@ -3461,48 +3485,48 @@ function wsExitEditMode(){
   WS.editSelBox = null;
   WS.editDrawPoints = [];
   WS.editDrawPreview = null;
+  WS._editFreeDragging = false;
+  WS._editFreePts = [];
   document.getElementById('wsToolbar').style.display = '';
   document.getElementById('wsEditToolbar').style.display = 'none';
   document.getElementById('wsHint').style.display = '';
-  var egb2 = document.getElementById('wsEditGlyphBox');
-  if(egb2) egb2.style.display = '';
+  var egb = document.getElementById('wsEditGlyphBox');
+  if(egb) egb.style.display = '';
   wsRender();
   wsRefreshTable();
 }
 
 function wsHighlightTool(){
-  var tools = ['wsToolEdit','wsToolSelect','wsToolLine','wsToolArc','wsToolFree'];
-  var actId = ({'edit':'wsToolEdit','select':'wsToolSelect','draw-line':'wsToolLine','draw-arc':'wsToolArc','draw-free':'wsToolFree'})[WS.editTool];
-  tools.forEach(function(id){
-    var el = document.getElementById(id);
-    if(el) el.classList[id === actId ? 'add' : 'remove']('act');
+  var map = {'edit':'wsToolEdit','select':'wsToolSelect','draw-line':'wsToolLine','draw-arc':'wsToolArc','draw-free':'wsToolFree'};
+  var actId = map[WS.editTool];
+  Object.keys(map).forEach(function(k){
+    var el = document.getElementById(map[k]);
+    if(el) el.classList[map[k] === actId ? 'add' : 'remove']('act');
   });
 }
 
-// Render the FULL scene (photo + all letters + grid) at workspace scale
-// + overlay editing handles for the currently-edited letter.
-// This is the "isolation mode" — like Illustrator's enter-into-group view.
+// Render full scene at workspace scale + overlay editing handles on the edited letter
 function wsRenderEditMode(){
-  var g = WS.editGlyph;
-  if(!g) return '';
   var L = WS.letters[WS.editingLetter];
-  if(!L) return '';
+  var g = WS.editGlyph;
+  if(!L || !g) return '';
 
   var out = '';
-
-  // === STEP 1: Render the full workspace scene (same as normal mode) ===
   // White sheet
   var wsTL = wsMmToPx(0, 0);
   var wsBR = wsMmToPx(WS.workMmW, WS.workMmH);
   out += '<rect x="' + wsTL.x + '" y="' + wsTL.y + '" width="' + (wsBR.x - wsTL.x) + '" height="' + (wsBR.y - wsTL.y) + '" fill="#fafafa" stroke="#3a3a3a" stroke-width="1" pointer-events="none"/>';
 
-  // Photo (use the workspace photo, dimmed)
+  // Workspace photo (always visible, dimmed in edit mode unless editShowPhoto toggled off)
+  // The edit-mode photo backdrop is the SAME workspace photo, just with adjustable opacity
   if(WS.editShowPhoto && S.cropPreviewUrl){
-    var pTL = wsMmToPx(WS.photoX, WS.photoY);
-    var pW = WS.photoMmW * WS.photoScale * WS.scale;
-    var pH = WS.photoMmH * WS.photoScale * WS.scale;
+    // Position centered behind canvas; user can zoom (centered) and drag
+    var photoNatW_px = WS.canvasW * 0.9 * WS.editPhotoZoom;
+    var photoNatH_px = photoNatW_px * (WS.photoMmH / WS.photoMmW);
+    var ppx = (WS.canvasW - photoNatW_px) / 2 + WS.editPhotoOffsetX;
+    var ppy = (WS.canvasH - photoNatH_px) / 2 + WS.editPhotoOffsetY;
     var cursorStyle = WS.editLockPhoto ? 'default' : 'move';
-    out += '<image id="wsEditPhoto" href="' + S.cropPreviewUrl + '" x="' + pTL.x + '" y="' + pTL.y + '" width="' + pW + '" height="' + pH + '" preserveAspectRatio="none" opacity="0.45" style="cursor:' + cursorStyle + '"/>';
+    out += '<image id="wsEditPhoto" href="' + S.cropPreviewUrl + '" x="' + ppx + '" y="' + ppy + '" width="' + photoNatW_px + '" height="' + photoNatH_px + '" preserveAspectRatio="xMidYMid meet" opacity="' + WS.editPhotoOpacity + '" style="cursor:' + cursorStyle + '"/>';
   }
 
   // Grid
@@ -3510,63 +3534,90 @@ function wsRenderEditMode(){
     out += wsBuildGrid();
   }
 
-  // ALL letters (the edited one shown as light grey, others normally dark)
+  // All non-edited letters (dimmed)
   WS.letters.forEach(function(Li, idx){
-    if(idx === WS.editingLetter){
-      // The edited letter: render the live editGlyph at its workspace position
-      var pTLL = wsMmToPx(Li.x, Li.y);
-      var pBRR = wsMmToPx(Li.x + Li.w, Li.y + Li.h);
-      var lpx = pTLL.x, lpy = pTLL.y;
-      var lpw = pBRR.x - pTLL.x, lph = pBRR.y - pTLL.y;
-      // Compute bbox of edit glyph
-      var bb = computeBBox(g.commands);
-      if(!bb || !isFinite(bb.minX)){ bb = {minX:0, minY:0, maxX:g.unitsPerEm, maxY:g.unitsPerEm}; }
-      var gW = bb.maxX - bb.minX || g.unitsPerEm;
-      var gH = bb.maxY - bb.minY || g.unitsPerEm;
-      var sx = lpw / gW;
-      var sy = lph / gH;
-      var tx = lpx - bb.minX * sx;
-      var ty = lpy + bb.maxY * sy;
-      var d = commandsToPathData(g.commands);
-      out += '<g transform="translate(' + tx + ',' + ty + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')"><path d="' + d + '" fill="rgba(232,127,0,0.18)" stroke="#e87f00" stroke-width="' + (1/Math.min(sx,sy)) + '" pointer-events="none"/></g>';
-      // Cache the transform for hit-testing: glyph-space → px
-      // For glyph point (gx, gy): screen x = tx + gx*sx ; screen y = ty - gy*sy
-      WS._editTransform = { tx: tx, ty: ty, sx: sx, sy: sy };
-    } else {
-      // Non-edited letters: render normally (dim them slightly so the edit target stands out)
-      out += wsBuildLetter(Li, idx).replace('<g class="ws-letter-box"', '<g class="ws-letter-box" style="opacity:0.5;pointer-events:none"');
+    if(idx !== WS.editingLetter){
+      // Inline rendering at 50% opacity (no hit catcher since not interactive)
+      var pTL = wsMmToPx(Li.x, Li.y);
+      var pBR = wsMmToPx(Li.x + Li.w, Li.y + Li.h);
+      var px = pTL.x, py = pTL.y;
+      var pw = pBR.x - pTL.x, ph = pBR.y - pTL.y;
+      var ef = effectiveFont();
+      var has = S._modifiedGlyphs && S._modifiedGlyphsFont === ef.family + '-' + ef.weight + '-' + ef.style && S._modifiedGlyphs[Li.ch];
+      if(has){
+        var mg = S._modifiedGlyphs[Li.ch];
+        var bb = mg.origBBox || computeBBox(mg.commands);
+        if(!bb || !isFinite(bb.minX)) bb = {minX:0, minY:0, maxX:mg.unitsPerEm, maxY:mg.unitsPerEm};
+        var gW = (bb.maxX - bb.minX) || mg.unitsPerEm;
+        var gH = (bb.maxY - bb.minY) || mg.unitsPerEm;
+        var sx = (Li.w * WS.scale) / gW;
+        var sy = (Li.h * WS.scale) / gH;
+        var tx = px - bb.minX * sx;
+        var ty = py + bb.maxY * sy;
+        var d = commandsToPathData(mg.commands);
+        out += '<path d="' + d + '" fill="#0a0a0a" opacity="0.4" transform="translate(' + tx + ',' + ty + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')" pointer-events="none"/>';
+      } else {
+        var fsMm = Li.h * 0.76;
+        var fsPx = fsMm * WS.scale;
+        var natW = measureCharWidth(ef.family, ef.weight, ef.style, fsMm, Li.ch);
+        if(!natW || natW < 1) natW = fsMm * 0.55;
+        var natWpx = natW * WS.scale;
+        var glyphScaleX = pw / natWpx;
+        var cxPx = px + pw/2;
+        var baseY_px = wsMmToPx(0, Li.y + Li.h * 0.80).y;
+        var tx2 = cxPx * (1 - glyphScaleX);
+        out += '<text x="' + cxPx + '" y="' + baseY_px + '" text-anchor="middle" font-family="' + xe(ef.family) + ',Georgia,serif" font-size="' + fsPx + '" font-weight="' + ef.weight + '" font-style="' + ef.style + '" transform="matrix(' + glyphScaleX.toFixed(4) + ',0,0,1,' + tx2 + ',0)" fill="#0a0a0a" opacity="0.4" pointer-events="none">' + xc(Li.ch) + '</text>';
+      }
     }
   });
 
-  // === STEP 2: Overlay editing handles for the edited letter ===
+  // The edited letter — rendered with the LIVE editGlyph at its workspace position
+  // Use the ORIGINAL bbox to determine scale so size never changes
+  var pTL2 = wsMmToPx(L.x, L.y);
+  var pBR2 = wsMmToPx(L.x + L.w, L.y + L.h);
+  var lpx = pTL2.x, lpy = pTL2.y;
+  var lpw = pBR2.x - pTL2.x, lph = pBR2.y - pTL2.y;
+  var origBB = g.origBBox;
+  var ogW = (origBB.maxX - origBB.minX) || g.unitsPerEm;
+  var ogH = (origBB.maxY - origBB.minY) || g.unitsPerEm;
+  var esx = (L.w * WS.scale) / ogW;
+  var esy = (L.h * WS.scale) / ogH;
+  var etx = lpx - origBB.minX * esx;
+  var ety = lpy + origBB.maxY * esy;
+  WS._editTransform = { tx: etx, ty: ety, sx: esx, sy: esy };
+
+  // Draw the live edit glyph (light fill so anchors are visible)
+  var dEdit = commandsToPathData(g.commands);
+  out += '<path d="' + dEdit + '" fill="rgba(232,127,0,0.20)" stroke="#e87f00" stroke-width="' + (1/Math.min(esx,esy)) + '" transform="translate(' + etx + ',' + ety + ') scale(' + esx.toFixed(5) + ',' + (-esy).toFixed(5) + ')" pointer-events="none"/>';
+
+  // Anchors and Bezier handles
   var T = WS._editTransform;
   function gpToPx(gx, gy){ return { x: T.tx + gx * T.sx, y: T.ty - gy * T.sy }; }
-  var anchorR = 4;
-  var handleR = 3;
+  var anchorR = 4, handleR = 3;
   g.commands.forEach(function(c, i){
     if(c.x === undefined || c.y === undefined) return;
     if(c.type === 'Z') return;
     var ap = gpToPx(c.x, c.y);
     var isSel = WS.editSelected.indexOf(i) >= 0;
     var fill = isSel ? '#e87f00' : '#1473e6';
-    out += '<rect class="ws-anchor' + (isSel?' sel':'') + '" data-edit-idx="' + i + '" data-edit-role="point" x="' + (ap.x - anchorR) + '" y="' + (ap.y - anchorR) + '" width="' + (anchorR*2) + '" height="' + (anchorR*2) + '" fill="' + fill + '" stroke="#fff" stroke-width="1"/>';
+    out += '<rect data-edit-idx="' + i + '" data-edit-role="point" x="' + (ap.x - anchorR) + '" y="' + (ap.y - anchorR) + '" width="' + (anchorR*2) + '" height="' + (anchorR*2) + '" fill="' + fill + '" stroke="#fff" stroke-width="1" style="cursor:pointer"/>';
     if(c.x1 !== undefined && c.y1 !== undefined){
       var h1 = gpToPx(c.x1, c.y1);
       var prev = g.commands[i-1];
       if(prev && prev.x !== undefined){
         var pp = gpToPx(prev.x, prev.y);
-        out += '<line class="ws-handle-line" x1="' + pp.x + '" y1="' + pp.y + '" x2="' + h1.x + '" y2="' + h1.y + '"/>';
+        out += '<line x1="' + pp.x + '" y1="' + pp.y + '" x2="' + h1.x + '" y2="' + h1.y + '" stroke="#5fa8e8" stroke-width="0.5" stroke-dasharray="2,2" pointer-events="none"/>';
       }
-      out += '<circle class="ws-handle" data-edit-idx="' + i + '" data-edit-role="ctrl1" cx="' + h1.x + '" cy="' + h1.y + '" r="' + handleR + '"/>';
+      out += '<circle data-edit-idx="' + i + '" data-edit-role="ctrl1" cx="' + h1.x + '" cy="' + h1.y + '" r="' + handleR + '" fill="#5fa8e8" stroke="#fff" stroke-width="1" style="cursor:pointer"/>';
     }
     if(c.x2 !== undefined && c.y2 !== undefined){
       var h2 = gpToPx(c.x2, c.y2);
-      out += '<line class="ws-handle-line" x1="' + ap.x + '" y1="' + ap.y + '" x2="' + h2.x + '" y2="' + h2.y + '"/>';
-      out += '<circle class="ws-handle" data-edit-idx="' + i + '" data-edit-role="ctrl2" cx="' + h2.x + '" cy="' + h2.y + '" r="' + handleR + '"/>';
+      out += '<line x1="' + ap.x + '" y1="' + ap.y + '" x2="' + h2.x + '" y2="' + h2.y + '" stroke="#5fa8e8" stroke-width="0.5" stroke-dasharray="2,2" pointer-events="none"/>';
+      out += '<circle data-edit-idx="' + i + '" data-edit-role="ctrl2" cx="' + h2.x + '" cy="' + h2.y + '" r="' + handleR + '" fill="#5fa8e8" stroke="#fff" stroke-width="1" style="cursor:pointer"/>';
     }
   });
 
-  // Selection rubber-band
+  // Edit selection rubber-band (in px)
   if(WS.editSelBox){
     var rx = Math.min(WS.editSelBox.x1, WS.editSelBox.x2);
     var ry = Math.min(WS.editSelBox.y1, WS.editSelBox.y2);
@@ -3597,72 +3648,56 @@ function wsRenderEditMode(){
       var p0 = gpToPx(WS.editDrawPreview.points[0].x, WS.editDrawPreview.points[0].y);
       var d2 = 'M' + p0.x + ' ' + p0.y;
       for(var i=1; i<WS.editDrawPreview.points.length; i++){
-        var pp = gpToPx(WS.editDrawPreview.points[i].x, WS.editDrawPreview.points[i].y);
-        d2 += ' L ' + pp.x + ' ' + pp.y;
+        var pp2 = gpToPx(WS.editDrawPreview.points[i].x, WS.editDrawPreview.points[i].y);
+        d2 += ' L ' + pp2.x + ' ' + pp2.y;
       }
       out += '<path d="' + d2 + '" stroke="#1473e6" stroke-width="2" fill="none" opacity="0.8" stroke-linecap="round" stroke-linejoin="round" pointer-events="none"/>';
     }
   }
-
   return out;
 }
 
-// Convert canvas px to glyph-space (Y-up).
-// In isolation mode: screen x = tx + gx*sx, screen y = ty - gy*sy
-// → gx = (pxX - tx) / sx, gy = (ty - pxY) / sy
 function wsPxToGlyph(pxX, pxY){
   if(!WS._editTransform) return {x:0, y:0};
-  var t = WS._editTransform;
-  if(t.sx !== undefined){
-    // New isolation transform
-    return { x: (pxX - t.tx) / t.sx, y: (t.ty - pxY) / t.sy };
-  }
-  // Legacy
-  var gx = (pxX - t.cx) / t.s;
-  var gy = -(pxY - t.cy) / t.s;
-  return { x: gx, y: gy };
+  var T = WS._editTransform;
+  return { x: (pxX - T.tx) / T.sx, y: (T.ty - pxY) / T.sy };
 }
 
-// =========== Edit mode interaction helpers ===========
 function wsResetCurrentLetter(){
   if(WS.editingLetter < 0) return;
   var L = WS.letters[WS.editingLetter];
   var ef = effectiveFont();
   var glyphKey = ef.family + '-' + ef.weight + '-' + ef.style;
-  if(window._otFonts && window._otFonts[glyphKey]){
-    var font = window._otFonts[glyphKey];
-    var otGlyph = font.charToGlyph(L.ch);
-    if(otGlyph){
-      WS.editGlyph = {
-        commands: otGlyph.path.commands.map(function(c){ return Object.assign({}, c); }),
-        unitsPerEm: font.unitsPerEm || 1000,
-        advanceWidth: otGlyph.advanceWidth || font.unitsPerEm
-      };
-      // Remove from modified
-      if(S._modifiedGlyphs && S._modifiedGlyphs[L.ch]){
-        delete S._modifiedGlyphs[L.ch];
-      }
-      WS.editSelected = [];
-      wsRender();
-    }
-  }
+  if(!window._otFonts || !window._otFonts[glyphKey]) return;
+  var font = window._otFonts[glyphKey];
+  var otGlyph = font.charToGlyph(L.ch);
+  if(!otGlyph) return;
+  var commands = otGlyph.path.commands.map(function(c){ return Object.assign({}, c); });
+  var bb = computeBBox(commands);
+  if(!bb || !isFinite(bb.minX)) bb = {minX:0, minY:0, maxX:font.unitsPerEm, maxY:font.unitsPerEm};
+  WS.editGlyph = {
+    commands: commands,
+    unitsPerEm: font.unitsPerEm || 1000,
+    advanceWidth: otGlyph.advanceWidth || font.unitsPerEm,
+    origBBox: { minX: bb.minX, minY: bb.minY, maxX: bb.maxX, maxY: bb.maxY }
+  };
+  if(S._modifiedGlyphs && S._modifiedGlyphs[L.ch]) delete S._modifiedGlyphs[L.ch];
+  WS.editSelected = [];
+  wsRender();
 }
 
-// Update the modify button label (called after committing changes)
 function updateModifyButtonLabel(){
   var btn = document.getElementById('btnEditGlyphs');
   if(!btn) return;
+  var icon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>';
   if(S._modifiedGlyphs){
     var n = Object.keys(S._modifiedGlyphs).length;
-    if(n > 0){
-      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg> Modifier les lettres (' + n + ' modifiees)';
-      return;
-    }
+    if(n > 0){ btn.innerHTML = icon + ' Modifier les lettres (' + n + ' modifiees)'; return; }
   }
-  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg> Modifier les lettres (desktop)';
+  btn.innerHTML = icon + ' Modifier les lettres (desktop)';
 }
 
-// ============= Workspace interaction =============
+// ========== INTERACTION ==========
 function wsBindEvents(){
   var wrap = document.getElementById('wsCanvasWrap');
   var svg = document.getElementById('wsSvg');
@@ -3670,20 +3705,19 @@ function wsBindEvents(){
   if(wrap._wsBound) return;
   wrap._wsBound = true;
 
-  function getInnerXY(e){
+  function getXY(e){
     var rect = wrap.getBoundingClientRect();
     var cx = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
     var cy = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
     return { x: cx - rect.left, y: cy - rect.top };
   }
 
-  // Wheel zoom (only)
+  // Wheel = zoom (workspace zoom in both modes; in edit mode, Shift+wheel zooms photo)
   wrap.addEventListener('wheel', function(e){
     if(!document.getElementById('workspace').classList.contains('on')) return;
     e.preventDefault();
     var delta = e.deltaY < 0 ? 1.1 : 0.9;
     if(WS.editingLetter >= 0 && (e.shiftKey || e.altKey)){
-      // Zoom the edit-mode photo only
       WS.editPhotoZoom = Math.max(0.2, Math.min(8, WS.editPhotoZoom * delta));
       wsRender();
     } else {
@@ -3698,25 +3732,26 @@ function wsBindEvents(){
     if(!document.getElementById('workspace').classList.contains('on')) return;
     if(e.button !== 0) return;
     e.preventDefault();
-    var xy = getInnerXY(e);
+    var xy = getXY(e);
     var tgt = e.target;
 
     if(WS.editingLetter >= 0){
-      // EDIT MODE interactions
       wsEditMouseDown(e, xy, tgt);
       return;
     }
 
-    // Normal mode
-    var handleRole = tgt && tgt.getAttribute && tgt.getAttribute('data-handle');
-    if(handleRole && WS.selectedLetterIdx >= 0){
-      var L = WS.letters[WS.selectedLetterIdx];
-      WS.dragMode = 'letter-handle';
-      WS.resizingHandle = handleRole;
-      WS.dragStart = { mouseX: xy.x, mouseY: xy.y, L0: { x: L.x, y: L.y, w: L.w, h: L.h } };
+    // Resize handle
+    var role = tgt && tgt.getAttribute && tgt.getAttribute('data-handle');
+    if(role && WS.selectedLetters.length === 1){
+      var idx = WS.selectedLetters[0];
+      var L = WS.letters[idx];
+      WS.dragMode = 'handle';
+      WS.resizingHandle = role;
+      WS.dragStart = { mouseX: xy.x, mouseY: xy.y, L0: { x: L.x, y: L.y, w: L.w, h: L.h }, idx: idx };
       return;
     }
-    // Find which letter (if any) was clicked
+
+    // Find clicked letter
     var letterIdx = null;
     var node = tgt;
     while(node && node !== svg){
@@ -3724,61 +3759,124 @@ function wsBindEvents(){
       if(li !== null && li !== undefined){ letterIdx = parseInt(li, 10); break; }
       node = node.parentNode;
     }
+
     if(letterIdx !== null){
-      // SHIFT+click toggles inclusion in multi-selection
       if(e.shiftKey){
-        var existing = WS.selectedLetters.indexOf(letterIdx);
-        if(existing >= 0){
-          WS.selectedLetters.splice(existing, 1);
-          if(WS.selectedLetterIdx === letterIdx){
-            WS.selectedLetterIdx = WS.selectedLetters.length > 0 ? WS.selectedLetters[0] : -1;
-          }
-        } else {
-          WS.selectedLetters.push(letterIdx);
-          WS.selectedLetterIdx = letterIdx;
-        }
-        wsRender();
-        wsRefreshTable();
+        var pos = WS.selectedLetters.indexOf(letterIdx);
+        if(pos >= 0) WS.selectedLetters.splice(pos, 1);
+        else WS.selectedLetters.push(letterIdx);
+        wsRender(); wsRefreshTable();
         return;
       }
-      // Regular click on letter — if it's already part of the multi-selection,
-      // start a GROUP drag. Otherwise select it as new primary.
-      if(WS.selectedLetters.indexOf(letterIdx) >= 0 && WS.selectedLetters.length > 1){
-        WS.dragMode = 'group';
-        WS.groupDragSnapshot = {};
-        WS.selectedLetters.forEach(function(idx){
-          WS.groupDragSnapshot[idx] = { x: WS.letters[idx].x, y: WS.letters[idx].y };
-        });
-        WS.dragStart = { mouseX: xy.x, mouseY: xy.y };
-        return;
+      // Plain click on letter — if already in selection, group-drag; else replace selection
+      if(WS.selectedLetters.indexOf(letterIdx) < 0){
+        WS.selectedLetters = [letterIdx];
       }
-      // Otherwise: single-select this letter and drag it
-      WS.selectedLetterIdx = letterIdx;
-      WS.selectedLetters = [letterIdx];
-      var L2 = WS.letters[letterIdx];
-      WS.dragMode = 'letter';
-      WS.dragStart = { mouseX: xy.x, mouseY: xy.y, L0: { x: L2.x, y: L2.y } };
-      wsRender();
-      wsRefreshTable();
+      var snap = {};
+      WS.selectedLetters.forEach(function(i){ snap[i] = { x: WS.letters[i].x, y: WS.letters[i].y }; });
+      WS.dragMode = 'group';
+      WS.dragStart = { mouseX: xy.x, mouseY: xy.y, snap: snap };
+      wsRender(); wsRefreshTable();
       return;
     }
+
+    // Photo
     if(tgt && tgt.id === 'wsPhoto' && !WS.lockPhoto){
       WS.dragMode = 'photo';
       WS.dragStart = { mouseX: xy.x, mouseY: xy.y, photoX0: WS.photoX, photoY0: WS.photoY };
       return;
     }
-    // Click on empty space — start rubber-band selection
+
+    // Empty space — start rubber-band (in px)
     WS.dragMode = 'rubber';
     WS.rubberBand = { x1: xy.x, y1: xy.y, x2: xy.x, y2: xy.y };
+    WS.dragStart = { mouseX: xy.x, mouseY: xy.y, additive: e.shiftKey, baseSel: e.shiftKey ? WS.selectedLetters.slice() : [] };
     if(!e.shiftKey){
       WS.selectedLetters = [];
-      WS.selectedLetterIdx = -1;
     }
-    wsRender();
-    wsRefreshTable();
+    wsRender(); wsRefreshTable();
   });
 
-  // Double click → enter edit mode for that letter
+  // Mousemove
+  window.addEventListener('mousemove', function(e){
+    if(!document.getElementById('workspace').classList.contains('on')) return;
+    if(WS.editingLetter >= 0){
+      wsEditMouseMove(e, getXY(e));
+      return;
+    }
+    if(!WS.dragMode) return;
+    var xy = getXY(e);
+    var dx = xy.x - WS.dragStart.mouseX;
+    var dy = xy.y - WS.dragStart.mouseY;
+    var dmx = dx / WS.scale, dmy = dy / WS.scale;
+
+    if(WS.dragMode === 'photo'){
+      WS.photoX = WS.dragStart.photoX0 + dmx;
+      WS.photoY = WS.dragStart.photoY0 + dmy;
+      wsRender();
+    } else if(WS.dragMode === 'group'){
+      Object.keys(WS.dragStart.snap).forEach(function(k){
+        var i = parseInt(k, 10);
+        var s = WS.dragStart.snap[k];
+        WS.letters[i].x = s.x + dmx;
+        WS.letters[i].y = s.y + dmy;
+      });
+      wsRender(); wsRefreshTable();
+    } else if(WS.dragMode === 'handle'){
+      var L = WS.letters[WS.dragStart.idx];
+      var L0 = WS.dragStart.L0;
+      var h = WS.resizingHandle;
+      var nx = L0.x, ny = L0.y, nw = L0.w, nh = L0.h;
+      if(h.indexOf('w') >= 0){ nx = L0.x + dmx; nw = L0.w - dmx; }
+      if(h.indexOf('e') >= 0){ nw = L0.w + dmx; }
+      if(h.indexOf('n') >= 0){ ny = L0.y + dmy; nh = L0.h - dmy; }
+      if(h.indexOf('s') >= 0){ nh = L0.h + dmy; }
+      if(nw < 1) nw = 1;
+      if(nh < 1) nh = 1;
+      L.x = nx; L.y = ny; L.w = nw; L.h = nh;
+      wsRender(); wsRefreshTable();
+    } else if(WS.dragMode === 'rubber'){
+      WS.rubberBand.x2 = xy.x;
+      WS.rubberBand.y2 = xy.y;
+      // Compute selection in real-time using mm bounds
+      var p1 = wsPxToMm(WS.rubberBand.x1, WS.rubberBand.y1);
+      var p2 = wsPxToMm(WS.rubberBand.x2, WS.rubberBand.y2);
+      var x1 = Math.min(p1.x, p2.x), x2 = Math.max(p1.x, p2.x);
+      var y1 = Math.min(p1.y, p2.y), y2 = Math.max(p1.y, p2.y);
+      var inBox = [];
+      WS.letters.forEach(function(L, i){
+        if(L.x + L.w >= x1 && L.x <= x2 && L.y + L.h >= y1 && L.y <= y2){
+          inBox.push(i);
+        }
+      });
+      if(WS.dragStart.additive){
+        var merged = WS.dragStart.baseSel.slice();
+        inBox.forEach(function(i){ if(merged.indexOf(i) < 0) merged.push(i); });
+        WS.selectedLetters = merged;
+      } else {
+        WS.selectedLetters = inBox;
+      }
+      wsRender(); wsRefreshTable();
+    }
+  });
+
+  // Mouseup
+  window.addEventListener('mouseup', function(e){
+    if(!document.getElementById('workspace').classList.contains('on')) return;
+    if(WS.editingLetter >= 0){
+      wsEditMouseUp(e);
+      return;
+    }
+    if(WS.dragMode === 'rubber'){
+      WS.rubberBand = null;
+      wsRender();
+    }
+    WS.dragMode = null;
+    WS.dragStart = null;
+    WS.resizingHandle = null;
+  });
+
+  // Double-click → enter edit mode
   svg.addEventListener('dblclick', function(e){
     if(WS.editingLetter >= 0) return;
     var tgt = e.target;
@@ -3791,99 +3889,11 @@ function wsBindEvents(){
     }
     if(letterIdx !== null){
       WS.selectedLetters = [letterIdx];
-      WS.selectedLetterIdx = letterIdx;
       wsEnterEditMode(letterIdx);
     }
   });
 
-  // Mousemove
-  window.addEventListener('mousemove', function(e){
-    if(!document.getElementById('workspace').classList.contains('on')) return;
-
-    if(WS.editingLetter >= 0){
-      wsEditMouseMove(e, getInnerXY(e));
-      return;
-    }
-
-    if(!WS.dragMode) return;
-    var xy = getInnerXY(e);
-    var dx = xy.x - WS.dragStart.mouseX;
-    var dy = xy.y - WS.dragStart.mouseY;
-    if(WS.dragMode === 'photo'){
-      WS.photoX = WS.dragStart.photoX0 + dx / WS.scale;
-      WS.photoY = WS.dragStart.photoY0 + dy / WS.scale;
-    } else if(WS.dragMode === 'letter'){
-      var L = WS.letters[WS.selectedLetterIdx];
-      L.x = WS.dragStart.L0.x + dx / WS.scale;
-      L.y = WS.dragStart.L0.y + dy / WS.scale;
-    } else if(WS.dragMode === 'group'){
-      var dmx = dx / WS.scale, dmy = dy / WS.scale;
-      Object.keys(WS.groupDragSnapshot).forEach(function(idxStr){
-        var i = parseInt(idxStr, 10);
-        var L = WS.letters[i];
-        var snap = WS.groupDragSnapshot[idxStr];
-        L.x = snap.x + dmx;
-        L.y = snap.y + dmy;
-      });
-    } else if(WS.dragMode === 'rubber'){
-      WS.rubberBand.x2 = xy.x;
-      WS.rubberBand.y2 = xy.y;
-    } else if(WS.dragMode === 'letter-handle'){
-      var L = WS.letters[WS.selectedLetterIdx];
-      var dmx2 = dx / WS.scale, dmy2 = dy / WS.scale;
-      var L0 = WS.dragStart.L0;
-      var h = WS.resizingHandle;
-      var nx = L0.x, ny = L0.y, nw = L0.w, nh = L0.h;
-      if(h.indexOf('w') >= 0){ nx = L0.x + dmx2; nw = L0.w - dmx2; }
-      if(h.indexOf('e') >= 0){ nw = L0.w + dmx2; }
-      if(h.indexOf('n') >= 0){ ny = L0.y + dmy2; nh = L0.h - dmy2; }
-      if(h.indexOf('s') >= 0){ nh = L0.h + dmy2; }
-      if(nw < 1) nw = 1;
-      if(nh < 1) nh = 1;
-      L.x = nx; L.y = ny; L.w = nw; L.h = nh;
-    }
-    wsRender();
-    wsRefreshTable();
-  });
-
-  window.addEventListener('mouseup', function(e){
-    if(WS.editingLetter >= 0){
-      wsEditMouseUp(e);
-      return;
-    }
-    if(WS.dragMode === 'rubber' && WS.rubberBand){
-      // Compute which letters are inside the rubber-band rectangle (in mm)
-      var rb = WS.rubberBand;
-      var p1 = wsPxToMm(Math.min(rb.x1,rb.x2), Math.min(rb.y1,rb.y2));
-      var p2 = wsPxToMm(Math.max(rb.x1,rb.x2), Math.max(rb.y1,rb.y2));
-      var newSel = e.shiftKey ? WS.selectedLetters.slice() : [];
-      WS.letters.forEach(function(L, i){
-        // A letter is selected if its bbox intersects the rubber band
-        var lx1 = L.x, ly1 = L.y, lx2 = L.x + L.w, ly2 = L.y + L.h;
-        if(lx1 < p2.x && lx2 > p1.x && ly1 < p2.y && ly2 > p1.y){
-          if(newSel.indexOf(i) < 0) newSel.push(i);
-        }
-      });
-      // Only update selection if the rubber-band has meaningful size, otherwise
-      // it was a simple click in empty space — keep deselection
-      var tiny = Math.abs(rb.x2 - rb.x1) < 4 && Math.abs(rb.y2 - rb.y1) < 4;
-      if(!tiny){
-        WS.selectedLetters = newSel;
-        WS.selectedLetterIdx = newSel.length > 0 ? newSel[0] : -1;
-      }
-      WS.rubberBand = null;
-      wsRender();
-      wsRefreshTable();
-    }
-    if(WS.dragMode){
-      WS.dragMode = null;
-      WS.dragStart = null;
-      WS.resizingHandle = null;
-      WS.groupDragSnapshot = null;
-    }
-  });
-
-  // Letters table row click
+  // Table row click
   document.getElementById('wsLettersTbody').addEventListener('click', function(e){
     var tr = e.target.closest('tr');
     if(!tr) return;
@@ -3896,14 +3906,12 @@ function wsBindEvents(){
     } else {
       WS.selectedLetters = [i];
     }
-    WS.selectedLetterIdx = WS.selectedLetters.length === 1 ? WS.selectedLetters[0] : -1;
-    wsRender();
-    wsRefreshTable();
+    wsRender(); wsRefreshTable();
   });
 
   // Side panel controls
   document.getElementById('wsShowPhoto').addEventListener('change', function(e){ WS.showPhoto = e.target.checked; wsRender(); });
-  document.getElementById('wsLockPhoto').addEventListener('change', function(e){ WS.lockPhoto = e.target.checked; });
+  document.getElementById('wsLockPhoto').addEventListener('change', function(e){ WS.lockPhoto = e.target.checked; wsRender(); });
   document.getElementById('wsShowGrid').addEventListener('change', function(e){ WS.showGrid = e.target.checked; wsRender(); });
   document.getElementById('wsPhotoScale').addEventListener('input', function(e){
     WS.photoScale = parseInt(e.target.value, 10) / 100;
@@ -3924,20 +3932,19 @@ function wsBindEvents(){
   document.getElementById('wsZoomOut').addEventListener('click', function(){ wsZoom(1/1.2); wsRender(); wsSyncUI(); });
   document.getElementById('wsZoomFit').addEventListener('click', function(){ wsFit(); wsRender(); wsSyncUI(); });
   document.getElementById('wsAlignLetters').addEventListener('click', function(){
-    var lineHmm = parseFloat(document.getElementById('hm').value) || 20;
-    var lineWmm = parseFloat(document.getElementById('wm').value) || 15;
-    var spacing = parseFloat(document.getElementById('sm').value) || 0;
-    var totalW = (lineWmm + spacing) * WS.letters.length - spacing;
+    var hMm = parseFloat(document.getElementById('hm').value) || 20;
+    var wMm = parseFloat(document.getElementById('wm').value) || 15;
+    var sMm = parseFloat(document.getElementById('sm').value) || 0;
+    var totalW = (wMm + sMm) * WS.letters.length - sMm;
     var startX = WS.photoX + (WS.photoMmW - totalW) / 2;
-    var lineY = WS.photoY + WS.photoMmH / 2 - lineHmm / 2;
+    var lineY = WS.photoY + WS.photoMmH / 2 - hMm / 2;
     WS.letters.forEach(function(L, i){
-      L.x = startX + i * (lineWmm + spacing);
+      L.x = startX + i * (wMm + sMm);
       L.y = lineY;
-      L.w = lineWmm;
-      L.h = lineHmm;
+      L.w = wMm;
+      L.h = hMm;
     });
-    wsRender();
-    wsRefreshTable();
+    wsRender(); wsRefreshTable();
   });
   document.getElementById('wsClose').addEventListener('click', wsApply);
   document.getElementById('wsCancel').addEventListener('click', wsCancel);
@@ -3946,62 +3953,7 @@ function wsBindEvents(){
     wsEnterEditMode(WS.selectedLetters[0]);
   });
 
-  // Arrow buttons — move selection by 0.5 mm (5 mm with Shift)
-  function moveSelection(dx, dy){
-    if(WS.selectedLetters.length === 0) return;
-    WS.selectedLetters.forEach(function(i){
-      WS.letters[i].x += dx;
-      WS.letters[i].y += dy;
-    });
-    wsRender();
-    wsRefreshTable();
-  }
-  function arrowStep(e){ return (e && e.shiftKey) ? 5 : 0.5; }
-  document.getElementById('wsArrowUp').addEventListener('click', function(e){ moveSelection(0, -arrowStep(e)); });
-  document.getElementById('wsArrowDown').addEventListener('click', function(e){ moveSelection(0, arrowStep(e)); });
-  document.getElementById('wsArrowLeft').addEventListener('click', function(e){ moveSelection(-arrowStep(e), 0); });
-  document.getElementById('wsArrowRight').addEventListener('click', function(e){ moveSelection(arrowStep(e), 0); });
-  document.getElementById('wsArrowCenter').addEventListener('click', function(){
-    if(WS.selectedLetters.length === 0) return;
-    // Reset selected letters to default positions (based on align rule)
-    var lineHmm = parseFloat(document.getElementById('hm').value) || 20;
-    var lineWmm = parseFloat(document.getElementById('wm').value) || 15;
-    var spacing = parseFloat(document.getElementById('sm').value) || 0;
-    var totalW = (lineWmm + spacing) * WS.letters.length - spacing;
-    var startX = WS.photoX + (WS.photoMmW - totalW) / 2;
-    var lineY = WS.photoY + WS.photoMmH / 2 - lineHmm / 2;
-    WS.selectedLetters.forEach(function(i){
-      WS.letters[i].x = startX + i * (lineWmm + spacing);
-      WS.letters[i].y = lineY;
-    });
-    wsRender();
-    wsRefreshTable();
-  });
-
-  // Keyboard arrow keys also work
-  document.addEventListener('keydown', function(e){
-    if(!document.getElementById('workspace').classList.contains('on')) return;
-    if(WS.editingLetter >= 0) return;
-    if(WS.selectedLetters.length === 0) return;
-    // Ignore if typing in an input
-    var t = e.target;
-    if(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
-    var step = e.shiftKey ? 5 : 0.5;
-    if(e.key === 'ArrowUp'){ e.preventDefault(); moveSelection(0, -step); }
-    else if(e.key === 'ArrowDown'){ e.preventDefault(); moveSelection(0, step); }
-    else if(e.key === 'ArrowLeft'){ e.preventDefault(); moveSelection(-step, 0); }
-    else if(e.key === 'ArrowRight'){ e.preventDefault(); moveSelection(step, 0); }
-    // Cmd/Ctrl+A — select all
-    if((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A')){
-      e.preventDefault();
-      WS.selectedLetters = WS.letters.map(function(_, i){ return i; });
-      WS.selectedLetterIdx = WS.selectedLetters[0];
-      wsRender();
-      wsRefreshTable();
-    }
-  });
-
-  // Edit toolbar buttons
+  // Edit toolbar
   document.getElementById('wsToolEdit').addEventListener('click', function(){ WS.editTool = 'edit'; WS.editDrawPoints = []; WS.editDrawPreview = null; wsHighlightTool(); wsRender(); });
   document.getElementById('wsToolSelect').addEventListener('click', function(){ WS.editTool = 'select'; WS.editDrawPoints = []; WS.editDrawPreview = null; wsHighlightTool(); wsRender(); });
   document.getElementById('wsToolLine').addEventListener('click', function(){ WS.editTool = 'draw-line'; WS.editDrawPoints = []; WS.editDrawPreview = null; WS.editSelected = []; wsHighlightTool(); wsRender(); });
@@ -4009,16 +3961,10 @@ function wsBindEvents(){
   document.getElementById('wsToolFree').addEventListener('click', function(){ WS.editTool = 'draw-free'; WS.editDrawPoints = []; WS.editDrawPreview = null; WS.editSelected = []; wsHighlightTool(); wsRender(); });
   document.getElementById('wsResetLetter').addEventListener('click', wsResetCurrentLetter);
   document.getElementById('wsExitEdit').addEventListener('click', wsExitEditMode);
-  // Edit-mode photo controls
-  var espEl = document.getElementById('wsEditShowPhoto');
-  if(espEl){
-    espEl.checked = true;
-    espEl.addEventListener('change', function(e){ WS.editShowPhoto = e.target.checked; wsRender(); });
-  }
-  var elpEl = document.getElementById('wsEditLockPhoto');
-  if(elpEl){
-    elpEl.addEventListener('change', function(e){ WS.editLockPhoto = e.target.checked; });
-  }
+
+  // Edit photo controls
+  document.getElementById('wsEditShowPhoto').addEventListener('change', function(e){ WS.editShowPhoto = e.target.checked; wsRender(); });
+  document.getElementById('wsEditLockPhoto').addEventListener('change', function(e){ WS.editLockPhoto = e.target.checked; wsRender(); });
   document.getElementById('wsEditPhotoZoomIn').addEventListener('click', function(){
     WS.editPhotoZoom = Math.min(8, WS.editPhotoZoom * 1.2);
     wsRender();
@@ -4027,40 +3973,32 @@ function wsBindEvents(){
     WS.editPhotoZoom = Math.max(0.2, WS.editPhotoZoom / 1.2);
     wsRender();
   });
-  // Select-all / deselect-all
+
+  // Select-all / deselect / arrow buttons
   document.getElementById('wsSelectAll').addEventListener('click', function(){
     WS.selectedLetters = WS.letters.map(function(_,i){return i;});
-    WS.selectedLetterIdx = WS.selectedLetters.length === 1 ? WS.selectedLetters[0] : -1;
-    wsRender();
-    wsRefreshTable();
+    wsRender(); wsRefreshTable();
   });
   document.getElementById('wsDeselectAll').addEventListener('click', function(){
     WS.selectedLetters = [];
-    WS.selectedLetterIdx = -1;
-    WS.selBox = null;
-    wsRender();
-    wsRefreshTable();
+    wsRender(); wsRefreshTable();
   });
-  // Arrow buttons
   function moveSel(dx, dy){
     if(WS.selectedLetters.length === 0) return;
     WS.selectedLetters.forEach(function(i){
-      var L = WS.letters[i];
-      L.x += dx;
-      L.y += dy;
+      WS.letters[i].x += dx;
+      WS.letters[i].y += dy;
     });
-    wsRender();
-    wsRefreshTable();
+    wsRender(); wsRefreshTable();
   }
   document.getElementById('wsArrowUp').addEventListener('click', function(e){ moveSel(0, e.shiftKey ? -5 : -0.5); });
   document.getElementById('wsArrowDown').addEventListener('click', function(e){ moveSel(0, e.shiftKey ? 5 : 0.5); });
   document.getElementById('wsArrowLeft').addEventListener('click', function(e){ moveSel(e.shiftKey ? -5 : -0.5, 0); });
   document.getElementById('wsArrowRight').addEventListener('click', function(e){ moveSel(e.shiftKey ? 5 : 0.5, 0); });
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts (only when workspace open and not typing in an input)
   document.addEventListener('keydown', function(e){
     if(!document.getElementById('workspace').classList.contains('on')) return;
-    // Don't intercept keys when typing in an input
     var ae = document.activeElement;
     if(ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) return;
     if(e.key === 'Escape'){
@@ -4068,27 +4006,21 @@ function wsBindEvents(){
         wsExitEditMode();
       } else {
         WS.selectedLetters = [];
-        WS.selectedLetterIdx = -1;
-        WS.selBox = null;
-        wsRender();
-        wsRefreshTable();
+        WS.rubberBand = null;
+        wsRender(); wsRefreshTable();
       }
       return;
     }
-    // Cmd+A or Ctrl+A: select all
     if((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A')){
       if(WS.editingLetter >= 0) return;
       e.preventDefault();
       WS.selectedLetters = WS.letters.map(function(_,i){return i;});
-      WS.selectedLetterIdx = WS.selectedLetters.length === 1 ? WS.selectedLetters[0] : -1;
-      wsRender();
-      wsRefreshTable();
+      wsRender(); wsRefreshTable();
       return;
     }
-    // Arrow keys: move selected letters by 0.5mm (5mm with Shift)
     if(WS.editingLetter < 0 && WS.selectedLetters.length > 0){
       var step = e.shiftKey ? 5 : 0.5;
-      var dx = 0, dy = 0;
+      var dx=0, dy=0;
       if(e.key === 'ArrowLeft') dx = -step;
       else if(e.key === 'ArrowRight') dx = step;
       else if(e.key === 'ArrowUp') dy = -step;
@@ -4096,16 +4028,14 @@ function wsBindEvents(){
       else return;
       e.preventDefault();
       WS.selectedLetters.forEach(function(i){
-        var L = WS.letters[i];
-        L.x += dx;
-        L.y += dy;
+        WS.letters[i].x += dx;
+        WS.letters[i].y += dy;
       });
-      wsRender();
-      wsRefreshTable();
+      wsRender(); wsRefreshTable();
     }
   });
 
-  // Window resize handler
+  // Window resize
   window.addEventListener('resize', function(){
     if(document.getElementById('workspace').classList.contains('on')){
       wsFit();
@@ -4115,17 +4045,14 @@ function wsBindEvents(){
   });
 }
 
-// ============ EDIT MODE: mouse handlers ============
-var _editFreeDragging = false;
-var _editFreePts = [];
-
+// ========== EDIT MODE MOUSE HANDLERS ==========
 function wsEditMouseDown(e, xy, tgt){
   e.preventDefault();
   var role = tgt && tgt.getAttribute && tgt.getAttribute('data-edit-role');
   var idxAttr = tgt && tgt.getAttribute && tgt.getAttribute('data-edit-idx');
   var glyphP = wsPxToGlyph(xy.x, xy.y);
 
-  // Check if user clicked the edit-mode photo (and it's not locked)
+  // Photo drag in edit mode
   if(tgt && tgt.id === 'wsEditPhoto' && !WS.editLockPhoto){
     WS.editDragging = { type: 'photo', mouseX: xy.x, mouseY: xy.y, offX0: WS.editPhotoOffsetX, offY0: WS.editPhotoOffsetY };
     return;
@@ -4134,14 +4061,12 @@ function wsEditMouseDown(e, xy, tgt){
   if(WS.editTool === 'edit'){
     if(role && idxAttr !== null && idxAttr !== ''){
       var idx = parseInt(idxAttr, 10);
-      WS.editDragging = { idx: idx, role: role, mouseX: xy.x, mouseY: xy.y, gp: { x: WS.editGlyph.commands[idx][role === 'ctrl1' ? 'x1' : (role === 'ctrl2' ? 'x2' : 'x')], y: WS.editGlyph.commands[idx][role === 'ctrl1' ? 'y1' : (role === 'ctrl2' ? 'y2' : 'y')] } };
+      WS.editDragging = { type: 'point', idx: idx, role: role };
     }
   } else if(WS.editTool === 'select'){
-    // Rubber-band
     if(role && idxAttr !== null && idxAttr !== ''){
       var idx2 = parseInt(idxAttr, 10);
       if(WS.editSelected.indexOf(idx2) >= 0){
-        // Start group drag
         WS.editDragging = { type: 'group', mouseX: xy.x, mouseY: xy.y, snapshot: {} };
         WS.editSelected.forEach(function(i){
           var c = WS.editGlyph.commands[i];
@@ -4178,9 +4103,9 @@ function wsEditMouseDown(e, xy, tgt){
     }
     wsRender();
   } else if(WS.editTool === 'draw-free'){
-    _editFreeDragging = true;
-    _editFreePts = [glyphP];
-    WS.editDrawPreview = { type: 'free', points: _editFreePts.slice() };
+    WS._editFreeDragging = true;
+    WS._editFreePts = [glyphP];
+    WS.editDrawPreview = { type: 'free', points: WS._editFreePts.slice() };
     wsRender();
   }
 }
@@ -4188,7 +4113,6 @@ function wsEditMouseDown(e, xy, tgt){
 function wsEditMouseMove(e, xy){
   var glyphP = wsPxToGlyph(xy.x, xy.y);
 
-  // Photo drag in edit mode
   if(WS.editDragging && WS.editDragging.type === 'photo'){
     WS.editPhotoOffsetX = WS.editDragging.offX0 + (xy.x - WS.editDragging.mouseX);
     WS.editPhotoOffsetY = WS.editDragging.offY0 + (xy.y - WS.editDragging.mouseY);
@@ -4196,30 +4120,26 @@ function wsEditMouseMove(e, xy){
     return;
   }
 
-  if(WS.editTool === 'edit' && WS.editDragging){
+  if(WS.editTool === 'edit' && WS.editDragging && WS.editDragging.type === 'point'){
     var c = WS.editGlyph.commands[WS.editDragging.idx];
-    if(WS.editDragging.role === 'point'){
-      c.x = glyphP.x;
-      c.y = glyphP.y;
-    } else if(WS.editDragging.role === 'ctrl1'){
-      c.x1 = glyphP.x;
-      c.y1 = glyphP.y;
-    } else if(WS.editDragging.role === 'ctrl2'){
-      c.x2 = glyphP.x;
-      c.y2 = glyphP.y;
-    }
+    if(!c) return;
+    if(WS.editDragging.role === 'point'){ c.x = glyphP.x; c.y = glyphP.y; }
+    else if(WS.editDragging.role === 'ctrl1'){ c.x1 = glyphP.x; c.y1 = glyphP.y; }
+    else if(WS.editDragging.role === 'ctrl2'){ c.x2 = glyphP.x; c.y2 = glyphP.y; }
     wsRender();
-  } else if(WS.editTool === 'select'){
+    return;
+  }
+
+  if(WS.editTool === 'select'){
     if(WS.editDragging && WS.editDragging.type === 'group'){
       var startP = wsPxToGlyph(WS.editDragging.mouseX, WS.editDragging.mouseY);
       var dx = glyphP.x - startP.x;
       var dy = glyphP.y - startP.y;
-      Object.keys(WS.editDragging.snapshot).forEach(function(idxStr){
-        var i = parseInt(idxStr, 10);
+      Object.keys(WS.editDragging.snapshot).forEach(function(k){
+        var i = parseInt(k, 10);
+        var s = WS.editDragging.snapshot[k];
         var c = WS.editGlyph.commands[i];
-        var s = WS.editDragging.snapshot[idxStr];
-        c.x = s.x + dx;
-        c.y = s.y + dy;
+        c.x = s.x + dx; c.y = s.y + dy;
         if(s.x1 !== undefined){ c.x1 = s.x1 + dx; c.y1 = s.y1 + dy; }
         if(s.x2 !== undefined){ c.x2 = s.x2 + dx; c.y2 = s.y2 + dy; }
       });
@@ -4229,7 +4149,11 @@ function wsEditMouseMove(e, xy){
       WS.editSelBox.y2 = xy.y;
       wsRender();
     }
-  } else if(WS.editTool === 'draw-line' && WS.editDrawPoints.length === 1){
+    return;
+  }
+
+  // Drawing previews follow cursor
+  if(WS.editTool === 'draw-line' && WS.editDrawPoints.length === 1){
     WS.editDrawPreview = { type: 'line', points: [WS.editDrawPoints[0], glyphP] };
     wsRender();
   } else if(WS.editTool === 'draw-arc' && WS.editDrawPoints.length > 0){
@@ -4239,80 +4163,66 @@ function wsEditMouseMove(e, xy){
       WS.editDrawPreview = { type: 'arc', points: [WS.editDrawPoints[0], WS.editDrawPoints[1], glyphP] };
     }
     wsRender();
-  } else if(WS.editTool === 'draw-free' && _editFreeDragging){
-    var last = _editFreePts[_editFreePts.length - 1];
-    var dx2 = glyphP.x - last.x, dy2 = glyphP.y - last.y;
-    var minDist = (WS.editGlyph.unitsPerEm * 0.005);
-    if(dx2*dx2 + dy2*dy2 >= minDist*minDist){
-      _editFreePts.push(glyphP);
-      WS.editDrawPreview = { type: 'free', points: _editFreePts.slice() };
+  } else if(WS.editTool === 'draw-free' && WS._editFreeDragging){
+    var last = WS._editFreePts[WS._editFreePts.length - 1];
+    var ddx = glyphP.x - last.x, ddy = glyphP.y - last.y;
+    var minD = WS.editGlyph.unitsPerEm * 0.005;
+    if(ddx*ddx + ddy*ddy >= minD*minD){
+      WS._editFreePts.push(glyphP);
+      WS.editDrawPreview = { type: 'free', points: WS._editFreePts.slice() };
       wsRender();
     }
   }
 }
 
 function wsEditMouseUp(e){
-  // Clear any drag (including photo)
-  if(WS.editDragging && WS.editDragging.type === 'photo'){
+  if(WS.editDragging){
     WS.editDragging = null;
     return;
   }
-  if(WS.editTool === 'edit'){
-    WS.editDragging = null;
-  } else if(WS.editTool === 'select'){
-    if(WS.editDragging && WS.editDragging.type === 'group'){
-      WS.editDragging = null;
-    } else if(WS.editSelBox){
-      // Compute selection — convert box to glyph-space
-      var g1 = wsPxToGlyph(WS.editSelBox.x1, WS.editSelBox.y1);
-      var g2 = wsPxToGlyph(WS.editSelBox.x2, WS.editSelBox.y2);
-      var gx1 = Math.min(g1.x, g2.x), gx2 = Math.max(g1.x, g2.x);
-      var gy1 = Math.min(g1.y, g2.y), gy2 = Math.max(g1.y, g2.y);
-      var newSel = [];
-      WS.editGlyph.commands.forEach(function(c, i){
-        if(c.type === 'Z') return;
-        if(c.x === undefined || c.y === undefined) return;
-        if(c.x >= gx1 && c.x <= gx2 && c.y >= gy1 && c.y <= gy2){
-          newSel.push(i);
-        }
-      });
-      var tiny = Math.abs(WS.editSelBox.x2 - WS.editSelBox.x1) < 5 && Math.abs(WS.editSelBox.y2 - WS.editSelBox.y1) < 5;
-      if(tiny) newSel = [];
-      WS.editSelected = newSel;
-      WS.editSelBox = null;
-      wsRender();
-    }
-  } else if(WS.editTool === 'draw-free' && _editFreeDragging){
-    _editFreeDragging = false;
-    if(_editFreePts.length >= 2){
-      // Add to glyph commands (with simple line segments — keep it simple for now)
-      WS.editGlyph.commands.push({ type: 'M', x: _editFreePts[0].x, y: _editFreePts[0].y });
-      for(var i=1; i<_editFreePts.length; i++){
-        WS.editGlyph.commands.push({ type: 'L', x: _editFreePts[i].x, y: _editFreePts[i].y });
+  if(WS.editTool === 'select' && WS.editSelBox){
+    var g1 = wsPxToGlyph(WS.editSelBox.x1, WS.editSelBox.y1);
+    var g2 = wsPxToGlyph(WS.editSelBox.x2, WS.editSelBox.y2);
+    var gx1 = Math.min(g1.x, g2.x), gx2 = Math.max(g1.x, g2.x);
+    var gy1 = Math.min(g1.y, g2.y), gy2 = Math.max(g1.y, g2.y);
+    var newSel = [];
+    WS.editGlyph.commands.forEach(function(c, i){
+      if(c.type === 'Z') return;
+      if(c.x === undefined || c.y === undefined) return;
+      if(c.x >= gx1 && c.x <= gx2 && c.y >= gy1 && c.y <= gy2) newSel.push(i);
+    });
+    var tiny = Math.abs(WS.editSelBox.x2 - WS.editSelBox.x1) < 5 && Math.abs(WS.editSelBox.y2 - WS.editSelBox.y1) < 5;
+    if(tiny) newSel = [];
+    WS.editSelected = newSel;
+    WS.editSelBox = null;
+    wsRender();
+  } else if(WS.editTool === 'draw-free' && WS._editFreeDragging){
+    WS._editFreeDragging = false;
+    if(WS._editFreePts.length >= 2){
+      WS.editGlyph.commands.push({ type: 'M', x: WS._editFreePts[0].x, y: WS._editFreePts[0].y });
+      for(var i=1; i<WS._editFreePts.length; i++){
+        WS.editGlyph.commands.push({ type: 'L', x: WS._editFreePts[i].x, y: WS._editFreePts[i].y });
       }
     }
-    _editFreePts = [];
+    WS._editFreePts = [];
     WS.editDrawPreview = null;
     wsRender();
   }
 }
 
-// Helper: ensure font is loaded for a given font family (so wsEnterEditMode can use it)
 function loadGlyphFontIfNeeded(ef){
   if(typeof loadFontFile !== 'function') return;
   var glyphKey = ef.family + '-' + ef.weight + '-' + ef.style;
   if(window._otFonts && window._otFonts[glyphKey]) return;
-  // Trigger the load — it will populate window._otFonts on success
   loadFontFile(ef).then(function(font){
     if(!window._otFonts) window._otFonts = {};
     window._otFonts[glyphKey] = font;
-    console.log('[Jorge] Font preloaded for workspace:', glyphKey);
   }).catch(function(err){
     console.error('[Jorge] Font preload failed:', err);
   });
 }
 
-// Hook the existing button: route to workspace
+// Hook the existing button
 (function(){
   var btn = document.getElementById('btnEditGlyphs');
   if(btn){
@@ -4340,27 +4250,62 @@ setTimeout(wsBindEvents, 200);
 function exportPDF(){
   var data = buildFinalSvg();
   if(!data) return;
-  // Use jsPDF if available, otherwise fall back to print-to-PDF approach
-  if(typeof jspdf !== 'undefined' || typeof window.jspdf !== 'undefined'){
-    var jsPDFLib = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
-    var pdf = new jsPDFLib({
-      orientation: data.widthMm >= data.heightMm ? 'landscape' : 'portrait',
-      unit: 'mm',
-      format: [data.widthMm, data.heightMm]
-    });
-    pdf.svg(data.svg, { x: 0, y: 0, width: data.widthMm, height: data.heightMm }).then(function(){
-      pdf.save(data.filename.replace(/\.svg$/, '.pdf'));
-    }).catch(function(err){
-      console.error('PDF export error:', err);
-      alert('Erreur lors de la generation du PDF. Utilisez le SVG a la place.');
-    });
-  } else {
-    // Fallback: open SVG in a new window and trigger print-to-PDF
-    var win = window.open('', '_blank');
-    if(!win){ alert('Veuillez autoriser les popups pour exporter en PDF'); return; }
-    win.document.write('<!DOCTYPE html><html><head><title>' + data.filename + '</title><style>@page{size:' + data.widthMm + 'mm ' + data.heightMm + 'mm;margin:0}body{margin:0;padding:0}</style></head><body>' + data.svg + '</body></html>');
-    win.document.close();
-    setTimeout(function(){ win.print(); }, 500);
+  var filename = data.filename.replace(/\.svg$/, '.pdf');
+  // Need jsPDF + svg2pdf loaded
+  var jsPDFLib = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+  if(!jsPDFLib){
+    alert('Bibliotheque PDF non chargee. Verifiez votre connexion internet et rechargez la page.');
+    return;
+  }
+  // svg2pdf.js exports a global svg2pdf function. Need to use jsPDF.svg() method.
+  if(typeof window.svg2pdf !== 'function' && !(jsPDFLib.API && jsPDFLib.API.svg)){
+    alert('Bibliotheque svg2pdf non chargee. Verifiez votre connexion.');
+    return;
+  }
+  // Parse the SVG string into an actual SVG element (svg2pdf needs a DOM node)
+  var parser = new DOMParser();
+  var doc = parser.parseFromString(data.svg, 'image/svg+xml');
+  var svgEl = doc.documentElement;
+  if(!svgEl || svgEl.tagName !== 'svg'){
+    alert('Erreur lors de la lecture du SVG. Utilisez l\'export SVG a la place.');
+    return;
+  }
+  // Append to DOM temporarily (svg2pdf needs computed dimensions)
+  svgEl.style.position = 'absolute';
+  svgEl.style.left = '-9999px';
+  svgEl.style.top = '0';
+  document.body.appendChild(svgEl);
+
+  var orientation = data.widthMm >= data.heightMm ? 'landscape' : 'portrait';
+  var pdf = new jsPDFLib({
+    orientation: orientation,
+    unit: 'mm',
+    format: [data.widthMm, data.heightMm]
+  });
+
+  // svg2pdf.js v2.x: returns a Promise
+  try {
+    var p = pdf.svg(svgEl, { x: 0, y: 0, width: data.widthMm, height: data.heightMm });
+    if(p && typeof p.then === 'function'){
+      p.then(function(){
+        try { document.body.removeChild(svgEl); } catch(e){}
+        var blob = pdf.output('blob');
+        saveBlob(blob, filename, 'application/pdf', 'PDF', 'pdf');
+      }).catch(function(err){
+        try { document.body.removeChild(svgEl); } catch(e){}
+        console.error('PDF export error:', err);
+        alert('Erreur PDF : ' + (err && err.message ? err.message : err) + '\nUtilisez l\'export SVG a la place.');
+      });
+    } else {
+      // Synchronous (older version)
+      try { document.body.removeChild(svgEl); } catch(e){}
+      var blob2 = pdf.output('blob');
+      saveBlob(blob2, filename, 'application/pdf', 'PDF', 'pdf');
+    }
+  } catch(err){
+    try { document.body.removeChild(svgEl); } catch(e){}
+    console.error('PDF export sync error:', err);
+    alert('Erreur PDF : ' + err.message + '\nUtilisez l\'export SVG a la place.');
   }
 }
 
