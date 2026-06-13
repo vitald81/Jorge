@@ -233,6 +233,56 @@ textarea::placeholder{color:var(--fnt)}
 .ge-canvas-wrap[data-mode="select"] svg *{
   cursor: crosshair !important;
 }
+
+/* ============ WORKSPACE / Plan de travail ============ */
+#workspace{position:fixed;inset:0;z-index:200;background:rgba(10,30,18,.7);backdrop-filter:blur(6px);display:none}
+#workspace.on{display:flex;flex-direction:column}
+.ws-top{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--g50);border-bottom:1px solid var(--brd)}
+.ws-top h2{font-size:14px;font-weight:700;color:var(--g600)}
+.ws-body{flex:1;display:flex;overflow:hidden;background:#f5f7f5}
+.ws-canvas-area{flex:1;display:flex;flex-direction:column;position:relative;overflow:hidden;background:#eceeec}
+.ws-toolbar{display:flex;align-items:center;gap:6px;padding:6px 10px;background:var(--off);border-bottom:1px solid var(--brd);flex-wrap:wrap}
+.ws-tool-btn{padding:6px 10px;background:var(--wh);border:1px solid var(--brd2);border-radius:6px;font-size:11px;color:var(--mid);cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:4px}
+.ws-tool-btn.act{background:var(--g500);border-color:var(--g500);color:#fff}
+.ws-tool-btn:active{transform:scale(.96)}
+.ws-tool-sep{width:1px;height:18px;background:var(--brd2);margin:0 4px}
+.ws-tool-lbl{font-size:11px;color:var(--mut);font-family:var(--mono);padding:0 4px}
+.ws-zoom-input{width:54px;padding:5px 6px;border:1px solid var(--brd2);border-radius:4px;font-size:11px;font-family:var(--mono);text-align:center}
+.ws-canvas-wrap{flex:1;position:relative;overflow:hidden;background:repeating-conic-gradient(#f5f7f5 0 25%,#fff 0 50%) 50%/16px 16px}
+#wsSvg{position:absolute;inset:0;width:100%;height:100%;cursor:default;user-select:none;-webkit-user-select:none}
+#wsSvg.pan-mode{cursor:grab}
+#wsSvg.pan-active{cursor:grabbing}
+.ws-letter-box{cursor:move}
+.ws-letter-box.sel rect{stroke:#f59e0b;stroke-width:1;stroke-dasharray:3,2;fill:none}
+.ws-letter-handle{fill:#f59e0b;stroke:#fff;stroke-width:1.2;cursor:nwse-resize}
+.ws-letter-handle.n,.ws-letter-handle.s{cursor:ns-resize}
+.ws-letter-handle.e,.ws-letter-handle.w{cursor:ew-resize}
+.ws-letter-handle.nw,.ws-letter-handle.se{cursor:nwse-resize}
+.ws-letter-handle.ne,.ws-letter-handle.sw{cursor:nesw-resize}
+.ws-side{width:320px;background:var(--wh);border-left:1px solid var(--brd);display:flex;flex-direction:column;overflow:hidden}
+@media(max-width:900px){.ws-side{width:240px}}
+.ws-side-section{padding:12px 14px;border-bottom:1px solid var(--brd)}
+.ws-side-section h3{font-size:11px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;font-family:var(--mono)}
+.ws-check-row{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;color:var(--mid);cursor:pointer}
+.ws-check-row input{accent-color:var(--g500)}
+.ws-slider-row{margin-top:6px}
+.ws-slider-row label{font-size:10px;color:var(--mut);font-family:var(--mono)}
+.ws-slider-row input[type=range]{width:100%;accent-color:var(--g500)}
+.ws-letters-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px}
+.ws-letters-table th{text-align:left;padding:5px 4px;color:var(--mut);font-weight:600;border-bottom:1px solid var(--brd);font-size:10px;text-transform:uppercase}
+.ws-letters-table td{padding:4px;border-bottom:1px solid var(--off);color:var(--ink)}
+.ws-letters-table tr.sel td{background:#fef3c7;color:var(--g600);font-weight:600}
+.ws-letters-table tr:hover td{background:var(--g50);cursor:pointer}
+.ws-letters-table .ch{font-weight:700;color:var(--g500);width:24px;text-align:center}
+.ws-actions{display:flex;gap:8px;padding:14px;background:var(--off);border-top:1px solid var(--brd)}
+.ws-foot{display:flex;gap:10px;padding:12px 16px;background:var(--wh);border-top:1px solid var(--brd)}
+.ws-side-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+/* Rulers */
+.ws-ruler{position:absolute;background:#f9fafb;color:#6b7280;font-family:var(--mono);font-size:9px;user-select:none;pointer-events:none;z-index:5}
+.ws-ruler-h{top:0;left:24px;right:0;height:24px;border-bottom:1px solid var(--brd)}
+.ws-ruler-v{top:24px;left:0;bottom:0;width:24px;border-right:1px solid var(--brd)}
+.ws-ruler-corner{position:absolute;top:0;left:0;width:24px;height:24px;background:#f3f4f6;border-bottom:1px solid var(--brd);border-right:1px solid var(--brd);z-index:6}
+.ws-canvas-inner{position:absolute;top:24px;left:24px;right:0;bottom:0;overflow:hidden}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
 </head>
@@ -450,6 +500,81 @@ textarea::placeholder{color:var(--fnt)}
     <div class="fp-foot">
       <button class="btn btn-f" id="fpCancel">Modifier encore</button>
       <button class="btn btn-g btn-f" id="fpExport">Enregistrer le SVG</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============ WORKSPACE / Plan de travail ============ -->
+<div id="workspace">
+  <div class="ws-top">
+    <h2 id="wsTitle">Plan de travail</h2>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-sm btn-ghost" id="wsCancel">Annuler</button>
+      <button class="btn btn-sm" id="wsClose">Fermer</button>
+    </div>
+  </div>
+  <div class="ws-body">
+    <div class="ws-canvas-area">
+      <div class="ws-toolbar">
+        <span class="ws-tool-lbl">Zoom</span>
+        <button class="ws-tool-btn" id="wsZoomOut" type="button">−</button>
+        <input class="ws-zoom-input" id="wsZoomVal" type="text" value="100%" readonly>
+        <button class="ws-tool-btn" id="wsZoomIn" type="button">+</button>
+        <button class="ws-tool-btn" id="wsZoomFit" type="button">Adapter</button>
+        <div class="ws-tool-sep"></div>
+        <button class="ws-tool-btn" id="wsAlignLetters" type="button" title="Realigne les lettres en ligne droite">Aligner</button>
+        <button class="ws-tool-btn" id="wsResetPos" type="button" title="Reinitialise les positions de toutes les lettres">Reset positions</button>
+        <div class="ws-tool-sep"></div>
+        <span class="ws-tool-lbl" id="wsHint">Cliquez une lettre pour la deplacer. Double-cliquez pour modifier ses courbes.</span>
+      </div>
+      <div class="ws-canvas-wrap" id="wsCanvasWrap">
+        <div class="ws-ruler ws-ruler-corner"></div>
+        <div class="ws-ruler ws-ruler-h" id="wsRulerH"></div>
+        <div class="ws-ruler ws-ruler-v" id="wsRulerV"></div>
+        <div class="ws-canvas-inner">
+          <svg id="wsSvg" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+      </div>
+    </div>
+    <div class="ws-side">
+      <div class="ws-side-scroll">
+        <div class="ws-side-section">
+          <h3>Photo</h3>
+          <label class="ws-check-row"><input type="checkbox" id="wsShowPhoto" checked> Afficher la photo</label>
+          <label class="ws-check-row"><input type="checkbox" id="wsLockPhoto"> Verrouiller la photo</label>
+          <div class="ws-slider-row">
+            <label>Taille de la photo : <span id="wsPhotoScaleVal">100%</span></label>
+            <input type="range" id="wsPhotoScale" min="20" max="500" value="100" step="5">
+          </div>
+          <div class="ws-slider-row">
+            <label>Opacite : <span id="wsPhotoOpacityVal">100%</span></label>
+            <input type="range" id="wsPhotoOpacity" min="10" max="100" value="100" step="5">
+          </div>
+        </div>
+        <div class="ws-side-section">
+          <h3>Grille millimetree</h3>
+          <label class="ws-check-row"><input type="checkbox" id="wsShowGrid"> Afficher la grille</label>
+          <div class="ws-slider-row">
+            <label>Opacite grille : <span id="wsGridOpacityVal">30%</span></label>
+            <input type="range" id="wsGridOpacity" min="5" max="80" value="30" step="5">
+          </div>
+        </div>
+        <div class="ws-side-section">
+          <h3>Lettres</h3>
+          <table class="ws-letters-table" id="wsLettersTable">
+            <thead><tr><th></th><th>Largeur</th><th>Hauteur</th></tr></thead>
+            <tbody id="wsLettersTbody"></tbody>
+          </table>
+          <div id="wsSelInfo" style="font-size:11px;color:var(--mut);font-family:var(--mono);margin-top:8px"></div>
+        </div>
+      </div>
+      <div class="ws-actions">
+        <button class="btn btn-sm" id="wsEditGlyph" type="button" style="flex:1" disabled>Modifier les courbes de la lettre</button>
+      </div>
+      <div class="ws-foot">
+        <button class="btn btn-g btn-f" id="wsApply">Appliquer au document</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1344,12 +1469,29 @@ function xc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(
 // =================================================
 // GLYPH EDITOR — opentype.js based vector editing
 // =================================================
-// Global mouse tracker — updated by passive listeners, read by RAF loop
+// Global mouse tracker
 var _mouseX = 0, _mouseY = 0;
-window.addEventListener('mousemove', function(e){ _mouseX = e.clientX; _mouseY = e.clientY; }, true);
-window.addEventListener('touchmove', function(e){ 
-  if(e.touches && e.touches[0]){ _mouseX = e.touches[0].clientX; _mouseY = e.touches[0].clientY; } 
-}, {passive:true, capture:true});
+var _trackerCount = 0;
+
+function _updateMouse(e){
+  if(e.touches && e.touches[0]){
+    _mouseX = e.touches[0].clientX;
+    _mouseY = e.touches[0].clientY;
+  } else if(e.clientX !== undefined){
+    _mouseX = e.clientX;
+    _mouseY = e.clientY;
+  }
+  _trackerCount++;
+}
+
+// Attach to multiple targets and event types to maximize the chance one of them fires
+document.addEventListener('mousemove', _updateMouse, true);
+document.addEventListener('mouseover', _updateMouse, true);
+document.addEventListener('pointermove', _updateMouse, true);
+document.addEventListener('touchmove', _updateMouse, {passive:true, capture:true});
+window.addEventListener('mousemove', _updateMouse, true);
+window.addEventListener('pointermove', _updateMouse, true);
+document.body && document.body.addEventListener && document.body.addEventListener('mousemove', _updateMouse, true);
 
 var GE = {
   font: null,
@@ -2638,6 +2780,716 @@ function bindDrawMode(svgEl){
   window.addEventListener('mouseup', onUp, true);
   window.addEventListener('touchend', onUp, true);
 }
+
+// CONTINUOUS update loop — runs forever, updates previews when active drawing state exists
+var _lastMouseX = -999, _lastMouseY = -999;
+function _continuousLoop(){
+  try {
+    // Only update if mouse position actually changed since last loop
+    if(_mouseX === _lastMouseX && _mouseY === _lastMouseY){
+      requestAnimationFrame(_continuousLoop);
+      return;
+    }
+    _lastMouseX = _mouseX;
+    _lastMouseY = _mouseY;
+
+    // Check if drawing state is active
+    var ge = (typeof GE !== 'undefined') ? GE : null;
+    if(!ge || !ge.currentChar || !ge.glyphs[ge.currentChar]){
+      requestAnimationFrame(_continuousLoop);
+      return;
+    }
+
+    var wrap = document.getElementById('geCanvasWrap');
+    if(!wrap){
+      requestAnimationFrame(_continuousLoop);
+      return;
+    }
+    var sv = wrap.querySelector('svg');
+    if(!sv){
+      requestAnimationFrame(_continuousLoop);
+      return;
+    }
+
+    // Convert mouse position to glyph space
+    var pt = sv.createSVGPoint();
+    pt.x = _mouseX; pt.y = _mouseY;
+    var ctm = sv.getScreenCTM();
+    if(!ctm){
+      requestAnimationFrame(_continuousLoop);
+      return;
+    }
+    var inv = ctm.inverse();
+    var pp = pt.matrixTransform(inv);
+    var glyphP = { x: pp.x, y: -pp.y };
+    var rawP = { x: pp.x, y: pp.y };
+
+    var changed = false;
+
+    // Drawing modes — update preview based on drawPoints
+    if(ge.mode === 'draw-line' && ge.drawPoints.length === 1){
+      ge.drawPreview = { type: 'line', points: [ge.drawPoints[0], glyphP] };
+      changed = true;
+    } else if(ge.mode === 'draw-arc' && ge.drawPoints.length === 1){
+      ge.drawPreview = { type: 'line', points: [ge.drawPoints[0], glyphP] };
+      changed = true;
+    } else if(ge.mode === 'draw-arc' && ge.drawPoints.length === 2){
+      ge.drawPreview = { type: 'arc', points: [ge.drawPoints[0], ge.drawPoints[1], glyphP] };
+      changed = true;
+    }
+
+    // Selection mode — update selBox if a rubber band is active
+    if(ge.mode === 'select' && ge.selBox){
+      ge.selBox.x2 = rawP.x;
+      ge.selBox.y2 = rawP.y;
+      changed = true;
+    }
+
+    if(changed && typeof renderEditor === 'function'){
+      renderEditor();
+    }
+  } catch(err){
+    // Silently swallow errors so the loop keeps running
+    console.log('[Jorge] loop error:', err.message);
+  }
+  requestAnimationFrame(_continuousLoop);
+}
+// Start the loop after a short delay to ensure DOM is ready
+setTimeout(function(){ requestAnimationFrame(_continuousLoop); }, 500);
+
+// Periodic diagnostic
+setInterval(function(){
+  if(typeof GE !== 'undefined' && GE.mode && GE.mode !== 'edit' && GE.mode !== 'select'){
+    console.log('[Jorge] HEARTBEAT mode:', GE.mode, 'drawPoints:', GE.drawPoints.length, 'trackerCount:', _trackerCount, 'mouse:', _mouseX, _mouseY);
+  }
+}, 2000);
+
+
+// =============================================================
+// WORKSPACE / Plan de travail — per-letter positioning canvas
+// =============================================================
+var WS = {
+  // Display state
+  scale: 1,              // px per mm (display scale)
+  panX: 0, panY: 0,      // pan offset in px
+  canvasW: 0, canvasH: 0, // viewport size in px
+  // Photo state (in mm coordinates)
+  photoMmW: 0, photoMmH: 0,  // photo's natural size in mm (set when opening)
+  photoX: 0, photoY: 0,       // photo top-left position in mm
+  photoScale: 1,              // photo's own scale factor (relative to mm size)
+  photoOpacity: 1,
+  showPhoto: true,
+  lockPhoto: false,
+  // Grid
+  showGrid: false,
+  gridOpacity: 0.3,
+  // Layout / letters
+  workMmW: 0, workMmH: 0,   // workspace size in mm (determined by photo + margin)
+  letters: [],               // array of {ch, x, y, w, h, w0, h0, glyph}
+  selectedLetterIdx: -1,
+  // Interaction
+  dragMode: null,           // 'photo'|'letter'|'letter-handle'|'pan'
+  dragStart: null,           // { mouseX, mouseY, ... per-mode data }
+  // Resize state
+  resizingHandle: null,      // 'nw','ne','sw','se','n','s','e','w'
+};
+
+function openWorkspace(){
+  var ef = effectiveFont();
+  if(!ef){ alert('Choisissez une police avant'); return; }
+  if(!S.cropPreviewUrl){ alert("Importez d'abord une photo"); return; }
+  // Determine photo dimensions in mm using textHeightMm as reference for cropped region
+  // S.cropMm = { wMm, hMm } — the cropped region's real-world size
+  var photoWmm = (S.cropMm && S.cropMm.wMm) ? S.cropMm.wMm : 150;
+  var photoHmm = (S.cropMm && S.cropMm.hMm) ? S.cropMm.hMm : 50;
+
+  WS.photoMmW = photoWmm;
+  WS.photoMmH = photoHmm;
+  WS.photoScale = 1;
+  WS.photoOpacity = 1;
+  WS.showPhoto = true;
+  WS.lockPhoto = false;
+  WS.showGrid = false;
+  WS.gridOpacity = 0.3;
+  WS.selectedLetterIdx = -1;
+
+  // Workspace size = photo size + 25% margin on each side
+  var marginMm = Math.max(photoWmm, photoHmm) * 0.25;
+  WS.workMmW = photoWmm + 2 * marginMm;
+  WS.workMmH = photoHmm + 2 * marginMm;
+
+  // Center the photo in workspace
+  WS.photoX = marginMm;
+  WS.photoY = marginMm;
+
+  // Build letters from current text using the user's chosen layout params
+  var raw = document.getElementById('ta').value || 'Jorge';
+  var txt = applyCase(raw, ef.textCase);
+  var lineHmm = parseFloat(document.getElementById('hm').value) || 20;
+  var lineWmm = parseFloat(document.getElementById('wm').value) || 15;
+  var spacing = parseFloat(document.getElementById('sm').value) || 0;
+  // Only use the first line for simplicity (multi-line could be added later)
+  var line = txt.split('\n')[0];
+  // Center the line on the photo horizontally, baseline near photo vertical center
+  var totalW = (lineWmm + spacing) * line.length - spacing;
+  var startX = WS.photoX + (photoWmm - totalW) / 2;
+  var lineY = WS.photoY + photoHmm / 2 - lineHmm / 2;
+  WS.letters = [];
+  for(var i=0; i<line.length; i++){
+    var ch = line[i];
+    WS.letters.push({
+      ch: ch,
+      x: startX + i * (lineWmm + spacing),
+      y: lineY,
+      w: lineWmm,
+      h: lineHmm,
+      w0: lineWmm,  // initial values for reset
+      h0: lineHmm
+    });
+  }
+
+  // Update reset values from S._wsLettersBackup if user re-opens
+  // (skip; we always rebuild fresh per open)
+
+  document.getElementById('workspace').classList.add('on');
+
+  // Wait one frame then fit zoom
+  setTimeout(function(){
+    wsFit();
+    wsSyncUI();
+    wsRender();
+  }, 50);
+}
+
+function wsClose(){
+  document.getElementById('workspace').classList.remove('on');
+}
+
+function wsCancel(){
+  // Discard changes — for now, same as close (no commit happens until Apply)
+  wsClose();
+}
+
+function wsApply(){
+  // Save the current letters layout to S so it persists / is used for export
+  S._wsLettersLayout = WS.letters.map(function(L){
+    return { ch: L.ch, x: L.x, y: L.y, w: L.w, h: L.h };
+  });
+  S._wsWorkSize = { wMm: WS.workMmW, hMm: WS.workMmH };
+  S._wsPhotoLayout = {
+    x: WS.photoX, y: WS.photoY,
+    scale: WS.photoScale,
+    show: WS.showPhoto,
+    opacity: WS.photoOpacity
+  };
+  // Trigger update of compose preview
+  updatePreview();
+  wsClose();
+}
+
+// Fit zoom so the whole workspace fits in view
+function wsFit(){
+  var wrap = document.getElementById('wsCanvasWrap');
+  var inner = wrap.querySelector('.ws-canvas-inner');
+  if(!inner) return;
+  var rect = inner.getBoundingClientRect();
+  WS.canvasW = rect.width;
+  WS.canvasH = rect.height;
+  var sx = WS.canvasW / WS.workMmW;
+  var sy = WS.canvasH / WS.workMmH;
+  WS.scale = Math.min(sx, sy) * 0.9;
+  // Center the workspace
+  WS.panX = (WS.canvasW - WS.workMmW * WS.scale) / 2;
+  WS.panY = (WS.canvasH - WS.workMmH * WS.scale) / 2;
+}
+
+function wsZoom(delta, anchorX, anchorY){
+  var old = WS.scale;
+  var nw = Math.max(0.05, Math.min(50, old * delta));
+  // Zoom around the anchor (mouse position)
+  if(anchorX === undefined) anchorX = WS.canvasW / 2;
+  if(anchorY === undefined) anchorY = WS.canvasH / 2;
+  // Convert anchor to mm coords with old scale
+  var mmX = (anchorX - WS.panX) / old;
+  var mmY = (anchorY - WS.panY) / old;
+  WS.scale = nw;
+  WS.panX = anchorX - mmX * nw;
+  WS.panY = anchorY - mmY * nw;
+}
+
+// Convert mm to canvas px
+function wsMmToPx(mmX, mmY){
+  return { x: mmX * WS.scale + WS.panX, y: mmY * WS.scale + WS.panY };
+}
+// Convert canvas px (relative to inner) to mm
+function wsPxToMm(pxX, pxY){
+  return { x: (pxX - WS.panX) / WS.scale, y: (pxY - WS.panY) / WS.scale };
+}
+
+function wsSyncUI(){
+  document.getElementById('wsZoomVal').value = Math.round(WS.scale / (WS.canvasW / WS.workMmW * 0.9) * 100) + '%';
+  document.getElementById('wsShowPhoto').checked = WS.showPhoto;
+  document.getElementById('wsLockPhoto').checked = WS.lockPhoto;
+  document.getElementById('wsShowGrid').checked = WS.showGrid;
+  document.getElementById('wsPhotoScale').value = Math.round(WS.photoScale * 100);
+  document.getElementById('wsPhotoScaleVal').textContent = Math.round(WS.photoScale * 100) + '%';
+  document.getElementById('wsPhotoOpacity').value = Math.round(WS.photoOpacity * 100);
+  document.getElementById('wsPhotoOpacityVal').textContent = Math.round(WS.photoOpacity * 100) + '%';
+  document.getElementById('wsGridOpacity').value = Math.round(WS.gridOpacity * 100);
+  document.getElementById('wsGridOpacityVal').textContent = Math.round(WS.gridOpacity * 100) + '%';
+  wsRefreshTable();
+}
+
+function wsRefreshTable(){
+  var tbody = document.getElementById('wsLettersTbody');
+  if(!tbody) return;
+  var html = '';
+  WS.letters.forEach(function(L, i){
+    var sel = (i === WS.selectedLetterIdx) ? ' class="sel"' : '';
+    html += '<tr' + sel + ' data-i="' + i + '"><td class="ch">' + xc(L.ch) + '</td><td>' + L.w.toFixed(1) + ' mm</td><td>' + L.h.toFixed(1) + ' mm</td></tr>';
+  });
+  tbody.innerHTML = html;
+  // Update Edit Glyph button enabled state
+  var btn = document.getElementById('wsEditGlyph');
+  if(btn) btn.disabled = (WS.selectedLetterIdx < 0);
+  var info = document.getElementById('wsSelInfo');
+  if(info){
+    if(WS.selectedLetterIdx >= 0){
+      var L = WS.letters[WS.selectedLetterIdx];
+      info.textContent = 'Lettre "' + L.ch + '" : ' + L.w.toFixed(1) + ' x ' + L.h.toFixed(1) + ' mm @ (' + L.x.toFixed(1) + ', ' + L.y.toFixed(1) + ')';
+    } else {
+      info.textContent = 'Aucune lettre selectionnee';
+    }
+  }
+}
+
+function wsRender(){
+  var svg = document.getElementById('wsSvg');
+  if(!svg) return;
+  // Set viewBox = canvas px size (1:1 with displayed pixels)
+  svg.setAttribute('viewBox', '0 0 ' + WS.canvasW + ' ' + WS.canvasH);
+  svg.setAttribute('width', WS.canvasW);
+  svg.setAttribute('height', WS.canvasH);
+
+  var s = '';
+
+  // Workspace background rectangle (white)
+  var wsTL = wsMmToPx(0, 0);
+  var wsBR = wsMmToPx(WS.workMmW, WS.workMmH);
+  s += '<rect x="' + wsTL.x + '" y="' + wsTL.y + '" width="' + (wsBR.x - wsTL.x) + '" height="' + (wsBR.y - wsTL.y) + '" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>';
+
+  // Photo
+  if(WS.showPhoto && S.cropPreviewUrl){
+    var pTL = wsMmToPx(WS.photoX, WS.photoY);
+    var pW = WS.photoMmW * WS.photoScale * WS.scale;
+    var pH = WS.photoMmH * WS.photoScale * WS.scale;
+    var cursorAttr = WS.lockPhoto ? '' : ' style="cursor:move"';
+    s += '<image id="wsPhoto" href="' + S.cropPreviewUrl + '" x="' + pTL.x + '" y="' + pTL.y + '" width="' + pW + '" height="' + pH + '" preserveAspectRatio="none" opacity="' + WS.photoOpacity + '"' + cursorAttr + '/>';
+  }
+
+  // Grid millimetree
+  if(WS.showGrid){
+    s += wsBuildGrid();
+  }
+
+  // Letters
+  WS.letters.forEach(function(L, i){
+    s += wsBuildLetter(L, i);
+  });
+
+  // Selection box and handles for the selected letter
+  if(WS.selectedLetterIdx >= 0){
+    s += wsBuildSelectionOverlay(WS.letters[WS.selectedLetterIdx], WS.selectedLetterIdx);
+  }
+
+  svg.innerHTML = s;
+
+  // Render rulers (separate divs, not part of svg)
+  wsRenderRulers();
+}
+
+function wsBuildGrid(){
+  var s = '<g opacity="' + WS.gridOpacity + '" pointer-events="none">';
+  // 1mm fine lines
+  var fineCol = '#94a3b8';
+  var thickCol = '#475569';
+  // Restrict to workspace bounds
+  for(var mm = 0; mm <= WS.workMmW; mm += 1){
+    var x = wsMmToPx(mm, 0).x;
+    var y0 = wsMmToPx(0, 0).y;
+    var y1 = wsMmToPx(0, WS.workMmH).y;
+    var col = (mm % 10 === 0) ? thickCol : fineCol;
+    var sw = (mm % 10 === 0) ? 0.7 : 0.3;
+    s += '<line x1="' + x + '" y1="' + y0 + '" x2="' + x + '" y2="' + y1 + '" stroke="' + col + '" stroke-width="' + sw + '"/>';
+  }
+  for(var mmy = 0; mmy <= WS.workMmH; mmy += 1){
+    var y = wsMmToPx(0, mmy).y;
+    var x0 = wsMmToPx(0, 0).x;
+    var x1 = wsMmToPx(WS.workMmW, 0).x;
+    var col2 = (mmy % 10 === 0) ? thickCol : fineCol;
+    var sw2 = (mmy % 10 === 0) ? 0.7 : 0.3;
+    s += '<line x1="' + x0 + '" y1="' + y + '" x2="' + x1 + '" y2="' + y + '" stroke="' + col2 + '" stroke-width="' + sw2 + '"/>';
+  }
+  s += '</g>';
+  return s;
+}
+
+function wsBuildLetter(L, i){
+  // Render the letter using the font with the same compose-time technique
+  var ef = effectiveFont();
+  if(!ef) return '';
+  var pTL = wsMmToPx(L.x, L.y);
+  var pBR = wsMmToPx(L.x + L.w, L.y + L.h);
+  var px = pTL.x, py = pTL.y;
+  var pw = pBR.x - pTL.x, ph = pBR.y - pTL.y;
+
+  // Use modified glyph if available
+  var hasModified = S._modifiedGlyphs &&
+                    S._modifiedGlyphsFont === ef.family + '-' + ef.weight + '-' + ef.style &&
+                    S._modifiedGlyphs[L.ch];
+  var fsMm = L.h * 0.76;
+  var baseY_mm = L.y + L.h * 0.80;
+  // Convert to px
+  var baseY_px = wsMmToPx(0, baseY_mm).y;
+  var cxMm = L.x + L.w / 2;
+  var cxPx = wsMmToPx(cxMm, 0).x;
+
+  if(hasModified){
+    var g = S._modifiedGlyphs[L.ch];
+    // Compute scale to fit L.w x L.h
+    var glyphFsMm = L.h * 0.76;
+    var sy = (glyphFsMm * WS.scale) / g.unitsPerEm;
+    var sx = sy * (L.w / L.w0);
+    var glyphW = g.advanceWidth * sx;
+    var tx = cxPx - glyphW / 2;
+    var ty = baseY_px;
+    var d = commandsToPathData(g.commands);
+    return '<g class="ws-letter-box' + (i === WS.selectedLetterIdx ? ' sel' : '') + '" data-letter="' + i + '" transform="translate(' + tx + ',' + ty + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')"><path d="' + d + '" fill="#0b1e12"/></g>';
+  } else {
+    // Use a <text> element with font-size in px (scale-aware) and a horizontal transform for width stretching
+    var fsPx = fsMm * WS.scale;
+    var natW = measureCharWidth(ef.family, ef.weight, ef.style, fsMm, L.ch);
+    if(!natW || natW < 1) natW = fsMm * 0.55;
+    var natWpx = natW * WS.scale;
+    var glyphScaleX = pw / natWpx;
+    var tx2 = cxPx * (1 - glyphScaleX);
+    return '<g class="ws-letter-box' + (i === WS.selectedLetterIdx ? ' sel' : '') + '" data-letter="' + i + '"><text x="' + cxPx + '" y="' + baseY_px + '" text-anchor="middle" font-family="' + xe(ef.family) + ',Georgia,serif" font-size="' + fsPx + '" font-weight="' + ef.weight + '" font-style="' + ef.style + '" transform="matrix(' + glyphScaleX.toFixed(4) + ',0,0,1,' + tx2 + ',0)" fill="#0b1e12">' + xc(L.ch) + '</text></g>';
+  }
+}
+
+function wsBuildSelectionOverlay(L, i){
+  var pTL = wsMmToPx(L.x, L.y);
+  var pBR = wsMmToPx(L.x + L.w, L.y + L.h);
+  var x = pTL.x, y = pTL.y;
+  var w = pBR.x - pTL.x, h = pBR.y - pTL.y;
+  var hs = 6;  // handle size in px
+  var s = '';
+  // Selection rectangle
+  s += '<rect data-sel-box="1" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="rgba(245,158,11,0.08)" stroke="#f59e0b" stroke-width="1" stroke-dasharray="3,2"/>';
+  // 8 handles
+  function H(cx, cy, role){
+    return '<rect class="ws-letter-handle ' + role + '" data-handle="' + role + '" x="' + (cx - hs/2) + '" y="' + (cy - hs/2) + '" width="' + hs + '" height="' + hs + '"/>';
+  }
+  s += H(x, y, 'nw');
+  s += H(x + w/2, y, 'n');
+  s += H(x + w, y, 'ne');
+  s += H(x + w, y + h/2, 'e');
+  s += H(x + w, y + h, 'se');
+  s += H(x + w/2, y + h, 's');
+  s += H(x, y + h, 'sw');
+  s += H(x, y + h/2, 'w');
+  return s;
+}
+
+function wsRenderRulers(){
+  var hRuler = document.getElementById('wsRulerH');
+  var vRuler = document.getElementById('wsRulerV');
+  if(!hRuler || !vRuler) return;
+  // Generate ticks every 5mm at current scale
+  var step = 5; // mm
+  if(WS.scale < 1.5) step = 10;
+  if(WS.scale < 0.5) step = 20;
+  if(WS.scale < 0.2) step = 50;
+  var hHtml = '<svg width="100%" height="100%" style="position:absolute;inset:0">';
+  for(var mm = 0; mm <= WS.workMmW + step; mm += step){
+    var p = wsMmToPx(mm, 0);
+    if(p.x < 0 || p.x > WS.canvasW) continue;
+    hHtml += '<line x1="' + p.x + '" y1="16" x2="' + p.x + '" y2="24" stroke="#6b7280" stroke-width="0.5"/>';
+    hHtml += '<text x="' + (p.x + 2) + '" y="12" font-size="9" font-family="ui-monospace,monospace" fill="#6b7280">' + mm + '</text>';
+  }
+  hHtml += '</svg>';
+  hRuler.innerHTML = hHtml;
+
+  var vHtml = '<svg width="100%" height="100%" style="position:absolute;inset:0">';
+  for(var mmy = 0; mmy <= WS.workMmH + step; mmy += step){
+    var p2 = wsMmToPx(0, mmy);
+    if(p2.y < 0 || p2.y > WS.canvasH) continue;
+    vHtml += '<line x1="16" y1="' + p2.y + '" x2="24" y2="' + p2.y + '" stroke="#6b7280" stroke-width="0.5"/>';
+    vHtml += '<text x="2" y="' + (p2.y - 2) + '" font-size="9" font-family="ui-monospace,monospace" fill="#6b7280">' + mmy + '</text>';
+  }
+  vHtml += '</svg>';
+  vRuler.innerHTML = vHtml;
+}
+
+// ============= Workspace interaction =============
+function wsBindEvents(){
+  var wrap = document.getElementById('wsCanvasWrap');
+  var svg = document.getElementById('wsSvg');
+  if(!wrap || !svg) return;
+  if(wrap._wsBound) return;
+  wrap._wsBound = true;
+
+  function getInnerXY(e){
+    var inner = wrap.querySelector('.ws-canvas-inner');
+    var rect = inner.getBoundingClientRect();
+    var cx = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+    var cy = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
+    return { x: cx - rect.left, y: cy - rect.top };
+  }
+
+  // Mouse wheel zoom
+  wrap.addEventListener('wheel', function(e){
+    if(!document.getElementById('workspace').classList.contains('on')) return;
+    e.preventDefault();
+    var xy = getInnerXY(e);
+    var delta = e.deltaY < 0 ? 1.1 : 0.9;
+    wsZoom(delta, xy.x, xy.y);
+    wsRender();
+    wsSyncUI();
+  }, { passive: false });
+
+  // Mousedown - decide which interaction starts
+  svg.addEventListener('mousedown', function(e){
+    if(!document.getElementById('workspace').classList.contains('on')) return;
+    e.preventDefault();
+    var xy = getInnerXY(e);
+    var tgt = e.target;
+    // Check if we clicked on a selection handle
+    var handleRole = tgt && tgt.getAttribute && tgt.getAttribute('data-handle');
+    if(handleRole && WS.selectedLetterIdx >= 0){
+      var L = WS.letters[WS.selectedLetterIdx];
+      WS.dragMode = 'letter-handle';
+      WS.resizingHandle = handleRole;
+      WS.dragStart = {
+        mouseX: xy.x, mouseY: xy.y,
+        L0: { x: L.x, y: L.y, w: L.w, h: L.h }
+      };
+      return;
+    }
+    // Check if we clicked on a letter
+    var letterIdx = null;
+    var node = tgt;
+    while(node && node !== svg){
+      var li = node.getAttribute && node.getAttribute('data-letter');
+      if(li !== null && li !== undefined){ letterIdx = parseInt(li, 10); break; }
+      node = node.parentNode;
+    }
+    if(letterIdx !== null){
+      WS.selectedLetterIdx = letterIdx;
+      var L2 = WS.letters[letterIdx];
+      WS.dragMode = 'letter';
+      WS.dragStart = {
+        mouseX: xy.x, mouseY: xy.y,
+        L0: { x: L2.x, y: L2.y }
+      };
+      wsRender();
+      wsRefreshTable();
+      return;
+    }
+    // Check if we clicked on photo
+    if(tgt && tgt.id === 'wsPhoto' && !WS.lockPhoto){
+      WS.dragMode = 'photo';
+      WS.dragStart = {
+        mouseX: xy.x, mouseY: xy.y,
+        photoX0: WS.photoX, photoY0: WS.photoY
+      };
+      return;
+    }
+    // Otherwise: pan the canvas
+    WS.dragMode = 'pan';
+    WS.dragStart = {
+      mouseX: xy.x, mouseY: xy.y,
+      panX0: WS.panX, panY0: WS.panY
+    };
+    WS.selectedLetterIdx = -1;
+    wsRender();
+    wsRefreshTable();
+  });
+
+  // Mousemove
+  window.addEventListener('mousemove', function(e){
+    if(!WS.dragMode) return;
+    if(!document.getElementById('workspace').classList.contains('on')) return;
+    var xy = getInnerXY(e);
+    var dx = xy.x - WS.dragStart.mouseX;
+    var dy = xy.y - WS.dragStart.mouseY;
+    if(WS.dragMode === 'pan'){
+      WS.panX = WS.dragStart.panX0 + dx;
+      WS.panY = WS.dragStart.panY0 + dy;
+    } else if(WS.dragMode === 'photo'){
+      WS.photoX = WS.dragStart.photoX0 + dx / WS.scale;
+      WS.photoY = WS.dragStart.photoY0 + dy / WS.scale;
+    } else if(WS.dragMode === 'letter'){
+      var L = WS.letters[WS.selectedLetterIdx];
+      L.x = WS.dragStart.L0.x + dx / WS.scale;
+      L.y = WS.dragStart.L0.y + dy / WS.scale;
+    } else if(WS.dragMode === 'letter-handle'){
+      var L = WS.letters[WS.selectedLetterIdx];
+      var dmx = dx / WS.scale;
+      var dmy = dy / WS.scale;
+      var L0 = WS.dragStart.L0;
+      var h = WS.resizingHandle;
+      // Map handle to delta on x, y, w, h
+      var nx = L0.x, ny = L0.y, nw = L0.w, nh = L0.h;
+      if(h.indexOf('w') >= 0){ nx = L0.x + dmx; nw = L0.w - dmx; }
+      if(h.indexOf('e') >= 0){ nw = L0.w + dmx; }
+      if(h.indexOf('n') >= 0){ ny = L0.y + dmy; nh = L0.h - dmy; }
+      if(h.indexOf('s') >= 0){ nh = L0.h + dmy; }
+      // Prevent flipping
+      if(nw < 1) nw = 1;
+      if(nh < 1) nh = 1;
+      L.x = nx; L.y = ny; L.w = nw; L.h = nh;
+    }
+    wsRender();
+    wsRefreshTable();
+  });
+
+  window.addEventListener('mouseup', function(){
+    if(WS.dragMode){
+      WS.dragMode = null;
+      WS.dragStart = null;
+      WS.resizingHandle = null;
+    }
+  });
+
+  // Click on row in table -> select
+  document.getElementById('wsLettersTbody').addEventListener('click', function(e){
+    var tr = e.target.closest('tr');
+    if(!tr) return;
+    var i = parseInt(tr.getAttribute('data-i'), 10);
+    if(!isNaN(i)){
+      WS.selectedLetterIdx = i;
+      wsRender();
+      wsRefreshTable();
+    }
+  });
+
+  // Double-click on a letter -> open the old glyph editor for it
+  svg.addEventListener('dblclick', function(e){
+    var tgt = e.target;
+    var letterIdx = null;
+    var node = tgt;
+    while(node && node !== svg){
+      var li = node.getAttribute && node.getAttribute('data-letter');
+      if(li !== null && li !== undefined){ letterIdx = parseInt(li, 10); break; }
+      node = node.parentNode;
+    }
+    if(letterIdx !== null){
+      var ch = WS.letters[letterIdx].ch;
+      // Close workspace and open glyph editor focused on this letter
+      // We'll reopen workspace on close — for now just open the editor.
+      // Track that we should return to workspace after the editor closes:
+      WS._returnAfterEditor = true;
+      openGlyphEditor();
+      // Once openGlyphEditor finishes loading the font and lists letters,
+      // try to select this letter:
+      setTimeout(function(){
+        if(typeof selectLetter === 'function' && GE.letters.indexOf(ch) >= 0){
+          selectLetter(ch);
+        }
+      }, 400);
+    }
+  });
+
+  // Side panel controls
+  document.getElementById('wsShowPhoto').addEventListener('change', function(e){
+    WS.showPhoto = e.target.checked; wsRender();
+  });
+  document.getElementById('wsLockPhoto').addEventListener('change', function(e){
+    WS.lockPhoto = e.target.checked;
+  });
+  document.getElementById('wsShowGrid').addEventListener('change', function(e){
+    WS.showGrid = e.target.checked; wsRender();
+  });
+  document.getElementById('wsPhotoScale').addEventListener('input', function(e){
+    WS.photoScale = parseInt(e.target.value, 10) / 100;
+    document.getElementById('wsPhotoScaleVal').textContent = e.target.value + '%';
+    wsRender();
+  });
+  document.getElementById('wsPhotoOpacity').addEventListener('input', function(e){
+    WS.photoOpacity = parseInt(e.target.value, 10) / 100;
+    document.getElementById('wsPhotoOpacityVal').textContent = e.target.value + '%';
+    wsRender();
+  });
+  document.getElementById('wsGridOpacity').addEventListener('input', function(e){
+    WS.gridOpacity = parseInt(e.target.value, 10) / 100;
+    document.getElementById('wsGridOpacityVal').textContent = e.target.value + '%';
+    wsRender();
+  });
+  document.getElementById('wsZoomIn').addEventListener('click', function(){ wsZoom(1.2); wsRender(); wsSyncUI(); });
+  document.getElementById('wsZoomOut').addEventListener('click', function(){ wsZoom(1/1.2); wsRender(); wsSyncUI(); });
+  document.getElementById('wsZoomFit').addEventListener('click', function(){ wsFit(); wsRender(); wsSyncUI(); });
+  document.getElementById('wsAlignLetters').addEventListener('click', function(){
+    // Realign letters in a row using current line height + width + spacing
+    var lineHmm = parseFloat(document.getElementById('hm').value) || 20;
+    var lineWmm = parseFloat(document.getElementById('wm').value) || 15;
+    var spacing = parseFloat(document.getElementById('sm').value) || 0;
+    var totalW = (lineWmm + spacing) * WS.letters.length - spacing;
+    var startX = WS.photoX + (WS.photoMmW - totalW) / 2;
+    var lineY = WS.photoY + WS.photoMmH / 2 - lineHmm / 2;
+    WS.letters.forEach(function(L, i){
+      L.x = startX + i * (lineWmm + spacing);
+      L.y = lineY;
+      L.w = lineWmm;
+      L.h = lineHmm;
+    });
+    wsRender();
+    wsRefreshTable();
+  });
+  document.getElementById('wsResetPos').addEventListener('click', function(){
+    document.getElementById('wsAlignLetters').click();
+  });
+  document.getElementById('wsClose').addEventListener('click', wsApply);
+  document.getElementById('wsCancel').addEventListener('click', wsCancel);
+  document.getElementById('wsApply').addEventListener('click', wsApply);
+  document.getElementById('wsEditGlyph').addEventListener('click', function(){
+    if(WS.selectedLetterIdx < 0) return;
+    var ch = WS.letters[WS.selectedLetterIdx].ch;
+    WS._returnAfterEditor = true;
+    openGlyphEditor();
+    setTimeout(function(){
+      if(typeof selectLetter === 'function' && GE.letters.indexOf(ch) >= 0){
+        selectLetter(ch);
+      }
+    }, 400);
+  });
+}
+
+// Hook the existing button: instead of opening the glyph editor directly,
+// open the workspace which is the new primary "Modifier les lettres" UI.
+// Replace the click handler.
+(function(){
+  var btn = document.getElementById('btnEditGlyphs');
+  if(btn){
+    // Remove old listener by cloning the node
+    var clone = btn.cloneNode(true);
+    btn.parentNode.replaceChild(clone, btn);
+    clone.addEventListener('click', openWorkspace);
+  }
+})();
+// Late-bind in case button wasn't ready
+setTimeout(function(){
+  var btn = document.getElementById('btnEditGlyphs');
+  if(btn && !btn._wsHooked){
+    btn._wsHooked = true;
+    var clone = btn.cloneNode(true);
+    btn.parentNode.replaceChild(clone, btn);
+    clone.addEventListener('click', openWorkspace);
+    clone._wsHooked = true;
+  }
+}, 100);
+// Bind workspace events once
+setTimeout(wsBindEvents, 200);
 </script>
 
 
