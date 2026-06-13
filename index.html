@@ -62,17 +62,20 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 .view.on{display:flex}
 
 /* HOME */
-.hero{text-align:center;padding:6px 0 2px}
-.hico{width:62px;height:62px;background:var(--g600);border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 10px 28px rgba(10,40,20,.3)}
-.hico svg{width:28px;height:28px;color:#fff}
-.hero h1{font-size:26px;font-weight:700;color:var(--g600);letter-spacing:-.03em;margin-bottom:5px}
-.hero p{font-size:13px;color:var(--mut);line-height:1.5}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.upload-lbl{display:flex;flex-direction:column;align-items:center;gap:9px;padding:20px 10px;background:var(--wh);border:1.5px solid var(--brd2);border-radius:14px;cursor:pointer;box-shadow:0 2px 8px var(--sh);text-align:center}
-.upload-lbl:active{transform:scale(.97);background:var(--g50);border-color:var(--g300)}
-.upload-lbl svg{width:28px;height:28px;color:var(--g400)}
-.upload-lbl strong{font-size:13px;font-weight:600;color:var(--mid);display:block}
-.upload-lbl small{font-size:11px;color:var(--mut);line-height:1.3;display:block}
+/* HOME — Elegant gradient design */
+#vHome{background:linear-gradient(160deg,#0a1428 0%,#142a4a 35%,#0d1a30 75%,#020610 100%);min-height:100vh;padding:30px 18px;border-radius:0;margin:-16px;margin-bottom:0}
+.hero{text-align:center;padding:40px 0 24px}
+.hico{width:110px;height:110px;background:linear-gradient(135deg,#1e3a6e 0%,#0a1f3d 100%);border-radius:24px;display:flex;align-items:center;justify-content:center;margin:0 auto 22px;box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,0.08),inset 0 2px 0 rgba(255,255,255,0.12)}
+.hico svg{width:60px;height:60px;color:#fff;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4))}
+.hero h1{font-size:48px;font-weight:700;color:#fff;letter-spacing:-.04em;margin-bottom:10px;text-shadow:0 4px 24px rgba(0,0,0,.5),0 1px 2px rgba(255,255,255,.1)}
+.hero p{font-size:14px;color:rgba(255,255,255,.55);line-height:1.6;letter-spacing:.04em;font-family:var(--mono)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}
+.upload-lbl{display:flex;flex-direction:column;align-items:center;gap:11px;padding:24px 12px;background:#000;border:1px solid rgba(255,255,255,0.5);border-radius:14px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,0.5);text-align:center;transition:all 0.2s}
+.upload-lbl:hover{background:#111;border-color:rgba(255,255,255,0.85);transform:translateY(-1px);box-shadow:0 10px 28px rgba(0,0,0,0.6)}
+.upload-lbl:active{transform:scale(.97)}
+.upload-lbl svg{width:30px;height:30px;color:#fff}
+.upload-lbl strong{font-size:14px;font-weight:600;color:#fff;display:block;letter-spacing:.04em;text-transform:uppercase}
+.upload-lbl small{font-size:10px;color:rgba(255,255,255,0.6);line-height:1.4;display:block;font-family:var(--mono);letter-spacing:.04em}
 .or-sep{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--fnt)}
 .or-sep::before,.or-sep::after{content:'';flex:1;height:1px;background:var(--brd)}
 .upload-row{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;background:var(--wh);border:1.5px solid var(--brd2);border-radius:12px;cursor:pointer;box-shadow:0 2px 8px var(--sh);font-size:14px;font-weight:600;color:var(--mid)}
@@ -319,8 +322,16 @@ textarea::placeholder{color:var(--fnt)}
 .ws-edit-banner{position:absolute;top:0;left:0;right:0;background:#3a2a10;color:#fdb45f;padding:6px 12px;font-size:11px;font-family:var(--sans);display:flex;align-items:center;justify-content:space-between;z-index:10;border-bottom:1px solid #5a3a18}
 .ws-edit-banner button{background:transparent;border:1px solid #fdb45f;color:#fdb45f;padding:3px 10px;border-radius:3px;font-size:11px;cursor:pointer}
 .ws-edit-banner button:hover{background:#fdb45f;color:#1c1c1c}
+
+#wsEditGlyph:disabled{background:#3a3a3a !important;color:#666 !important;box-shadow:none !important;cursor:not-allowed}
+#wsEditGlyph:not(:disabled):hover{background:var(--accent2) !important;box-shadow:0 4px 12px rgba(20,115,230,0.5) !important;transform:translateY(-1px)}
+
+#finalPreview .fp-foot{flex-wrap:wrap}
+#finalPreview .fp-foot .btn{min-width:140px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.4/dist/svg2pdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -361,7 +372,7 @@ textarea::placeholder{color:var(--fnt)}
     </div>
     <input type="file" id="iCam"  accept="image/*" capture="environment">
     <input type="file" id="iGal"  accept="image/*">
-    <input type="file" id="iFile" accept="image/*">
+    
     <div class="g2">
       <label for="iCam" class="upload-lbl">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
@@ -373,10 +384,7 @@ textarea::placeholder{color:var(--fnt)}
       </label>
     </div>
     <div class="or-sep">ou</div>
-    <label for="iFile" class="upload-row">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      Importer un fichier
-    </label>
+    
     <div id="herr" class="hidden" style="font-size:12px;color:#c0392b;font-family:var(--mono);text-align:center"></div>
   </div>
 
@@ -523,6 +531,19 @@ textarea::placeholder{color:var(--fnt)}
       <button class="btn btn-sm btn-ghost" id="fpClose">Fermer</button>
     </div>
     <div class="fp-info" id="fpInfo">--</div>
+    <div class="fp-letters-box" id="fpLettersBox" style="padding:14px 20px;background:#fff;color:#000;border-bottom:1px solid var(--brd);max-height:200px;overflow-y:auto">
+      <div style="font-size:11px;font-family:var(--mono);font-weight:600;color:#666;margin-bottom:8px;letter-spacing:.05em;text-transform:uppercase">Dimensions des lettres (non incluses dans l'export)</div>
+      <table id="fpLettersTable" style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;color:#000">
+        <thead>
+          <tr style="border-bottom:1px solid #ddd">
+            <th style="text-align:left;padding:4px 8px;font-weight:600;color:#444">Lettre</th>
+            <th style="text-align:left;padding:4px 8px;font-weight:600;color:#444">Largeur (X)</th>
+            <th style="text-align:left;padding:4px 8px;font-weight:600;color:#444">Hauteur (Y)</th>
+          </tr>
+        </thead>
+        <tbody id="fpLettersTbody"></tbody>
+      </table>
+    </div>
     <div class="fp-canvas-wrap">
       <div class="fp-canvas" id="fpCanvas"></div>
     </div>
@@ -535,7 +556,8 @@ textarea::placeholder{color:var(--fnt)}
     </div>
     <div class="fp-foot">
       <button class="btn btn-f" id="fpCancel">Modifier encore</button>
-      <button class="btn btn-g btn-f" id="fpExport">Enregistrer le SVG</button>
+      <button class="btn btn-g btn-f" id="fpExportPDF">Enregistrer en PDF</button>
+      <button class="btn btn-g btn-f" id="fpExport">Enregistrer en SVG</button>
     </div>
   </div>
 </div>
@@ -561,20 +583,25 @@ textarea::placeholder{color:var(--fnt)}
         <div class="ws-tool-sep"></div>
         <button class="ws-tool-btn" id="wsAlignLetters" type="button" title="Realigne les lettres en ligne droite">Aligner</button>
         <div class="ws-tool-sep"></div>
-        <span class="ws-tool-lbl" id="wsHint">Cliquez une lettre. Double-clic pour modifier ses courbes.</span>
+        <span class="ws-tool-lbl" id="wsHint">Cliquez une lettre pour la selectionner.</span>
       </div>
       <!-- Curve editing toolbar (hidden by default, shown when entering edit mode) -->
-      <div class="ws-toolbar" id="wsEditToolbar" style="display:none;background:#2a241c;border-bottom-color:#5a3a18">
-        <span class="ws-tool-lbl" style="color:#fdb45f">Lettre <strong id="wsEditChar">?</strong> — outils :</span>
-        <button class="ws-tool-btn act" id="wsToolEdit" type="button">Editer points</button>
+      <div class="ws-toolbar" id="wsEditToolbar" style="display:none;background:#2a241c;border-bottom-color:#5a3a18;gap:4px">
+        <span class="ws-tool-lbl" style="color:#fdb45f">Lettre <strong id="wsEditChar">?</strong></span>
+        <button class="ws-tool-btn act" id="wsToolEdit" type="button">Editer</button>
         <button class="ws-tool-btn" id="wsToolSelect" type="button">Selection</button>
         <button class="ws-tool-btn" id="wsToolLine" type="button">Ligne</button>
         <button class="ws-tool-btn" id="wsToolArc" type="button">Arc</button>
         <button class="ws-tool-btn" id="wsToolFree" type="button">Crayon libre</button>
         <div class="ws-tool-sep"></div>
-        <button class="ws-tool-btn" id="wsResetLetter" type="button">Reinitialiser cette lettre</button>
+        <label class="ws-tool-btn" style="background:#1f1f1f;cursor:pointer"><input type="checkbox" id="wsEditShowPhoto" style="margin-right:4px;accent-color:var(--accent)"> Photo</label>
+        <label class="ws-tool-btn" style="background:#1f1f1f;cursor:pointer"><input type="checkbox" id="wsEditLockPhoto" style="margin-right:4px;accent-color:var(--accent)"> Verrouiller</label>
+        <button class="ws-tool-btn" id="wsEditPhotoZoomOut" type="button" title="Reduire la photo">📷−</button>
+        <button class="ws-tool-btn" id="wsEditPhotoZoomIn" type="button" title="Agrandir la photo">📷+</button>
         <div class="ws-tool-sep"></div>
-        <button class="ws-tool-btn" id="wsExitEdit" type="button" style="background:var(--accent);color:#fff;border-color:var(--accent)">Terminer l'edition</button>
+        <button class="ws-tool-btn" id="wsResetLetter" type="button">Reinitialiser</button>
+        <div class="ws-tool-sep"></div>
+        <button class="ws-tool-btn" id="wsExitEdit" type="button" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;padding:6px 14px">Terminer l'edition</button>
       </div>
       <div class="ws-canvas-wrap" id="wsCanvasWrap">
         <svg id="wsSvg" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -613,7 +640,7 @@ textarea::placeholder{color:var(--fnt)}
         </div>
       </div>
       <div class="ws-actions">
-        <button class="ws-tool-btn" id="wsEditGlyph" type="button" style="flex:1" disabled>Modifier les courbes</button>
+        <button class="btn btn-g" id="wsEditGlyph" type="button" style="flex:1;padding:11px 16px;font-size:13px;font-weight:600;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;box-shadow:0 2px 8px rgba(20,115,230,0.4);transition:all 0.15s" disabled>Modifier les courbes</button>
       </div>
     </div>
   </div>
@@ -2488,12 +2515,42 @@ function openFinalPreview(){
   info.innerHTML = 'Dimensions <strong>' + data.widthMm.toFixed(1) + ' x ' + data.heightMm.toFixed(1) + ' mm</strong>' +
                    ' &nbsp;&middot;&nbsp; ' + (data.hasModified ? '<strong style="color:var(--g500)">Avec glyphes modifies</strong>' : 'Glyphes standards') +
                    ' &nbsp;&middot;&nbsp; Fichier : ' + data.filename;
+  // Build dimensions table
+  buildFpLettersTable();
   // Reset zoom
   document.getElementById('fpZoom').value = 100;
   document.getElementById('fpZoomValue').textContent = '100%';
   canvas.style.transform = 'scale(1)';
   // Show modal
   document.getElementById('finalPreview').classList.add('on');
+}
+
+function buildFpLettersTable(){
+  var tbody = document.getElementById('fpLettersTbody');
+  if(!tbody) return;
+  var ef = effectiveFont();
+  if(!ef){ tbody.innerHTML = ''; return; }
+  var raw = document.getElementById('ta').value || 'Jorge';
+  var txt = applyCase(raw, ef.textCase);
+  var hMm = parseFloat(document.getElementById('hm').value) || 20;
+  var wMm = parseFloat(document.getElementById('wm').value) || 15;
+  // If workspace has been applied with custom layout, use those values
+  var customLayout = S._wsLettersLayout;
+  var rows = '';
+  if(customLayout && customLayout.length > 0){
+    customLayout.forEach(function(L){
+      var ch = L.ch === ' ' ? '(espace)' : L.ch;
+      rows += '<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:5px 8px;font-weight:700;color:#000">' + xc(ch) + '</td><td style="padding:5px 8px;color:#000">' + L.w.toFixed(1) + ' mm</td><td style="padding:5px 8px;color:#000">' + L.h.toFixed(1) + ' mm</td></tr>';
+    });
+  } else {
+    // Use uniform width and height from compose page
+    var line = txt.split('\n')[0];
+    for(var i=0; i<line.length; i++){
+      var ch = line[i] === ' ' ? '(espace)' : line[i];
+      rows += '<tr style="border-bottom:1px solid #f0f0f0"><td style="padding:5px 8px;font-weight:700;color:#000">' + xc(ch) + '</td><td style="padding:5px 8px;color:#000">' + wMm.toFixed(1) + ' mm</td><td style="padding:5px 8px;color:#000">' + hMm.toFixed(1) + ' mm</td></tr>';
+    }
+  }
+  tbody.innerHTML = rows;
 }
 
 document.addEventListener('click', function(e){
@@ -2946,7 +3003,13 @@ var WS = {
   editSelected: [],
   editSelBox: null,
   editDrawPoints: [],
-  editDrawPreview: null
+  editDrawPreview: null,
+  // Photo state during edit mode (independent from workspace photo)
+  editShowPhoto: true,
+  editLockPhoto: false,
+  editPhotoZoom: 1,
+  editPhotoOffsetX: 0,
+  editPhotoOffsetY: 0
 };
 
 function openWorkspace(){
@@ -3286,6 +3349,11 @@ function wsEnterEditMode(letterIdx){
   WS.editSelBox = null;
   WS.editDrawPoints = [];
   WS.editDrawPreview = null;
+  WS.editShowPhoto = true;
+  WS.editLockPhoto = false;
+  WS.editPhotoZoom = 1;
+  WS.editPhotoOffsetX = 0;
+  WS.editPhotoOffsetY = 0;
 
   document.getElementById('wsToolbar').style.display = 'none';
   document.getElementById('wsEditToolbar').style.display = '';
@@ -3357,13 +3425,36 @@ function wsRenderEditMode(){
   var s = Math.min(ax, ay) * 0.85;
 
   var cx = WS.canvasW / 2 - ((bb.minX + bb.maxX) / 2) * s;
-  // Y is flipped — glyph y-axis is up, screen y-axis is down
   var cy = WS.canvasH / 2 + ((bb.minY + bb.maxY) / 2) * s;
 
-  // Helper to convert glyph-space (Y-up) to canvas px
   function gp(x, y){ return { x: cx + x * s, y: cy - y * s }; }
 
   var out = '';
+
+  // Photo backdrop (cropped to the letter region of the original photo)
+  if(WS.editShowPhoto && S.cropPreviewUrl && WS.editingLetter >= 0){
+    var L = WS.letters[WS.editingLetter];
+    // The letter occupies (L.x, L.y, L.w, L.h) in workspace mm coordinates.
+    // The photo occupies (WS.photoX, WS.photoY, WS.photoMmW*photoScale, WS.photoMmH*photoScale).
+    // We want to show the SAME portion of the photo that's behind this letter,
+    // but zoomed to fit the canvas.
+    //
+    // Letter bbox in mm: [L.x, L.y, L.x+L.w, L.y+L.h]
+    // Letter bbox in canvas px (edit mode): the glyph occupies a rectangle defined by
+    //   gp(bb.minX, bb.maxY) -> top-left in screen coords (since Y flipped)
+    //   gp(bb.maxX, bb.minY) -> bottom-right
+    // The photo's natural pixel-to-mm ratio applies.
+    //
+    // Simpler approach: just show the WHOLE photo, centered behind the glyph,
+    // with a zoom factor (editPhotoZoom). User can zoom and lock.
+    var photoNatW_px = WS.canvasW * 0.9 * WS.editPhotoZoom;
+    var photoNatH_px = photoNatW_px * (WS.photoMmH / WS.photoMmW);
+    var px = (WS.canvasW - photoNatW_px) / 2 + WS.editPhotoOffsetX;
+    var py = (WS.canvasH - photoNatH_px) / 2 + WS.editPhotoOffsetY;
+    var cursorStyle = WS.editLockPhoto ? 'default' : 'move';
+    out += '<image id="wsEditPhoto" href="' + S.cropPreviewUrl + '" x="' + px + '" y="' + py + '" width="' + photoNatW_px + '" height="' + photoNatH_px + '" preserveAspectRatio="xMidYMid meet" opacity="0.45" style="cursor:' + cursorStyle + '"/>';
+  }
+
 
   // Background — dark with the letter outline drawn in light color
   // Optional: photo backdrop for this letter — we could project the photo cropped to this letter region
@@ -3512,9 +3603,15 @@ function wsBindEvents(){
     if(!document.getElementById('workspace').classList.contains('on')) return;
     e.preventDefault();
     var delta = e.deltaY < 0 ? 1.1 : 0.9;
-    wsZoom(delta);
-    wsRender();
-    wsSyncUI();
+    if(WS.editingLetter >= 0 && (e.shiftKey || e.altKey)){
+      // Zoom the edit-mode photo only
+      WS.editPhotoZoom = Math.max(0.2, Math.min(8, WS.editPhotoZoom * delta));
+      wsRender();
+    } else {
+      wsZoom(delta);
+      wsRender();
+      wsSyncUI();
+    }
   }, { passive: false });
 
   // Mousedown
@@ -3698,6 +3795,24 @@ function wsBindEvents(){
   document.getElementById('wsToolFree').addEventListener('click', function(){ WS.editTool = 'draw-free'; WS.editDrawPoints = []; WS.editDrawPreview = null; WS.editSelected = []; wsHighlightTool(); wsRender(); });
   document.getElementById('wsResetLetter').addEventListener('click', wsResetCurrentLetter);
   document.getElementById('wsExitEdit').addEventListener('click', wsExitEditMode);
+  // Edit-mode photo controls
+  var espEl = document.getElementById('wsEditShowPhoto');
+  if(espEl){
+    espEl.checked = true;
+    espEl.addEventListener('change', function(e){ WS.editShowPhoto = e.target.checked; wsRender(); });
+  }
+  var elpEl = document.getElementById('wsEditLockPhoto');
+  if(elpEl){
+    elpEl.addEventListener('change', function(e){ WS.editLockPhoto = e.target.checked; });
+  }
+  document.getElementById('wsEditPhotoZoomIn').addEventListener('click', function(){
+    WS.editPhotoZoom = Math.min(8, WS.editPhotoZoom * 1.2);
+    wsRender();
+  });
+  document.getElementById('wsEditPhotoZoomOut').addEventListener('click', function(){
+    WS.editPhotoZoom = Math.max(0.2, WS.editPhotoZoom / 1.2);
+    wsRender();
+  });
 
   // Keyboard shortcuts (Escape exits edit mode)
   document.addEventListener('keydown', function(e){
@@ -3732,6 +3847,12 @@ function wsEditMouseDown(e, xy, tgt){
   var role = tgt && tgt.getAttribute && tgt.getAttribute('data-edit-role');
   var idxAttr = tgt && tgt.getAttribute && tgt.getAttribute('data-edit-idx');
   var glyphP = wsPxToGlyph(xy.x, xy.y);
+
+  // Check if user clicked the edit-mode photo (and it's not locked)
+  if(tgt && tgt.id === 'wsEditPhoto' && !WS.editLockPhoto){
+    WS.editDragging = { type: 'photo', mouseX: xy.x, mouseY: xy.y, offX0: WS.editPhotoOffsetX, offY0: WS.editPhotoOffsetY };
+    return;
+  }
 
   if(WS.editTool === 'edit'){
     if(role && idxAttr !== null && idxAttr !== ''){
@@ -3790,6 +3911,14 @@ function wsEditMouseDown(e, xy, tgt){
 function wsEditMouseMove(e, xy){
   var glyphP = wsPxToGlyph(xy.x, xy.y);
 
+  // Photo drag in edit mode
+  if(WS.editDragging && WS.editDragging.type === 'photo'){
+    WS.editPhotoOffsetX = WS.editDragging.offX0 + (xy.x - WS.editDragging.mouseX);
+    WS.editPhotoOffsetY = WS.editDragging.offY0 + (xy.y - WS.editDragging.mouseY);
+    wsRender();
+    return;
+  }
+
   if(WS.editTool === 'edit' && WS.editDragging){
     var c = WS.editGlyph.commands[WS.editDragging.idx];
     if(WS.editDragging.role === 'point'){
@@ -3846,6 +3975,11 @@ function wsEditMouseMove(e, xy){
 }
 
 function wsEditMouseUp(e){
+  // Clear any drag (including photo)
+  if(WS.editDragging && WS.editDragging.type === 'photo'){
+    WS.editDragging = null;
+    return;
+  }
   if(WS.editTool === 'edit'){
     WS.editDragging = null;
   } else if(WS.editTool === 'select'){
@@ -3921,6 +4055,46 @@ setTimeout(function(){
   }
 }, 100);
 setTimeout(wsBindEvents, 200);
+
+
+// =================================================
+// PDF EXPORT — converts SVG to PDF using a simple inline approach
+// =================================================
+function exportPDF(){
+  var data = buildFinalSvg();
+  if(!data) return;
+  // Use jsPDF if available, otherwise fall back to print-to-PDF approach
+  if(typeof jspdf !== 'undefined' || typeof window.jspdf !== 'undefined'){
+    var jsPDFLib = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    var pdf = new jsPDFLib({
+      orientation: data.widthMm >= data.heightMm ? 'landscape' : 'portrait',
+      unit: 'mm',
+      format: [data.widthMm, data.heightMm]
+    });
+    pdf.svg(data.svg, { x: 0, y: 0, width: data.widthMm, height: data.heightMm }).then(function(){
+      pdf.save(data.filename.replace(/\.svg$/, '.pdf'));
+    }).catch(function(err){
+      console.error('PDF export error:', err);
+      alert('Erreur lors de la generation du PDF. Utilisez le SVG a la place.');
+    });
+  } else {
+    // Fallback: open SVG in a new window and trigger print-to-PDF
+    var win = window.open('', '_blank');
+    if(!win){ alert('Veuillez autoriser les popups pour exporter en PDF'); return; }
+    win.document.write('<!DOCTYPE html><html><head><title>' + data.filename + '</title><style>@page{size:' + data.widthMm + 'mm ' + data.heightMm + 'mm;margin:0}body{margin:0;padding:0}</style></head><body>' + data.svg + '</body></html>');
+    win.document.close();
+    setTimeout(function(){ win.print(); }, 500);
+  }
+}
+
+// Hook the PDF button
+document.addEventListener('click', function(e){
+  if(e.target && e.target.id === 'fpExportPDF'){
+    e.preventDefault();
+    exportPDF();
+    document.getElementById('finalPreview').classList.remove('on');
+  }
+});
 </script>
 
 
