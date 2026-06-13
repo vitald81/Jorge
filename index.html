@@ -654,7 +654,7 @@ textarea::placeholder{color:var(--fnt)}
           <div></div>
         </div>
       </div>
-      <div class="ws-actions">
+      <div class="ws-actions" id="wsEditGlyphBox">
         <button class="btn btn-g" id="wsEditGlyph" type="button" style="flex:1;padding:11px 16px;font-size:13px;font-weight:600;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;box-shadow:0 2px 8px rgba(20,115,230,0.4);transition:all 0.15s" disabled>Modifier les courbes</button>
       </div>
     </div>
@@ -864,7 +864,7 @@ function showView(name) {
   } else if (name==='compose') {
     bb.classList.add('on');
     bk.classList.remove('hidden');
-    bm.textContent='\u2193 Enregistrer SVG';
+    bm.textContent='\u2193 Enregistrer';
     bm.className='btn btn-g btn-f';
     bm.disabled=false;
   } else {
@@ -1217,92 +1217,132 @@ document.getElementById('btnMain').addEventListener('click',function(){
 // LIVE PREVIEW
 // =============================================
 function updatePreview() {
-  var ef=effectiveFont(); if(!ef) return;
-  var raw=document.getElementById('ta').value||'Jorge';
-  var txt=applyCase(raw,ef.textCase);
-  var h=parseFloat(document.getElementById('hm').value)||20;
-  var w=parseFloat(document.getElementById('wm').value)||15;
-  var s=parseFloat(document.getElementById('sm').value)||0;
-  var lines=txt.split('\n');
-  var maxL=Math.max.apply(null,lines.map(function(l){return l.length;}).concat([1]));
-  var PX=3.7795;
-  var rawPx=h*PX;
-  var scale=Math.min(1,96/rawPx);
-  var fs=rawPx*0.78*scale;
-  var natW = measureCharWidth(ef.family, ef.weight, ef.style, fs, 'H');
-  if(!natW || natW < 1) natW = fs * 0.55;
-  var targetCellPx = w * PX * scale;
-  var glyphScaleX = (targetCellPx / natW) * ef.scaleX;
-  var lsPx = s * PX * scale;
-  var pv = document.getElementById('pvt');
+  var ef = effectiveFont(); if(!ef) return;
+  var raw = document.getElementById('ta').value || 'Jorge';
+  var txt = applyCase(raw, ef.textCase);
+  var hMm = parseFloat(document.getElementById('hm').value) || 20;
+  var wMm = parseFloat(document.getElementById('wm').value) || 15;
+  var sMm = parseFloat(document.getElementById('sm').value) || 0;
+  var line = txt.split('\n')[0];
+  var glyphKey = ef.family + '-' + ef.weight + '-' + ef.style;
+  var modGlyphs = (S._modifiedGlyphs && S._modifiedGlyphsFont === glyphKey) ? S._modifiedGlyphs : null;
+  var hasModified = !!modGlyphs && Object.keys(modGlyphs).length > 0;
 
-  // Check if there are modified glyphs for this font
-  var hasModified = S._modifiedGlyphs &&
-                    S._modifiedGlyphsFont === ef.family + '-' + ef.weight + '-' + ef.style &&
-                    Object.keys(S._modifiedGlyphs).length > 0;
-  // Check if the text contains any modified char
-  var anyModified = false;
-  if(hasModified){
-    for(var i=0;i<txt.length;i++){
-      if(S._modifiedGlyphs[txt[i]]){ anyModified = true; break; }
+  // Detect workspace layout
+  var useWS = false;
+  if(S._wsLettersLayout && S._wsLettersLayout.length === line.length){
+    useWS = true;
+    for(var ci=0; ci<line.length; ci++){
+      if(S._wsLettersLayout[ci].ch !== line[ci]){ useWS = false; break; }
     }
   }
 
-  if(anyModified){
-    // Build SVG preview mixing modified glyph paths with text
-    pv.style.cssText = 'display:inline-block';
-    var cellPx = (w + s) * PX * scale;
-    var visualCellW = cellPx * ef.scaleX;
-    var totalW = (visualCellW * maxL) - (s * PX * scale * ef.scaleX);
-    var totalH = rawPx * scale * lines.length;
-    var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + totalW.toFixed(1) + '" height="' + totalH.toFixed(1) + '" style="overflow:visible">';
-    lines.forEach(function(line, li){
-      var yBaseline = li * (rawPx * scale) + (rawPx * scale * 0.80);
-      line.split('').forEach(function(ch, ci){
-        var xCenter = ci * visualCellW + visualCellW/2;
-        var modGlyph = S._modifiedGlyphs && S._modifiedGlyphs[ch];
+  var pv = document.getElementById('pvt');
+  var PX = 3.7795;  // px/mm
+
+  // Determine total size in mm
+  var totalWmm, totalHmm;
+  if(useWS){
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    S._wsLettersLayout.forEach(function(L){
+      if(L.x < minX) minX = L.x;
+      if(L.y < minY) minY = L.y;
+      if(L.x + L.w > maxX) maxX = L.x + L.w;
+      if(L.y + L.h > maxY) maxY = L.y + L.h;
+    });
+    totalWmm = maxX - minX;
+    totalHmm = maxY - minY;
+  } else {
+    var maxL = line.length;
+    totalWmm = (wMm + sMm) * maxL - sMm;
+    totalHmm = hMm;
+  }
+
+  // Scale preview to fit comfortably (max 600px wide, height proportional)
+  var prevPxScale = Math.min(1, 600 / (totalWmm * PX));
+  var prevW = totalWmm * PX * prevPxScale;
+  var prevH = totalHmm * PX * prevPxScale;
+
+  pv.style.cssText = 'display:inline-block';
+
+  var svgInner = '';
+  if(useWS){
+    var bbMinX = minX, bbMinY = minY;
+    S._wsLettersLayout.forEach(function(L){
+      if(L.ch === ' ' || L.ch === '\n') return;
+      var lx = (L.x - bbMinX) * PX * prevPxScale;
+      var ly = (L.y - bbMinY) * PX * prevPxScale;
+      var lw = L.w * PX * prevPxScale;
+      var lh = L.h * PX * prevPxScale;
+      var fsPx = lh * 0.76;
+      var modGlyph = modGlyphs && modGlyphs[L.ch];
+      if(modGlyph){
+        var bb = modGlyph.origBBox || computeBBox(modGlyph.commands);
+        if(!bb || !isFinite(bb.minX)) bb = {minX:0, minY:0, maxX:modGlyph.unitsPerEm, maxY:modGlyph.unitsPerEm};
+        var gW = (bb.maxX - bb.minX) || modGlyph.unitsPerEm;
+        var gH = (bb.maxY - bb.minY) || modGlyph.unitsPerEm;
+        var sx = lw / gW;
+        var sy = lh / gH;
+        var tx = lx - bb.minX * sx;
+        var ty = ly + bb.maxY * sy;
+        var d = commandsToPathData(modGlyph.commands);
+        svgInner += '<g transform="translate(' + tx.toFixed(3) + ',' + ty.toFixed(3) + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')"><path d="' + d + '" fill="#e4e4e4"/></g>';
+      } else {
+        var natW = measureCharWidth(ef.family, ef.weight, ef.style, fsPx, 'H');
+        if(!natW || natW < 1) natW = fsPx * 0.55;
+        var glyphScaleX = lw / natW;
+        var cxPx = lx + lw / 2;
+        var baseY = ly + lh * 0.80;
+        var txM = (cxPx * (1 - glyphScaleX)).toFixed(2);
+        svgInner += '<text x="' + cxPx.toFixed(2) + '" y="' + baseY.toFixed(2) + '" text-anchor="middle" font-family="\'' + ef.family + '\',Georgia,serif" font-size="' + fsPx.toFixed(2) + '" font-weight="' + ef.weight + '" font-style="' + ef.style + '" transform="matrix(' + glyphScaleX.toFixed(4) + ',0,0,1,' + txM + ',0)" fill="#e4e4e4">' + xc(L.ch) + '</text>';
+      }
+    });
+  } else {
+    // Standard uniform grid
+    var lines = txt.split('\n');
+    var maxL = Math.max.apply(null, lines.map(function(l){return l.length;}).concat([1]));
+    var cellWpx = (wMm + sMm) * PX * prevPxScale;
+    var lineHpx = hMm * PX * prevPxScale;
+    var fsPx = lineHpx * 0.76;
+    var natW = measureCharWidth(ef.family, ef.weight, ef.style, fsPx, 'H');
+    if(!natW || natW < 1) natW = fsPx * 0.55;
+    var targetCellW = wMm * PX * prevPxScale * ef.scaleX;
+    var glyphScaleX = targetCellW / natW;
+    lines.forEach(function(lineTxt, li){
+      var yB = (li * lineHpx + lineHpx * 0.80);
+      lineTxt.split('').forEach(function(ch, ci){
+        if(ch === ' ') return;
+        var xC = ci * cellWpx + cellWpx/2 - sMm*PX*prevPxScale/2;
+        var modGlyph = modGlyphs && modGlyphs[ch];
         if(modGlyph){
-          // Render path. opentype Y-up, scale: fs/upem
-          var sy = (fs * 0.97) / modGlyph.unitsPerEm;
-          var sx = sy * glyphScaleX;
-          var glyphW = modGlyph.advanceWidth * sx;
-          var tx = xCenter - glyphW/2;
-          var ty = li * (rawPx * scale) + (rawPx * scale * 0.80);
+          var bb = modGlyph.origBBox || computeBBox(modGlyph.commands);
+          if(!bb || !isFinite(bb.minX)) bb = {minX:0, minY:0, maxX:modGlyph.unitsPerEm, maxY:modGlyph.unitsPerEm};
+          var gW = (bb.maxX - bb.minX) || modGlyph.unitsPerEm;
+          var gH = (bb.maxY - bb.minY) || modGlyph.unitsPerEm;
+          var sx = (wMm * PX * prevPxScale) / gW;
+          var sy = lineHpx / gH;
+          var tx = (xC - (wMm * PX * prevPxScale)/2) - bb.minX * sx;
+          var ty = (li * lineHpx) + bb.maxY * sy;
           var d = commandsToPathData(modGlyph.commands);
-          svg += '<g transform="translate(' + tx.toFixed(2) + ',' + ty.toFixed(2) + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')">' +
-                 '<path d="' + d + '" fill="#0b1e12"/></g>';
+          svgInner += '<g transform="translate(' + tx.toFixed(2) + ',' + ty.toFixed(2) + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')"><path d="' + d + '" fill="#e4e4e4"/></g>';
         } else {
-          // Render normal text element
-          svg += '<text x="' + xCenter.toFixed(2) + '" y="' + yBaseline.toFixed(2) + '"' +
-                 ' text-anchor="middle"' +
-                 ' font-family="\'' + ef.family + '\',Georgia,serif"' +
-                 ' font-size="' + fs.toFixed(2) + '"' +
-                 ' font-weight="' + ef.weight + '"' +
-                 ' font-style="' + ef.style + '"' +
-                 ' transform="matrix(' + glyphScaleX.toFixed(4) + ',0,0,1,' + (xCenter * (1 - glyphScaleX)).toFixed(2) + ',0)"' +
-                 ' fill="#0b1e12">' + xc(ch) + '</text>';
+          var txM = (xC * (1 - glyphScaleX)).toFixed(2);
+          svgInner += '<text x="' + xC.toFixed(2) + '" y="' + yB.toFixed(2) + '" text-anchor="middle" font-family="\'' + ef.family + '\',Georgia,serif" font-size="' + fsPx.toFixed(2) + '" font-weight="' + ef.weight + '" font-style="' + ef.style + '" transform="matrix(' + glyphScaleX.toFixed(4) + ',0,0,1,' + txM + ',0)" fill="#e4e4e4">' + xc(ch) + '</text>';
         }
       });
     });
-    svg += '</svg>';
-    pv.innerHTML = svg;
-  } else {
-    // Standard text rendering
-    pv.style.cssText =
-      'font-family:\''+ef.family+'\',Georgia,serif;'+
-      'font-weight:'+ef.weight+';font-style:'+ef.style+';'+
-      'font-size:'+fs+'px;line-height:'+(rawPx*scale)+'px;'+
-      'white-space:pre;letter-spacing:'+lsPx+'px;overflow:hidden;'+
-      'display:inline-block;transform:scaleX('+glyphScaleX+');transform-origin:left center;';
-    pv.textContent = txt;
   }
 
-  var tW=((w+s)*maxL-s).toFixed(1);
-  var tH=(lines.length*h).toFixed(1);
-  var modInfo = anyModified ? ' &nbsp;&middot;&nbsp; <strong style="color:var(--g500)">Glyphes modifies appliques</strong>' : '';
-  document.getElementById('dinfo').innerHTML='SVG : <strong>'+tW+' x '+tH+' mm</strong> &nbsp;&middot;&nbsp; '+w+'x'+h+'mm . esp. '+s+'mm' + modInfo;
+  pv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="' + prevW.toFixed(0) + '" height="' + prevH.toFixed(0) + '" style="overflow:visible">' + svgInner + '</svg>';
+
+  // Info line
+  var tagInfo = '';
+  if(useWS) tagInfo += ' &nbsp;&middot;&nbsp; <strong style="color:var(--accent)">Plan de travail applique</strong>';
+  if(hasModified) tagInfo += ' &nbsp;&middot;&nbsp; <strong style="color:var(--accent)">Glyphes modifies</strong>';
+  document.getElementById('dinfo').innerHTML = 'SVG : <strong>' + totalWmm.toFixed(1) + ' x ' + totalHmm.toFixed(1) + ' mm</strong> &nbsp;&middot;&nbsp; ' + wMm + 'x' + hMm + 'mm . esp. ' + sMm + 'mm' + tagInfo;
   updateOverlay();
 }
+
 
 function updateOverlay(){
   var box = document.getElementById('overlayBox');
@@ -2481,60 +2521,123 @@ function geApplyGlyphs(){
 // FINAL PREVIEW — taille reelle avant export
 // =================================================
 function buildFinalSvg(){
-  // Build the same SVG as doExport but return as string (without saving)
   var ef = effectiveFont();
   if(!ef) return null;
   var raw = document.getElementById('ta').value || 'Jorge';
   var txt = applyCase(raw, ef.textCase);
-  var h = parseFloat(document.getElementById('hm').value) || 20;
-  var w = parseFloat(document.getElementById('wm').value) || 15;
-  var s = parseFloat(document.getElementById('sm').value) || 0;
-  var lines = txt.split('\n');
-  var maxL = Math.max.apply(null, lines.map(function(l){return l.length;}).concat([1]));
+  var hMm = parseFloat(document.getElementById('hm').value) || 20;
+  var wMm = parseFloat(document.getElementById('wm').value) || 15;
+  var sMm = parseFloat(document.getElementById('sm').value) || 0;
+  var glyphKey = ef.family + '-' + ef.weight + '-' + ef.style;
+  var modGlyphs = (S._modifiedGlyphs && S._modifiedGlyphsFont === glyphKey) ? S._modifiedGlyphs : null;
 
-  var hasModified = S._modifiedGlyphs &&
-                    S._modifiedGlyphsFont === ef.family + '-' + ef.weight + '-' + ef.style &&
-                    Object.keys(S._modifiedGlyphs).length > 0;
-
-  var svgW = ((w + s) * maxL - s);
-  var svgH = lines.length * h;
-  var fsMm = h * 0.76;
-  var baseY = h * 0.80;
-  var natW = measureCharWidth(ef.family, ef.weight, ef.style, fsMm, 'H');
-  if(!natW || natW < 1) natW = fsMm * 0.55;
-  var visualCellW = w * ef.scaleX;
-  var glyphScaleX = visualCellW / natW;
+  // Check if we have a custom workspace layout matching the current text
+  var line = txt.split('\n')[0];
+  var useWS = false;
+  if(S._wsLettersLayout && S._wsLettersLayout.length === line.length){
+    useWS = true;
+    for(var ci=0; ci<line.length; ci++){
+      if(S._wsLettersLayout[ci].ch !== line[ci]){ useWS = false; break; }
+    }
+  }
 
   var els = '';
   var anyTextNeeded = false;
-  lines.forEach(function(line, li){
-    var yB = (li * h + baseY).toFixed(3);
-    line.split('').forEach(function(ch, ci){
-      var xC = (ci * (w + s) + w/2);
-      var modGlyph = hasModified && S._modifiedGlyphs[ch];
+  var svgW, svgH;
+
+  if(useWS){
+    // Use custom positions from workspace
+    // Compute bounding box of the entire layout, then translate to origin
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    S._wsLettersLayout.forEach(function(L){
+      if(L.x < minX) minX = L.x;
+      if(L.y < minY) minY = L.y;
+      if(L.x + L.w > maxX) maxX = L.x + L.w;
+      if(L.y + L.h > maxY) maxY = L.y + L.h;
+    });
+    svgW = maxX - minX;
+    svgH = maxY - minY;
+
+    S._wsLettersLayout.forEach(function(L){
+      if(L.ch === ' ' || L.ch === '\n' || L.ch === '\t') return;
+      var x = L.x - minX;
+      var y = L.y - minY;
+      var w = L.w;
+      var h = L.h;
+      var fsMm = h * 0.76;
+      var baseY = y + h * 0.80;
+      var cxMm = x + w/2;
+      var modGlyph = modGlyphs && modGlyphs[L.ch];
       if(modGlyph){
-        var sy = fsMm / modGlyph.unitsPerEm;
-        var sx = sy * glyphScaleX;
-        var glyphW = modGlyph.advanceWidth * sx;
-        var tx = xC - glyphW/2;
-        var ty = li * h + baseY;
+        var bb = modGlyph.origBBox || computeBBox(modGlyph.commands);
+        if(!bb || !isFinite(bb.minX)) bb = {minX:0, minY:0, maxX:modGlyph.unitsPerEm, maxY:modGlyph.unitsPerEm};
+        var gW = (bb.maxX - bb.minX) || modGlyph.unitsPerEm;
+        var gH = (bb.maxY - bb.minY) || modGlyph.unitsPerEm;
+        var sx = w / gW;
+        var sy = h / gH;
+        var tx = x - bb.minX * sx;
+        var ty = y + bb.maxY * sy;
         var d = commandsToPathData(modGlyph.commands);
-        els += '\n  <g transform="translate(' + tx.toFixed(3) + ',' + ty.toFixed(3) + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')">' +
-               '<path d="' + d + '" fill="#000000"/></g>';
+        els += '\n  <g transform="translate(' + tx.toFixed(4) + ',' + ty.toFixed(4) + ') scale(' + sx.toFixed(6) + ',' + (-sy).toFixed(6) + ')"><path d="' + d + '" fill="#000000"/></g>';
       } else {
         anyTextNeeded = true;
-        var txM = (xC * (1 - glyphScaleX)).toFixed(3);
-        els += '\n  <text x="' + xC.toFixed(3) + '" y="' + yB + '"' +
+        var natW = measureCharWidth(ef.family, ef.weight, ef.style, fsMm, 'H');
+        if(!natW || natW < 1) natW = fsMm * 0.55;
+        var glyphScaleX = (w * ef.scaleX) / natW;
+        var txM = (cxMm * (1 - glyphScaleX)).toFixed(3);
+        els += '\n  <text x="' + cxMm.toFixed(3) + '" y="' + baseY.toFixed(3) + '"' +
                ' text-anchor="middle"' +
                ' font-family="' + xe(ef.family) + ',Georgia,serif"' +
                ' font-size="' + fsMm.toFixed(3) + '"' +
                ' font-weight="' + ef.weight + '"' +
                ' font-style="' + ef.style + '"' +
                ' transform="matrix(' + glyphScaleX.toFixed(4) + ',0,0,1,' + txM + ',0)"' +
-               ' fill="#000000">' + xc(ch) + '</text>';
+               ' fill="#000000">' + xc(L.ch) + '</text>';
       }
     });
-  });
+  } else {
+    // Standard uniform-grid layout (compose page values only)
+    var lines = txt.split('\n');
+    var maxL = Math.max.apply(null, lines.map(function(l){return l.length;}).concat([1]));
+    svgW = (wMm + sMm) * maxL - sMm;
+    svgH = lines.length * hMm;
+    var fsMm = hMm * 0.76;
+    var baseY = hMm * 0.80;
+    var natW2 = measureCharWidth(ef.family, ef.weight, ef.style, fsMm, 'H');
+    if(!natW2 || natW2 < 1) natW2 = fsMm * 0.55;
+    var glyphScaleX = (wMm * ef.scaleX) / natW2;
+    lines.forEach(function(lineTxt, li){
+      var yB = (li * hMm + baseY).toFixed(3);
+      lineTxt.split('').forEach(function(ch, ci){
+        if(ch === ' ' || ch === '\t') return;
+        var xC = ci * (wMm + sMm) + wMm/2;
+        var modGlyph = modGlyphs && modGlyphs[ch];
+        if(modGlyph){
+          var bb2 = modGlyph.origBBox || computeBBox(modGlyph.commands);
+          if(!bb2 || !isFinite(bb2.minX)) bb2 = {minX:0, minY:0, maxX:modGlyph.unitsPerEm, maxY:modGlyph.unitsPerEm};
+          var gW2 = (bb2.maxX - bb2.minX) || modGlyph.unitsPerEm;
+          var gH2 = (bb2.maxY - bb2.minY) || modGlyph.unitsPerEm;
+          var sx2 = wMm / gW2;
+          var sy2 = hMm / gH2;
+          var tx2 = (xC - wMm/2) - bb2.minX * sx2;
+          var ty2 = (li * hMm) + bb2.maxY * sy2;
+          var d2 = commandsToPathData(modGlyph.commands);
+          els += '\n  <g transform="translate(' + tx2.toFixed(4) + ',' + ty2.toFixed(4) + ') scale(' + sx2.toFixed(6) + ',' + (-sy2).toFixed(6) + ')"><path d="' + d2 + '" fill="#000000"/></g>';
+        } else {
+          anyTextNeeded = true;
+          var txM2 = (xC * (1 - glyphScaleX)).toFixed(3);
+          els += '\n  <text x="' + xC.toFixed(3) + '" y="' + yB + '"' +
+                 ' text-anchor="middle"' +
+                 ' font-family="' + xe(ef.family) + ',Georgia,serif"' +
+                 ' font-size="' + fsMm.toFixed(3) + '"' +
+                 ' font-weight="' + ef.weight + '"' +
+                 ' font-style="' + ef.style + '"' +
+                 ' transform="matrix(' + glyphScaleX.toFixed(4) + ',0,0,1,' + txM2 + ',0)"' +
+                 ' fill="#000000">' + xc(ch) + '</text>';
+        }
+      });
+    });
+  }
 
   var fontImport = '';
   if(anyTextNeeded){
@@ -2547,9 +2650,10 @@ function buildFinalSvg(){
     fontImport +
     '<rect width="' + svgW.toFixed(3) + '" height="' + svgH.toFixed(3) + '" fill="white"/>' + els + '\n</svg>';
 
-  var fname = 'jorge_' + ef.family.replace(/\s+/g, '-').toLowerCase() + (hasModified ? '_custom' : '') + '_' + w + 'x' + h + 'mm.svg';
+  var hasModified = !!modGlyphs && Object.keys(modGlyphs).length > 0;
+  var fname = 'jorge_' + ef.family.replace(/\s+/g, '-').toLowerCase() + (hasModified ? '_custom' : '') + (useWS ? '_positions' : '') + '_' + Math.round(svgW) + 'x' + Math.round(svgH) + 'mm.svg';
 
-  return { svg: svg, filename: fname, widthMm: svgW, heightMm: svgH, hasModified: hasModified };
+  return { svg: svg, filename: fname, widthMm: svgW, heightMm: svgH, hasModified: hasModified, usesWorkspace: useWS };
 }
 
 function openFinalPreview(){
@@ -3268,7 +3372,8 @@ function wsRenderNormal(){
     var pTL = wsMmToPx(WS.photoX, WS.photoY);
     var pW = WS.photoMmW * WS.photoScale * WS.scale;
     var pH = WS.photoMmH * WS.photoScale * WS.scale;
-    out += '<image id="wsPhoto" href="' + S.cropPreviewUrl + '" x="' + pTL.x + '" y="' + pTL.y + '" width="' + pW + '" height="' + pH + '" preserveAspectRatio="none" opacity="' + WS.photoOpacity + '" style="cursor:' + (WS.lockPhoto ? 'default' : 'move') + '"/>';
+    var wsPe = WS.lockPhoto ? 'none' : 'auto';
+    out += '<image id="wsPhoto" href="' + S.cropPreviewUrl + '" x="' + pTL.x + '" y="' + pTL.y + '" width="' + pW + '" height="' + pH + '" preserveAspectRatio="none" opacity="' + WS.photoOpacity + '" style="cursor:' + (WS.lockPhoto ? 'default' : 'move') + ';pointer-events:' + wsPe + '"/>';
   }
 
   if(WS.showGrid){
@@ -3526,7 +3631,8 @@ function wsRenderEditMode(){
     var ppx = (WS.canvasW - photoNatW_px) / 2 + WS.editPhotoOffsetX;
     var ppy = (WS.canvasH - photoNatH_px) / 2 + WS.editPhotoOffsetY;
     var cursorStyle = WS.editLockPhoto ? 'default' : 'move';
-    out += '<image id="wsEditPhoto" href="' + S.cropPreviewUrl + '" x="' + ppx + '" y="' + ppy + '" width="' + photoNatW_px + '" height="' + photoNatH_px + '" preserveAspectRatio="xMidYMid meet" opacity="' + WS.editPhotoOpacity + '" style="cursor:' + cursorStyle + '"/>';
+    var pe = WS.editLockPhoto ? 'none' : 'auto';
+    out += '<image id="wsEditPhoto" href="' + S.cropPreviewUrl + '" x="' + ppx + '" y="' + ppy + '" width="' + photoNatW_px + '" height="' + photoNatH_px + '" preserveAspectRatio="xMidYMid meet" opacity="' + WS.editPhotoOpacity + '" style="cursor:' + cursorStyle + ';pointer-events:' + pe + '"/>';
   }
 
   // Grid
@@ -4247,7 +4353,118 @@ setTimeout(wsBindEvents, 200);
 // =================================================
 // PDF EXPORT — converts SVG to PDF using a simple inline approach
 // =================================================
+
+
+// Build a paths-only SVG for PDF export (no <text> elements — they don't render in PDF)
+// Returns null if opentype fonts aren't loaded yet
+function buildFinalSvgPaths(){
+  var ef = effectiveFont();
+  if(!ef) return null;
+  var glyphKey = ef.family + '-' + ef.weight + '-' + ef.style;
+  if(!window._otFonts || !window._otFonts[glyphKey]){
+    // Try to load and bail
+    loadGlyphFontIfNeeded(ef);
+    return null;
+  }
+  var font = window._otFonts[glyphKey];
+  var upem = font.unitsPerEm || 1000;
+  var raw = document.getElementById('ta').value || 'Jorge';
+  var txt = applyCase(raw, ef.textCase);
+  var hMm = parseFloat(document.getElementById('hm').value) || 20;
+  var wMm = parseFloat(document.getElementById('wm').value) || 15;
+  var sMm = parseFloat(document.getElementById('sm').value) || 0;
+  var line = txt.split('\n')[0];
+  var modGlyphs = (S._modifiedGlyphs && S._modifiedGlyphsFont === glyphKey) ? S._modifiedGlyphs : null;
+
+  // Detect workspace layout
+  var useWS = false;
+  if(S._wsLettersLayout && S._wsLettersLayout.length === line.length){
+    useWS = true;
+    for(var ci=0; ci<line.length; ci++){
+      if(S._wsLettersLayout[ci].ch !== line[ci]){ useWS = false; break; }
+    }
+  }
+
+  // Helper: get path commands for a char (modified or from font)
+  function getGlyphData(ch){
+    if(modGlyphs && modGlyphs[ch]){
+      var mg = modGlyphs[ch];
+      var bb = mg.origBBox || computeBBox(mg.commands);
+      if(!bb || !isFinite(bb.minX)) bb = {minX:0, minY:0, maxX:mg.unitsPerEm, maxY:mg.unitsPerEm};
+      return { commands: mg.commands, bbox: bb, unitsPerEm: mg.unitsPerEm };
+    }
+    var otGlyph = font.charToGlyph(ch);
+    if(!otGlyph) return null;
+    var commands = otGlyph.path.commands.map(function(c){ return Object.assign({}, c); });
+    var bb2 = computeBBox(commands);
+    if(!bb2 || !isFinite(bb2.minX)) bb2 = {minX:0, minY:0, maxX:upem, maxY:upem};
+    return { commands: commands, bbox: bb2, unitsPerEm: upem };
+  }
+
+  var els = '';
+  var svgW, svgH;
+
+  if(useWS){
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    S._wsLettersLayout.forEach(function(L){
+      if(L.x < minX) minX = L.x;
+      if(L.y < minY) minY = L.y;
+      if(L.x + L.w > maxX) maxX = L.x + L.w;
+      if(L.y + L.h > maxY) maxY = L.y + L.h;
+    });
+    svgW = maxX - minX;
+    svgH = maxY - minY;
+    S._wsLettersLayout.forEach(function(L){
+      if(L.ch === ' ' || L.ch === '\n' || L.ch === '\t') return;
+      var gd = getGlyphData(L.ch);
+      if(!gd) return;
+      var x = L.x - minX, y = L.y - minY, w = L.w, h = L.h;
+      var bb = gd.bbox;
+      var gW = (bb.maxX - bb.minX) || gd.unitsPerEm;
+      var gH = (bb.maxY - bb.minY) || gd.unitsPerEm;
+      var sx = w / gW;
+      var sy = h / gH;
+      var tx = x - bb.minX * sx;
+      var ty = y + bb.maxY * sy;
+      var d = commandsToPathData(gd.commands);
+      els += '\n  <g transform="translate(' + tx.toFixed(4) + ',' + ty.toFixed(4) + ') scale(' + sx.toFixed(6) + ',' + (-sy).toFixed(6) + ')"><path d="' + d + '" fill="#000000"/></g>';
+    });
+  } else {
+    var lines = txt.split('\n');
+    var maxL = Math.max.apply(null, lines.map(function(l){return l.length;}).concat([1]));
+    svgW = (wMm + sMm) * maxL - sMm;
+    svgH = lines.length * hMm;
+    lines.forEach(function(lineTxt, li){
+      lineTxt.split('').forEach(function(ch, ci){
+        if(ch === ' ' || ch === '\t') return;
+        var gd = getGlyphData(ch);
+        if(!gd) return;
+        var x = ci * (wMm + sMm), y = li * hMm, w = wMm, h = hMm;
+        var bb = gd.bbox;
+        var gW = (bb.maxX - bb.minX) || gd.unitsPerEm;
+        var gH = (bb.maxY - bb.minY) || gd.unitsPerEm;
+        var sx = w / gW;
+        var sy = h / gH;
+        var tx = x - bb.minX * sx;
+        var ty = y + bb.maxY * sy;
+        var d = commandsToPathData(gd.commands);
+        els += '\n  <g transform="translate(' + tx.toFixed(4) + ',' + ty.toFixed(4) + ') scale(' + sx.toFixed(6) + ',' + (-sy).toFixed(6) + ')"><path d="' + d + '" fill="#000000"/></g>';
+      });
+    });
+  }
+
+  var svg = '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<svg xmlns="http://www.w3.org/2000/svg" width="' + svgW.toFixed(3) + 'mm" height="' + svgH.toFixed(3) + 'mm" viewBox="0 0 ' + svgW.toFixed(3) + ' ' + svgH.toFixed(3) + '">\n  ' +
+    '<rect width="' + svgW.toFixed(3) + '" height="' + svgH.toFixed(3) + '" fill="white"/>' + els + '\n</svg>';
+  return { svg: svg, widthMm: svgW, heightMm: svgH };
+}
 function exportPDF(){
+  // Use a paths-only SVG so jsPDF doesn't need to load fonts
+  var pathsData = buildFinalSvgPaths();
+  if(!pathsData){
+    alert('Police pas encore chargee. Patientez quelques secondes et reessayez.');
+    return;
+  }
   var data = buildFinalSvg();
   if(!data) return;
   var filename = data.filename.replace(/\.svg$/, '.pdf');
@@ -4264,7 +4481,7 @@ function exportPDF(){
   }
   // Parse the SVG string into an actual SVG element (svg2pdf needs a DOM node)
   var parser = new DOMParser();
-  var doc = parser.parseFromString(data.svg, 'image/svg+xml');
+  var doc = parser.parseFromString(pathsData.svg, 'image/svg+xml');
   var svgEl = doc.documentElement;
   if(!svgEl || svgEl.tagName !== 'svg'){
     alert('Erreur lors de la lecture du SVG. Utilisez l\'export SVG a la place.');
