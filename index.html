@@ -104,9 +104,9 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 .font-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .cat-hdr{grid-column:1/-1;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--g500);font-family:var(--mono);padding:10px 4px 4px;display:flex;align-items:center;gap:8px}
 .cat-hdr::after{content:'';flex:1;height:1px;background:var(--brd2)}
-.font-card{background:var(--wh);border:2px solid var(--brd);border-radius:12px;padding:13px 11px;cursor:pointer;transition:border-color .15s,box-shadow .15s;box-shadow:0 2px 6px var(--sh);display:flex;flex-direction:column;gap:5px}
+.font-card{background:#fff;border:2px solid #d0d8d2;border-radius:12px;padding:13px 11px;cursor:pointer;transition:border-color .15s,box-shadow .15s;box-shadow:0 2px 6px rgba(0,0,0,.08);display:flex;flex-direction:column;gap:5px}
 .font-card:active{transform:scale(.97)}
-.font-card.sel{border-color:var(--g400);background:var(--g50);box-shadow:0 0 0 3px var(--g100)}
+.font-card.sel{border-color:var(--accent);background:#eaf3fc;box-shadow:0 0 0 3px rgba(20,115,230,.15)}
 .fc-prev{font-size:24px;line-height:1.2;color:#0b1e12;height:34px;overflow:hidden;font-weight:600}
 .fc-name{font-size:11px;font-family:var(--mono);color:#333;font-weight:600}
 .fc-tag{font-size:10px;color:#666}
@@ -651,6 +651,23 @@ textarea::placeholder{color:var(--fnt)}
         </div>
       </div>
 
+      <div class="ws-side-section" id="wsEditSelTools" style="display:none">
+        <h3>Deplacer la selection</h3>
+        <div style="font-size:10px;color:#888;margin-bottom:6px;font-family:var(--mono)">0.5 mm par clic, Shift = 5 mm</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;width:130px;margin:0 auto">
+          <div></div>
+          <button class="ws-tool-btn" id="wsEditArrowUp" type="button" style="padding:4px;height:30px;justify-content:center;font-size:16px">&uarr;</button>
+          <div></div>
+          <button class="ws-tool-btn" id="wsEditArrowLeft" type="button" style="padding:4px;height:30px;justify-content:center;font-size:16px">&larr;</button>
+          <div></div>
+          <button class="ws-tool-btn" id="wsEditArrowRight" type="button" style="padding:4px;height:30px;justify-content:center;font-size:16px">&rarr;</button>
+          <div></div>
+          <button class="ws-tool-btn" id="wsEditArrowDown" type="button" style="padding:4px;height:30px;justify-content:center;font-size:16px">&darr;</button>
+          <div></div>
+        </div>
+        <div id="wsEditSelInfo" style="font-size:10px;color:#fdb45f;font-family:var(--mono);margin-top:8px;text-align:center"></div>
+        <div style="font-size:10px;color:#888;margin-top:6px;font-family:var(--mono);text-align:center">Ou glissez avec la souris dans le cadre</div>
+      </div>
       <div class="ws-actions" id="wsEditGlyphBox">
         <button class="btn btn-g" id="wsEditGlyph" type="button" style="flex:1;padding:11px 16px;font-size:13px;font-weight:600;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;box-shadow:0 2px 8px rgba(20,115,230,0.4);transition:all 0.15s" disabled>Modifier les courbes</button>
       </div>
@@ -3379,6 +3396,7 @@ function wsRender(){
     out += wsRenderNormal();
   }
   svg.innerHTML = out;
+  wsUpdateEditSelToolsUI();
 }
 
 function wsRenderNormal(){
@@ -3755,6 +3773,30 @@ function wsRenderEditMode(){
     }
   });
 
+  // Selection bounding box — orange dashed rectangle around selected anchors (helps user drag)
+  if(WS.editTool === 'select' && WS.editSelected.length > 0){
+    var T2 = WS._editTransform;
+    if(T2){
+      var minPx2 = Infinity, minPy2 = Infinity, maxPx2 = -Infinity, maxPy2 = -Infinity;
+      var anyV = false;
+      WS.editSelected.forEach(function(idx){
+        var c = g.commands[idx];
+        if(!c || c.x === undefined) return;
+        var px = T2.tx + c.x * T2.sx;
+        var py = T2.ty - c.y * T2.sy;
+        if(px < minPx2) minPx2 = px;
+        if(py < minPy2) minPy2 = py;
+        if(px > maxPx2) maxPx2 = px;
+        if(py > maxPy2) maxPy2 = py;
+        anyV = true;
+      });
+      if(anyV){
+        var pad = 8;
+        out += '<rect x="' + (minPx2 - pad) + '" y="' + (minPy2 - pad) + '" width="' + (maxPx2 - minPx2 + 2*pad) + '" height="' + (maxPy2 - minPy2 + 2*pad) + '" fill="rgba(232,127,0,0.08)" stroke="#e87f00" stroke-width="1.2" stroke-dasharray="5,3" pointer-events="none"/>';
+      }
+    }
+  }
+
   // Edit selection rubber-band (in px)
   if(WS.editSelBox){
     var rx = Math.min(WS.editSelBox.x1, WS.editSelBox.x2);
@@ -3836,6 +3878,37 @@ function updateModifyButtonLabel(){
     if(n > 0){ btn.innerHTML = icon + ' Modifier les lettres (' + n + ' modifiees)'; return; }
   }
   btn.innerHTML = icon + ' Modifier les lettres (desktop)';
+}
+
+// Move selected anchor points by dxMm, dyMm (mm in workspace coords)
+function wsMoveEditSelectedAnchors(dxMm, dyMm){
+  if(WS.editingLetter < 0 || !WS.editGlyph || WS.editSelected.length === 0) return;
+  var dxg = wsMmToGlyphUnits(dxMm);
+  var dyg = wsMmToGlyphUnits(dyMm);
+  WS.editSelected.forEach(function(idx){
+    var c = WS.editGlyph.commands[idx];
+    if(!c) return;
+    if(c.x !== undefined) c.x += dxg;
+    if(c.y !== undefined) c.y += dyg;
+    if(c.x1 !== undefined) c.x1 += dxg;
+    if(c.y1 !== undefined) c.y1 += dyg;
+    if(c.x2 !== undefined) c.x2 += dxg;
+    if(c.y2 !== undefined) c.y2 += dyg;
+  });
+  wsRender();
+}
+
+// Update the visibility of the edit-select side panel
+function wsUpdateEditSelToolsUI(){
+  var box = document.getElementById('wsEditSelTools');
+  if(!box) return;
+  if(WS.editingLetter >= 0 && WS.editTool === 'select' && WS.editSelected.length > 0){
+    box.style.display = '';
+    var info = document.getElementById('wsEditSelInfo');
+    if(info) info.textContent = WS.editSelected.length + ' point(s) selectionne(s)';
+  } else {
+    box.style.display = 'none';
+  }
 }
 
 // ========== INTERACTION ==========
@@ -4149,6 +4222,21 @@ function wsBindEvents(){
       if(img) img.setAttribute('opacity', WS.editPhotoOpacity);
     });
   }
+  // Edit-select arrow pad
+  var ear = function(id, dx, dy){
+    var b = document.getElementById(id);
+    if(!b) return;
+    b.addEventListener('click', function(e){
+      e.preventDefault();
+      var k = e.shiftKey ? 10 : 1;
+      wsMoveEditSelectedAnchors(dx * k * 0.5, dy * k * 0.5);
+    });
+  };
+  ear('wsEditArrowUp', 0, 1);
+  ear('wsEditArrowDown', 0, -1);
+  ear('wsEditArrowLeft', -1, 0);
+  ear('wsEditArrowRight', 1, 0);
+
   // Retour button — exit edit mode WITHOUT committing changes
   var backBtn = document.getElementById('wsBackToWS');
   if(backBtn){
@@ -4339,20 +4427,70 @@ function wsEditMouseDown(e, xy, tgt){
       WS.editDragging = { type: 'point', idx: idx, role: role };
     }
   } else if(WS.editTool === 'select'){
+    // Click on an anchor point
     if(role && idxAttr !== null && idxAttr !== ''){
       var idx2 = parseInt(idxAttr, 10);
-      if(WS.editSelected.indexOf(idx2) >= 0){
-        WS.editDragging = { type: 'group', mouseX: xy.x, mouseY: xy.y, snapshot: {} };
-        WS.editSelected.forEach(function(i){
-          var c = WS.editGlyph.commands[i];
-          WS.editDragging.snapshot[i] = { x: c.x, y: c.y };
-          if(c.x1 !== undefined){ WS.editDragging.snapshot[i].x1 = c.x1; WS.editDragging.snapshot[i].y1 = c.y1; }
-          if(c.x2 !== undefined){ WS.editDragging.snapshot[i].x2 = c.x2; WS.editDragging.snapshot[i].y2 = c.y2; }
-        });
+      if(WS.editSelected.indexOf(idx2) < 0){
+        // Unselected point — select it (or add to selection with Shift)
+        if(e.shiftKey){
+          WS.editSelected.push(idx2);
+        } else {
+          WS.editSelected = [idx2];
+        }
+      } else if(e.shiftKey){
+        // Already selected + shift = deselect this one
+        WS.editSelected = WS.editSelected.filter(function(i){return i !== idx2;});
+        wsRender();
         return;
       }
+      // Start group drag with current selection
+      WS.editDragging = { type: 'group', mouseX: xy.x, mouseY: xy.y, snapshot: {} };
+      WS.editSelected.forEach(function(i){
+        var c = WS.editGlyph.commands[i];
+        if(!c) return;
+        WS.editDragging.snapshot[i] = { x: c.x, y: c.y };
+        if(c.x1 !== undefined){ WS.editDragging.snapshot[i].x1 = c.x1; WS.editDragging.snapshot[i].y1 = c.y1; }
+        if(c.x2 !== undefined){ WS.editDragging.snapshot[i].x2 = c.x2; WS.editDragging.snapshot[i].y2 = c.y2; }
+      });
+      wsRender();
+      return;
     }
+    // Click in empty space — check if inside selection bbox (so user can drag from anywhere in it)
+    if(WS.editSelected.length > 0 && WS._editTransform){
+      var T = WS._editTransform;
+      var minPx = Infinity, minPy = Infinity, maxPx = -Infinity, maxPy = -Infinity;
+      var anyValid = false;
+      WS.editSelected.forEach(function(idx){
+        var c = WS.editGlyph.commands[idx];
+        if(!c || c.x === undefined) return;
+        var px = T.tx + c.x * T.sx;
+        var py = T.ty - c.y * T.sy;
+        if(px < minPx) minPx = px;
+        if(py < minPy) minPy = py;
+        if(px > maxPx) maxPx = px;
+        if(py > maxPy) maxPy = py;
+        anyValid = true;
+      });
+      if(anyValid){
+        var margin = 14;
+        if(xy.x >= minPx - margin && xy.x <= maxPx + margin && xy.y >= minPy - margin && xy.y <= maxPy + margin){
+          // Click inside selection — start group drag
+          WS.editDragging = { type: 'group', mouseX: xy.x, mouseY: xy.y, snapshot: {} };
+          WS.editSelected.forEach(function(i){
+            var c = WS.editGlyph.commands[i];
+            if(!c) return;
+            WS.editDragging.snapshot[i] = { x: c.x, y: c.y };
+            if(c.x1 !== undefined){ WS.editDragging.snapshot[i].x1 = c.x1; WS.editDragging.snapshot[i].y1 = c.y1; }
+            if(c.x2 !== undefined){ WS.editDragging.snapshot[i].x2 = c.x2; WS.editDragging.snapshot[i].y2 = c.y2; }
+          });
+          return;
+        }
+      }
+    }
+    // Otherwise — start a new rubber-band selection
+    if(!e.shiftKey) WS.editSelected = [];
     WS.editSelBox = { x1: xy.x, y1: xy.y, x2: xy.x, y2: xy.y };
+    wsRender();
   } else if(WS.editTool === 'draw-line'){
     WS.editDrawPoints.push(glyphP);
     if(WS.editDrawPoints.length === 2){
