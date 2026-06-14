@@ -602,17 +602,10 @@ textarea::placeholder{color:var(--fnt)}
         <div style="display:flex;align-items:center;gap:4px;padding:0 6px;background:#1f1f1f;border-radius:4px"><span class="ws-tool-lbl" style="font-size:10px">Trait</span><input type="range" id="wsDrawStrokeWidth" min="2" max="50" value="10" step="1" style="width:65px;accent-color:var(--accent)" title="Epaisseur du trait"><span id="wsDrawStrokeWidthVal" class="ws-tool-lbl" style="font-size:10px;min-width:36px">1.0mm</span></div>
         <label class="ws-tool-btn" style="background:#1f1f1f;cursor:pointer" title="Si le dessin est ferme, le remplir en noir"><input type="checkbox" id="wsDrawFill" style="margin-right:4px;accent-color:var(--accent)"> Remplir</label>
         <div class="ws-tool-sep"></div>
-        <label class="ws-tool-btn" style="background:#1f1f1f;cursor:pointer"><input type="checkbox" id="wsEditShowPhoto" style="margin-right:4px;accent-color:var(--accent)" checked> Photo</label>
-        <label class="ws-tool-btn" style="background:#1f1f1f;cursor:pointer"><input type="checkbox" id="wsEditLockPhoto" style="margin-right:4px;accent-color:var(--accent)"> Verrouiller</label>
-        <button class="ws-tool-btn" id="wsEditPhotoZoomOut" type="button" title="Reduire la photo">−</button>
-        <span class="ws-tool-lbl" style="font-size:10px">Taille</span>
-        <button class="ws-tool-btn" id="wsEditPhotoZoomIn" type="button" title="Agrandir la photo">+</button>
-        <div style="display:flex;align-items:center;gap:4px"><span class="ws-tool-lbl" style="font-size:10px">Opacite</span><input type="range" id="wsEditPhotoOpacity" min="10" max="100" value="45" step="5" style="width:70px;accent-color:var(--accent)"></div>
-        <div class="ws-tool-sep"></div>
         <button class="ws-tool-btn" id="wsResetLetter" type="button">Reinitialiser</button>
         <div class="ws-tool-sep"></div>
         <button class="ws-tool-btn" id="wsExitEdit" type="button" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;padding:6px 14px">Terminer l'edition</button>
-        <div style="flex-basis:100%;font-size:10px;color:#fdb45f;font-family:var(--mono);padding:2px 6px" id="wsEditHint"></div>
+        <div style="flex-basis:100%;font-size:10px;color:#fdb45f;font-family:var(--mono);padding:2px 6px" id="wsEditHint">Utilisez le panneau de droite pour la photo (taille, opacite, verrouillage). Molette = zoom plan de travail.</div>
       </div>
       <div class="ws-canvas-wrap" id="wsCanvasWrap">
         <svg id="wsSvg" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -3576,11 +3569,6 @@ function wsEnterEditMode(letterIdx){
   WS.editSelBox = null;
   WS.editDrawPoints = [];
   WS.editDrawPreview = null;
-  WS.editShowPhoto = true;
-  WS.editLockPhoto = false;
-  WS.editPhotoZoom = 1;
-  WS.editPhotoOffsetX = 0;
-  WS.editPhotoOffsetY = 0;
   WS._editFreeDragging = false;
   WS._editFreePts = [];
 
@@ -3590,11 +3578,6 @@ function wsEnterEditMode(letterIdx){
   document.getElementById('wsHint').style.display = 'none';
   var egb = document.getElementById('wsEditGlyphBox');
   if(egb) egb.style.display = 'none';
-  // Sync the edit photo toggles
-  var esp = document.getElementById('wsEditShowPhoto');
-  if(esp) esp.checked = true;
-  var elp = document.getElementById('wsEditLockPhoto');
-  if(elp) elp.checked = false;
 
   wsHighlightTool();
   wsRender();
@@ -3669,20 +3652,15 @@ function wsRenderEditMode(){
   var wsBR = wsMmToPx(WS.workMmW, WS.workMmH);
   out += '<rect x="' + wsTL.x + '" y="' + wsTL.y + '" width="' + (wsBR.x - wsTL.x) + '" height="' + (wsBR.y - wsTL.y) + '" fill="#fafafa" stroke="#3a3a3a" stroke-width="1" pointer-events="none"/>';
 
-  // Workspace photo (always visible, dimmed in edit mode unless editShowPhoto toggled off)
-  // The edit-mode photo backdrop is the SAME workspace photo, just with adjustable opacity
-  if(WS.editShowPhoto && S.cropPreviewUrl){
-    // Position centered behind canvas; user can zoom (centered) and drag
-    var photoNatW_px = WS.canvasW * 0.9 * WS.editPhotoZoom;
-    var photoNatH_px = photoNatW_px * (WS.photoMmH / WS.photoMmW);
-    var ppx = (WS.canvasW - photoNatW_px) / 2 + WS.editPhotoOffsetX;
-    var ppy = (WS.canvasH - photoNatH_px) / 2 + WS.editPhotoOffsetY;
-    var cursorStyle = WS.editLockPhoto ? 'default' : 'move';
-    // Photo is non-interactive in drawing/select modes (so clicks pass through to anchors/canvas)
-    // It's only draggable in 'edit' mode when not locked
+  // Use the SAME workspace photo state as normal mode — side panel controls work consistently
+  if(WS.showPhoto && S.cropPreviewUrl){
+    var pTL = wsMmToPx(WS.photoX, WS.photoY);
+    var pW = WS.photoMmW * WS.photoScale * WS.scale;
+    var pH = WS.photoMmH * WS.photoScale * WS.scale;
     var drawingMode = (WS.editTool === 'draw-line' || WS.editTool === 'draw-arc' || WS.editTool === 'draw-free' || WS.editTool === 'select');
-    var pe = (WS.editLockPhoto || drawingMode) ? 'none' : 'auto';
-    out += '<image id="wsEditPhoto" href="' + S.cropPreviewUrl + '" x="' + ppx + '" y="' + ppy + '" width="' + photoNatW_px + '" height="' + photoNatH_px + '" preserveAspectRatio="xMidYMid meet" opacity="' + WS.editPhotoOpacity + '" style="cursor:' + cursorStyle + ';pointer-events:' + pe + '"/>';
+    var pe = (WS.lockPhoto || drawingMode) ? 'none' : 'auto';
+    var cursorStyle = WS.lockPhoto ? 'default' : 'move';
+    out += '<image id="wsPhoto" href="' + S.cropPreviewUrl + '" x="' + pTL.x + '" y="' + pTL.y + '" width="' + pW + '" height="' + pH + '" preserveAspectRatio="none" opacity="' + WS.photoOpacity + '" style="cursor:' + cursorStyle + ';pointer-events:' + pe + '"/>';
   }
 
   // Grid
@@ -3931,15 +3909,10 @@ function wsBindEvents(){
     if(!document.getElementById('workspace').classList.contains('on')) return;
     e.preventDefault();
     var delta = e.deltaY < 0 ? 1.1 : 0.9;
-    if(WS.editingLetter >= 0){
-      // In edit mode the wheel always zooms only the photo (the workspace stays at the same scale)
-      WS.editPhotoZoom = Math.max(0.2, Math.min(8, WS.editPhotoZoom * delta));
-      wsRender();
-    } else {
-      wsZoom(delta);
-      wsRender();
-      wsSyncUI();
-    }
+    // Wheel zooms the workspace in both modes (so user can zoom in on a letter while editing)
+    wsZoom(delta);
+    wsRender();
+    wsSyncUI();
   }, { passive: false });
 
   // Mousedown
@@ -4177,21 +4150,7 @@ function wsBindEvents(){
   document.getElementById('wsResetLetter').addEventListener('click', wsResetCurrentLetter);
   document.getElementById('wsExitEdit').addEventListener('click', wsExitEditMode);
 
-  // Edit photo controls
-  document.getElementById('wsEditShowPhoto').addEventListener('change', function(e){ WS.editShowPhoto = e.target.checked; wsRender(); });
-  document.getElementById('wsEditLockPhoto').addEventListener('change', function(e){ WS.editLockPhoto = e.target.checked; wsRender(); });
-  document.getElementById('wsEditPhotoZoomIn').addEventListener('click', function(e){
-    e.preventDefault();
-    e.stopPropagation();
-    WS.editPhotoZoom = Math.min(8, WS.editPhotoZoom * 1.2);
-    wsRender();
-  });
-  document.getElementById('wsEditPhotoZoomOut').addEventListener('click', function(e){
-    e.preventDefault();
-    e.stopPropagation();
-    WS.editPhotoZoom = Math.max(0.2, WS.editPhotoZoom / 1.2);
-    wsRender();
-  });
+  // Edit photo controls — removed; the side panel handles photo (unified state)
   // Drawing tool: stroke width slider
   var swEl = document.getElementById('wsDrawStrokeWidth');
   var swVal = document.getElementById('wsDrawStrokeWidthVal');
@@ -4212,16 +4171,7 @@ function wsBindEvents(){
     });
   }
 
-  // Photo opacity slider
-  var epoEl = document.getElementById('wsEditPhotoOpacity');
-  if(epoEl){
-    epoEl.value = Math.round(WS.editPhotoOpacity * 100);
-    epoEl.addEventListener('input', function(e){
-      WS.editPhotoOpacity = parseInt(e.target.value, 10) / 100;
-      var img = document.getElementById('wsEditPhoto');
-      if(img) img.setAttribute('opacity', WS.editPhotoOpacity);
-    });
-  }
+  // Photo opacity controlled via side panel only (unified)
   // Edit-select arrow pad
   var ear = function(id, dx, dy){
     var b = document.getElementById(id);
@@ -4415,9 +4365,9 @@ function wsEditMouseDown(e, xy, tgt){
   var idxAttr = tgt && tgt.getAttribute && tgt.getAttribute('data-edit-idx');
   var glyphP = wsPxToGlyph(xy.x, xy.y);
 
-  // Photo drag in edit mode
-  if(tgt && tgt.id === 'wsEditPhoto' && !WS.editLockPhoto){
-    WS.editDragging = { type: 'photo', mouseX: xy.x, mouseY: xy.y, offX0: WS.editPhotoOffsetX, offY0: WS.editPhotoOffsetY };
+  // Photo drag in edit mode (same workspace photo)
+  if(tgt && tgt.id === 'wsPhoto' && !WS.lockPhoto){
+    WS.editDragging = { type: 'photo', mouseX: xy.x, mouseY: xy.y, photoX0: WS.photoX, photoY0: WS.photoY };
     return;
   }
 
@@ -4529,8 +4479,10 @@ function wsEditMouseMove(e, xy){
   var glyphP = wsPxToGlyph(xy.x, xy.y);
 
   if(WS.editDragging && WS.editDragging.type === 'photo'){
-    WS.editPhotoOffsetX = WS.editDragging.offX0 + (xy.x - WS.editDragging.mouseX);
-    WS.editPhotoOffsetY = WS.editDragging.offY0 + (xy.y - WS.editDragging.mouseY);
+    var dmx = (xy.x - WS.editDragging.mouseX) / WS.scale;
+    var dmy = (xy.y - WS.editDragging.mouseY) / WS.scale;
+    WS.photoX = WS.editDragging.photoX0 + dmx;
+    WS.photoY = WS.editDragging.photoY0 + dmy;
     wsRender();
     return;
   }
