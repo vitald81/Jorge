@@ -626,7 +626,7 @@ textarea::placeholder{color:var(--fnt)}
         <button class="ws-tool-btn" id="wsToolArc" type="button">Arc</button>
         <button class="ws-tool-btn" id="wsToolFree" type="button">Crayon libre</button>
         <div style="display:flex;align-items:center;gap:4px;padding:0 6px;background:#1f1f1f;border-radius:4px"><span class="ws-tool-lbl" style="font-size:10px">Trait</span><input type="range" id="wsDrawStrokeWidth" min="2" max="50" value="10" step="1" style="width:65px;accent-color:var(--accent)" title="Epaisseur du trait"><span id="wsDrawStrokeWidthVal" class="ws-tool-lbl" style="font-size:10px;min-width:36px">1.0mm</span></div>
-        <label class="ws-tool-btn" style="background:#1f1f1f;cursor:pointer" title="Si le dessin est ferme, le remplir en noir"><input type="checkbox" id="wsDrawFill" style="margin-right:4px;accent-color:var(--accent)"> Remplir</label>
+        <label class="ws-tool-btn" style="background:#1f1f1f;cursor:pointer" title="Crayon libre uniquement : si coche, ferme le trace et le remplit en noir solide. Sinon, contour epais ouvert."><input type="checkbox" id="wsDrawFill" style="margin-right:4px;accent-color:var(--accent)"> Remplir</label>
         <div class="ws-tool-sep"></div>
         <button class="ws-tool-btn" id="wsResetLetter" type="button">Reinitialiser</button>
         <div class="ws-tool-sep"></div>
@@ -1417,20 +1417,26 @@ function buildPrintPreview(){
   var sMm = parseFloat(document.getElementById('sm').value) || 0;
   var rows = '';
   if(S._wsLettersLayout && S._wsLettersLayout.length === line.length){
-    // Use workspace layout — position relative to first letter (offset removed)
+    // Compute actual rendered bboxes including modifications that extend beyond
+    var actBoxes = S._wsLettersLayout.map(function(L){ return wsActualLetterBBox(L, ef); });
     var minX = Infinity, minY = Infinity;
-    S._wsLettersLayout.forEach(function(L){
-      if(L.x < minX) minX = L.x;
-      if(L.y < minY) minY = L.y;
+    actBoxes.forEach(function(bb){
+      if(bb.x < minX) minX = bb.x;
+      if(bb.y < minY) minY = bb.y;
     });
-    S._wsLettersLayout.forEach(function(L){
+    S._wsLettersLayout.forEach(function(L, i){
       var dispCh = L.ch === ' ' ? '(espace)' : L.ch;
-      var x = (L.x - minX).toFixed(1);
-      var y = (L.y - minY).toFixed(1);
+      var ab = actBoxes[i];
+      var x = (ab.x - minX).toFixed(1);
+      var y = (ab.y - minY).toFixed(1);
+      // Check if modified for visual indicator
+      var modKey = ef.family + '-' + ef.weight + '-' + ef.style;
+      var isModified = S._modifiedGlyphs && S._modifiedGlyphsFont === modKey && S._modifiedGlyphs[L.ch];
+      var modMark = isModified ? ' <span style="color:#0d66d0;font-size:9px">(modifie)</span>' : '';
       rows += '<tr style="border-bottom:1px solid #f0f0f0">' +
-              '<td style="padding:5px 8px;font-weight:700;color:#0b1e12;font-size:14px">' + xc(dispCh) + '</td>' +
-              '<td style="padding:5px 8px;color:#0b1e12">' + L.w.toFixed(1) + ' mm</td>' +
-              '<td style="padding:5px 8px;color:#0b1e12">' + L.h.toFixed(1) + ' mm</td>' +
+              '<td style="padding:5px 8px;font-weight:700;color:#0b1e12;font-size:14px">' + xc(dispCh) + modMark + '</td>' +
+              '<td style="padding:5px 8px;color:#0b1e12">' + ab.w.toFixed(1) + ' mm</td>' +
+              '<td style="padding:5px 8px;color:#0b1e12">' + ab.h.toFixed(1) + ' mm</td>' +
               '<td style="padding:5px 8px;color:#666;font-size:11px">(' + x + ', ' + y + ') mm</td>' +
               '</tr>';
     });
@@ -2657,6 +2663,40 @@ function geApplyGlyphs(){
 // =================================================
 // FINAL PREVIEW — taille reelle avant export
 // =================================================
+
+// Compute the actual rendered bounding box of a letter in mm (mm coords in workspace).
+// Accounts for glyph modifications that may extend beyond the original bbox.
+function wsActualLetterBBox(L, ef){
+  if(!L) return { x:0, y:0, w:0, h:0 };
+  if(!ef) ef = effectiveFont();
+  if(!ef) return { x: L.x, y: L.y, w: L.w, h: L.h };
+  var glyphKey = ef.family + '-' + ef.weight + '-' + ef.style;
+  var modGlyphs = (S._modifiedGlyphs && S._modifiedGlyphsFont === glyphKey) ? S._modifiedGlyphs : null;
+  var mg = modGlyphs && modGlyphs[L.ch];
+  if(!mg) return { x: L.x, y: L.y, w: L.w, h: L.h };
+  var bb = computeBBox(mg.commands);
+  var origBB = mg.origBBox;
+  if(!bb || !isFinite(bb.minX) || !origBB) return { x: L.x, y: L.y, w: L.w, h: L.h };
+  var origW = origBB.maxX - origBB.minX;
+  var origH = origBB.maxY - origBB.minY;
+  if(origW < 0.001 || origH < 0.001) return { x: L.x, y: L.y, w: L.w, h: L.h };
+  var sx = L.w / origW;
+  var sy = L.h / origH;
+  // Glyph X maps to mm X via:  mm = L.x + (gX - origMinX) * sx
+  var mmMinX = L.x + (bb.minX - origBB.minX) * sx;
+  var mmMaxX = L.x + (bb.maxX - origBB.minX) * sx;
+  // Glyph Y is FLIPPED (font Y-up vs screen Y-down):
+  // mm Y of glyph point y = L.y + (origMaxY - gY) * sy
+  var mmTopY = L.y + (origBB.maxY - bb.maxY) * sy;
+  var mmBottomY = L.y + (origBB.maxY - bb.minY) * sy;
+  return {
+    x: mmMinX,
+    y: mmTopY,
+    w: mmMaxX - mmMinX,
+    h: mmBottomY - mmTopY
+  };
+}
+
 function buildFinalSvg(){
   var ef = effectiveFont();
   if(!ef) return null;
@@ -2683,14 +2723,14 @@ function buildFinalSvg(){
   var svgW, svgH;
 
   if(useWS){
-    // Use custom positions from workspace
-    // Compute bounding box of the entire layout, then translate to origin
+    // Compute bounding box including any modifications that extend beyond the letter boxes
     var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     S._wsLettersLayout.forEach(function(L){
-      if(L.x < minX) minX = L.x;
-      if(L.y < minY) minY = L.y;
-      if(L.x + L.w > maxX) maxX = L.x + L.w;
-      if(L.y + L.h > maxY) maxY = L.y + L.h;
+      var ab = wsActualLetterBBox(L, ef);
+      if(ab.x < minX) minX = ab.x;
+      if(ab.y < minY) minY = ab.y;
+      if(ab.x + ab.w > maxX) maxX = ab.x + ab.w;
+      if(ab.y + ab.h > maxY) maxY = ab.y + ab.h;
     });
     svgW = maxX - minX;
     svgH = maxY - minY;
@@ -3829,9 +3869,11 @@ function wsRenderEditMode(){
   var ety = lpy + origBB.maxY * esy;
   WS._editTransform = { tx: etx, ty: ety, sx: esx, sy: esy };
 
-  // Draw the live edit glyph (light fill so anchors are visible)
+  // Orange dashed outline around the edited letter's box (visual indicator)
+  out += '<rect x="' + lpx + '" y="' + lpy + '" width="' + lpw + '" height="' + lph + '" fill="none" stroke="#e87f00" stroke-width="1.5" stroke-dasharray="6,4" pointer-events="none"/>';
+  // Draw the live edit glyph in BLACK — what the export will actually look like
   var dEdit = commandsToPathData(g.commands);
-  out += '<path d="' + dEdit + '" fill="rgba(232,127,0,0.20)" stroke="#e87f00" stroke-width="' + (1/Math.min(esx,esy)) + '" transform="translate(' + etx + ',' + ety + ') scale(' + esx.toFixed(5) + ',' + (-esy).toFixed(5) + ')" pointer-events="none"/>';
+  out += '<path d="' + dEdit + '" fill="#000" transform="translate(' + etx + ',' + ety + ') scale(' + esx.toFixed(5) + ',' + (-esy).toFixed(5) + ')" pointer-events="none"/>';
 
   // Anchors and Bezier handles
   var T = WS._editTransform;
@@ -4676,17 +4718,9 @@ function wsEditMouseUp(e){
     WS._editFreeDragging = false;
     if(WS._editFreePts.length >= 2){
       var swG3 = wsMmToGlyphUnits(WS.drawStrokeWidthMm);
-      // Auto-detect closed if last point close to first
-      var first = WS._editFreePts[0];
-      var last = WS._editFreePts[WS._editFreePts.length - 1];
-      var ddx = last.x - first.x, ddy = last.y - first.y;
-      var bb = WS.editGlyph.origBBox;
-      var bbSize = Math.max((bb.maxX - bb.minX), (bb.maxY - bb.minY));
-      var threshold = bbSize * 0.08; // 8% of bbox
-      var isClosed = (ddx*ddx + ddy*ddy) < (threshold * threshold);
-      // Fill only if user wants AND the shape is closed
-      var doFill = (isClosed && WS.drawFillClosed);
-      var cmds3 = wsPolylineToPolygon(WS._editFreePts, swG3, doFill);
+      // "Remplir" checked = close the shape and fill it black
+      // Unchecked = thick offset polyline (open brush stroke)
+      var cmds3 = wsPolylineToPolygon(WS._editFreePts, swG3, WS.drawFillClosed);
       if(cmds3){ cmds3.forEach(function(c){ WS.editGlyph.commands.push(c); }); }
     }
     WS._editFreePts = [];
@@ -4786,10 +4820,11 @@ function buildFinalSvgPaths(){
   if(useWS){
     var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     S._wsLettersLayout.forEach(function(L){
-      if(L.x < minX) minX = L.x;
-      if(L.y < minY) minY = L.y;
-      if(L.x + L.w > maxX) maxX = L.x + L.w;
-      if(L.y + L.h > maxY) maxY = L.y + L.h;
+      var ab = wsActualLetterBBox(L, ef);
+      if(ab.x < minX) minX = ab.x;
+      if(ab.y < minY) minY = ab.y;
+      if(ab.x + ab.w > maxX) maxX = ab.x + ab.w;
+      if(ab.y + ab.h > maxY) maxY = ab.y + ab.h;
     });
     svgW = maxX - minX;
     svgH = maxY - minY;
