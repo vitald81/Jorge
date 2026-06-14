@@ -332,6 +332,8 @@ textarea::placeholder{color:var(--fnt)}
 #finalPreview #fpLettersBox{background:#fff !important;color:#000 !important;display:block !important}
 #finalPreview #fpLettersBox table{color:#000}
 #finalPreview #fpLettersBox td, #finalPreview #fpLettersBox th{color:#000}
+
+#wsSvg.tool-eraser{cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><rect x='3' y='12' width='17' height='10' rx='1.5' fill='%23ffb37a' stroke='%23222' stroke-width='1.5' transform='rotate(-25 11.5 17)'/><rect x='3' y='5' width='17' height='7' rx='1.5' fill='%23fff' stroke='%23222' stroke-width='1.5' transform='rotate(-25 11.5 8.5)'/></svg>") 4 22, crosshair}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -3618,46 +3620,10 @@ function wsBuildLetterShape(L, i){
   var pBR = wsMmToPx(L.x + L.w, L.y + L.h);
   var px = pTL.x, py = pTL.y;
   var pw = pBR.x - pTL.x, ph = pBR.y - pTL.y;
-
-  // Invisible bbox click-catcher (covers full letter rectangle so hollow letters can be selected)
   var hitBox = '<rect data-letter="' + i + '" x="' + px + '" y="' + py + '" width="' + pw + '" height="' + ph + '" fill="rgba(0,0,0,0.001)" style="cursor:move"/>';
-
-  var hasModified = S._modifiedGlyphs &&
-                    S._modifiedGlyphsFont === ef.family + '-' + ef.weight + '-' + ef.style &&
-                    S._modifiedGlyphs[L.ch];
-
-  var glyphShape;
-  if(hasModified){
-    var g = S._modifiedGlyphs[L.ch];
-    // Use stored origBBox so the glyph fills the EXACT same bounding box every time
-    var bb = g.origBBox;
-    if(!bb){
-      bb = computeBBox(g.commands);
-      if(!bb || !isFinite(bb.minX)) bb = {minX:0, minY:0, maxX:g.unitsPerEm, maxY:g.unitsPerEm};
-    }
-    var gW = (bb.maxX - bb.minX) || g.unitsPerEm;
-    var gH = (bb.maxY - bb.minY) || g.unitsPerEm;
-    var sx = (L.w * WS.scale) / gW;
-    var sy = (L.h * WS.scale) / gH;
-    var tx = px - bb.minX * sx;
-    var ty = py + bb.maxY * sy;
-    var d = commandsToPathData(g.commands);
-    glyphShape = '<path d="' + d + '" fill="#0a0a0a" transform="translate(' + tx + ',' + ty + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')" pointer-events="none"/>';
-  } else {
-    var fsMm = L.h * 0.76;
-    var fsPx = fsMm * WS.scale;
-    var natW = measureCharWidth(ef.family, ef.weight, ef.style, fsMm, L.ch);
-    if(!natW || natW < 1) natW = fsMm * 0.55;
-    var natWpx = natW * WS.scale;
-    var glyphScaleX = pw / natWpx;
-    var cxPx = px + pw/2;
-    var baseY_px = py + ph * 0.80 / 1;
-    // Actually use L baseline: y = L.y + L.h*0.80
-    baseY_px = wsMmToPx(0, L.y + L.h * 0.80).y;
-    var tx2 = cxPx * (1 - glyphScaleX);
-    glyphShape = '<text x="' + cxPx + '" y="' + baseY_px + '" text-anchor="middle" font-family="' + xe(ef.family) + ',Georgia,serif" font-size="' + fsPx + '" font-weight="' + ef.weight + '" font-style="' + ef.style + '" transform="matrix(' + glyphScaleX.toFixed(4) + ',0,0,1,' + tx2 + ',0)" fill="#0a0a0a" pointer-events="none">' + xc(L.ch) + '</text>';
-  }
-
+  var glyphKey = ef.family + '-' + ef.weight + '-' + ef.style;
+  var modG = (S._modifiedGlyphs && S._modifiedGlyphsFont === glyphKey) ? S._modifiedGlyphs[L.ch] : null;
+  var glyphShape = wsRenderGlyphSvg(L.ch, px, py, pw, ph, ef, 1, modG);
   return '<g>' + hitBox + glyphShape + '</g>';
 }
 
@@ -3683,6 +3649,53 @@ function wsBuildSelOverlay(L, idx, withHandles){
     out += H(x, y + h/2, 'w');
   }
   return out;
+}
+
+
+// Build SVG for rendering a letter glyph at a pixel-space box.
+// Uses opentype.js paths if font is loaded (so workspace + edit mode look identical).
+// Falls back to <text> element while font loads.
+// modGlyph (optional): if provided, uses these commands + origBBox instead of font lookup.
+function wsRenderGlyphSvg(ch, px, py, pw, ph, ef, opacity, modGlyph, fillColor){
+  fillColor = fillColor || '#0a0a0a';
+  if(opacity === undefined) opacity = 1;
+  var commands, bb;
+  if(modGlyph){
+    commands = modGlyph.commands;
+    bb = modGlyph.origBBox || computeBBox(commands);
+  } else {
+    var glyphKey = ef.family + '-' + ef.weight + '-' + ef.style;
+    if(window._otFonts && window._otFonts[glyphKey]){
+      var font = window._otFonts[glyphKey];
+      var otGlyph = font.charToGlyph(ch);
+      if(otGlyph){
+        commands = otGlyph.path.commands;
+        bb = computeBBox(commands);
+      }
+    }
+  }
+  if(commands && bb && isFinite(bb.minX) && (bb.maxX - bb.minX) > 0.001){
+    var gW = bb.maxX - bb.minX;
+    var gH = bb.maxY - bb.minY;
+    var sx = pw / gW;
+    var sy = ph / gH;
+    var tx = px - bb.minX * sx;
+    var ty = py + bb.maxY * sy;
+    var d = commandsToPathData(commands);
+    var op = (opacity < 1) ? ' opacity="' + opacity + '"' : '';
+    return '<path d="' + d + '" fill="' + fillColor + '"' + op + ' transform="translate(' + tx + ',' + ty + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')" pointer-events="none"/>';
+  }
+  // Fallback while font loads — use <text> element
+  var fsPx = ph * 0.76;
+  var natW = measureCharWidth(ef.family, ef.weight, ef.style, ph * 0.76, ch);
+  if(!natW || natW < 1) natW = ph * 0.4;
+  var natWpx = natW * WS.scale;
+  var sclX = pw / natWpx;
+  var cxPx = px + pw/2;
+  var baseY_px = py + ph * 0.80;
+  var txm = cxPx * (1 - sclX);
+  var op2 = (opacity < 1) ? ' opacity="' + opacity + '"' : '';
+  return '<text x="' + cxPx + '" y="' + baseY_px + '" text-anchor="middle" font-family="' + xe(ef.family) + ',Georgia,serif" font-size="' + fsPx + '" font-weight="' + ef.weight + '" font-style="' + ef.style + '" transform="matrix(' + sclX.toFixed(4) + ',0,0,1,' + txm + ',0)" fill="' + fillColor + '"' + op2 + ' pointer-events="none">' + xc(ch) + '</text>';
 }
 
 // ========== EDIT MODE ==========
@@ -3787,6 +3800,15 @@ function wsHighlightTool(){
     var el = document.getElementById(map[k]);
     if(el) el.classList[map[k] === actId ? 'add' : 'remove']('act');
   });
+  // Toggle cursor class on the canvas SVG
+  var svgEl = document.getElementById('wsSvg');
+  if(svgEl){
+    if(WS.editTool === 'eraser'){
+      svgEl.classList.add('tool-eraser');
+    } else {
+      svgEl.classList.remove('tool-eraser');
+    }
+  }
   // Show contextual hint based on selected tool
   var hintEl = document.getElementById('wsEditHint');
   if(hintEl){
@@ -3830,40 +3852,17 @@ function wsRenderEditMode(){
     out += wsBuildGrid();
   }
 
-  // All non-edited letters (dimmed)
+  // All non-edited letters (dimmed) — use the same unified renderer
+  var efEM = effectiveFont();
+  var glyphKeyEM = efEM ? (efEM.family + '-' + efEM.weight + '-' + efEM.style) : '';
   WS.letters.forEach(function(Li, idx){
     if(idx !== WS.editingLetter){
-      // Inline rendering at 50% opacity (no hit catcher since not interactive)
       var pTL = wsMmToPx(Li.x, Li.y);
       var pBR = wsMmToPx(Li.x + Li.w, Li.y + Li.h);
-      var px = pTL.x, py = pTL.y;
-      var pw = pBR.x - pTL.x, ph = pBR.y - pTL.y;
-      var ef = effectiveFont();
-      var has = S._modifiedGlyphs && S._modifiedGlyphsFont === ef.family + '-' + ef.weight + '-' + ef.style && S._modifiedGlyphs[Li.ch];
-      if(has){
-        var mg = S._modifiedGlyphs[Li.ch];
-        var bb = mg.origBBox || computeBBox(mg.commands);
-        if(!bb || !isFinite(bb.minX)) bb = {minX:0, minY:0, maxX:mg.unitsPerEm, maxY:mg.unitsPerEm};
-        var gW = (bb.maxX - bb.minX) || mg.unitsPerEm;
-        var gH = (bb.maxY - bb.minY) || mg.unitsPerEm;
-        var sx = (Li.w * WS.scale) / gW;
-        var sy = (Li.h * WS.scale) / gH;
-        var tx = px - bb.minX * sx;
-        var ty = py + bb.maxY * sy;
-        var d = commandsToPathData(mg.commands);
-        out += '<path d="' + d + '" fill="#0a0a0a" opacity="0.4" transform="translate(' + tx + ',' + ty + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')" pointer-events="none"/>';
-      } else {
-        var fsMm = Li.h * 0.76;
-        var fsPx = fsMm * WS.scale;
-        var natW = measureCharWidth(ef.family, ef.weight, ef.style, fsMm, Li.ch);
-        if(!natW || natW < 1) natW = fsMm * 0.55;
-        var natWpx = natW * WS.scale;
-        var glyphScaleX = pw / natWpx;
-        var cxPx = px + pw/2;
-        var baseY_px = wsMmToPx(0, Li.y + Li.h * 0.80).y;
-        var tx2 = cxPx * (1 - glyphScaleX);
-        out += '<text x="' + cxPx + '" y="' + baseY_px + '" text-anchor="middle" font-family="' + xe(ef.family) + ',Georgia,serif" font-size="' + fsPx + '" font-weight="' + ef.weight + '" font-style="' + ef.style + '" transform="matrix(' + glyphScaleX.toFixed(4) + ',0,0,1,' + tx2 + ',0)" fill="#0a0a0a" opacity="0.4" pointer-events="none">' + xc(Li.ch) + '</text>';
-      }
+      var pxL = pTL.x, pyL = pTL.y;
+      var pwL = pBR.x - pTL.x, phL = pBR.y - pTL.y;
+      var modLi = (S._modifiedGlyphs && S._modifiedGlyphsFont === glyphKeyEM) ? S._modifiedGlyphs[Li.ch] : null;
+      out += wsRenderGlyphSvg(Li.ch, pxL, pyL, pwL, phL, efEM, 0.4, modLi);
     }
   });
 
@@ -4602,33 +4601,77 @@ function wsFindSubpath(cmdIdx){
   return { start: startIdx, end: endIdx - 1 };
 }
 
-// Erase the user-drawn subpath nearest the click point (only deletes _drawn subpaths)
+// Point-in-polygon test (ray casting algorithm)
+function wsPointInPoly(px, py, pts){
+  var inside = false;
+  for(var i=0, j=pts.length-1; i<pts.length; j=i++){
+    var xi = pts[i].x, yi = pts[i].y;
+    var xj = pts[j].x, yj = pts[j].y;
+    var intersect = ((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+    if(intersect) inside = !inside;
+  }
+  return inside;
+}
+
+// Erase a user-drawn subpath at the click point.
+// First tries point-in-polygon (works for thick filled strokes).
+// Falls back to nearest-anchor within 60px.
 function wsEraseAt(xPx, yPx){
   if(!WS.editGlyph || !WS._editTransform) return false;
   var T = WS._editTransform;
   var cmds = WS.editGlyph.commands;
-  var closest = -1, bestDist = Infinity;
-  cmds.forEach(function(c, i){
-    if(c.x === undefined || c.y === undefined) return;
-    var px = T.tx + c.x * T.sx;
-    var py = T.ty - c.y * T.sy;
-    var dx = px - xPx, dy = py - yPx;
-    var d = Math.sqrt(dx*dx + dy*dy);
-    if(d < bestDist){ bestDist = d; closest = i; }
-  });
-  if(closest < 0 || bestDist > 40) return false;
-  var range = wsFindSubpath(closest);
-  if(!range) return false;
-  var startCmd = cmds[range.start];
-  if(!startCmd || !startCmd._drawn){
-    // Not user-drawn — refuse to delete (it's the original glyph)
-    return false;
+
+  // Build list of subpaths (as ranges + polygon points in pixel space)
+  var subpaths = [];
+  for(var i=0; i<cmds.length; i++){
+    if(cmds[i].type === 'M'){
+      var endIdx = i + 1;
+      while(endIdx < cmds.length && cmds[endIdx].type !== 'M') endIdx++;
+      var pts = [];
+      for(var k=i; k<endIdx; k++){
+        var c = cmds[k];
+        if(c.x !== undefined && c.y !== undefined){
+          pts.push({ x: T.tx + c.x * T.sx, y: T.ty - c.y * T.sy });
+        }
+      }
+      subpaths.push({ start: i, end: endIdx - 1, pts: pts, isDrawn: !!cmds[i]._drawn });
+      i = endIdx - 1;
+    }
   }
-  wsPushUndo();
-  cmds.splice(range.start, range.end - range.start + 1);
-  WS.editSelected = [];
-  wsRender();
-  return true;
+
+  // 1. Point-in-polygon check (preferred, iterate from latest to earliest)
+  for(var sp = subpaths.length - 1; sp >= 0; sp--){
+    var range = subpaths[sp];
+    if(!range.isDrawn) continue;
+    if(range.pts.length < 3) continue;
+    if(wsPointInPoly(xPx, yPx, range.pts)){
+      wsPushUndo();
+      cmds.splice(range.start, range.end - range.start + 1);
+      WS.editSelected = [];
+      wsRender();
+      return true;
+    }
+  }
+
+  // 2. Fallback: nearest anchor within 60px on a _drawn subpath
+  var closest = -1, bestDist = Infinity, bestRange = null;
+  for(var sp2 = subpaths.length - 1; sp2 >= 0; sp2--){
+    var range2 = subpaths[sp2];
+    if(!range2.isDrawn) continue;
+    range2.pts.forEach(function(p){
+      var dx = p.x - xPx, dy = p.y - yPx;
+      var d = Math.sqrt(dx*dx + dy*dy);
+      if(d < bestDist){ bestDist = d; bestRange = range2; }
+    });
+  }
+  if(bestRange && bestDist < 60){
+    wsPushUndo();
+    cmds.splice(bestRange.start, bestRange.end - bestRange.start + 1);
+    WS.editSelected = [];
+    wsRender();
+    return true;
+  }
+  return false;
 }
 
 function wsEditMouseDown(e, xy, tgt){
@@ -4878,6 +4921,12 @@ function loadGlyphFontIfNeeded(ef){
   loadFontFile(ef).then(function(font){
     if(!window._otFonts) window._otFonts = {};
     window._otFonts[glyphKey] = font;
+    // Re-render the workspace and compose preview now that the font is available
+    var wsEl = document.getElementById('workspace');
+    if(wsEl && wsEl.classList.contains('on')){
+      try { wsRender(); } catch(e){}
+    }
+    try { if(typeof updatePreview === 'function') updatePreview(); } catch(e){}
   }).catch(function(err){
     console.error('[Jorge] Font preload failed:', err);
   });
