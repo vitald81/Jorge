@@ -451,6 +451,32 @@ textarea::placeholder{color:var(--fnt)}
         </div>
         <div class="pvbox"><span class="pvlbl">Apercu</span><div id="pvt">...</div></div>
         <div class="dinfo" id="dinfo">SVG : <strong>-- x -- mm</strong></div>
+        <div class="print-preview-box" id="printPreviewBox" style="background:#fff;border:1.5px solid #d0d8d2;border-radius:10px;padding:14px;margin-top:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-size:10px;font-weight:700;letter-spacing:.12em;color:#666;font-family:var(--mono);text-transform:uppercase">Apercu avant impression — taille reelle</span>
+            <span id="printPreviewDims" style="font-size:11px;font-family:var(--mono);color:#0d66d0;font-weight:600">--</span>
+          </div>
+          <div style="background:#fafafa;border:1px dashed #b8c0bc;border-radius:6px;padding:14px;overflow:auto;display:flex;justify-content:center;align-items:center;min-height:80px">
+            <div id="printPreviewCanvas" style="display:inline-block"></div>
+          </div>
+          <div style="margin-top:12px">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.05em;color:#666;font-family:var(--mono);margin-bottom:6px;text-transform:uppercase">Dimensions des lettres (X largeur × Y hauteur)</div>
+            <table id="printPreviewTable" style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px;color:#0b1e12">
+              <thead>
+                <tr style="border-bottom:1px solid #ddd">
+                  <th style="text-align:left;padding:4px 8px;font-weight:600;color:#444;width:60px">Lettre</th>
+                  <th style="text-align:left;padding:4px 8px;font-weight:600;color:#444">Largeur X</th>
+                  <th style="text-align:left;padding:4px 8px;font-weight:600;color:#444">Hauteur Y</th>
+                  <th style="text-align:left;padding:4px 8px;font-weight:600;color:#444">Position (X,Y)</th>
+                </tr>
+              </thead>
+              <tbody id="printPreviewTbody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:10px;padding:8px 10px;background:#eaf3fc;border-left:3px solid var(--accent);border-radius:4px;font-size:11px;color:#0b1e12;line-height:1.5">
+            <strong>Garantie d'impression :</strong> Le fichier SVG exporte conserve les dimensions exactes en millimetres et la forme personnalisee de chaque lettre.
+          </div>
+        </div>
         <button class="btn btn-t" id="btnEditGlyphs" style="margin-top:6px;display:none">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
           Modifier les lettres (desktop)
@@ -1348,7 +1374,90 @@ function updatePreview() {
   if(hasModified) tagInfo += ' &nbsp;&middot;&nbsp; <strong style="color:var(--accent)">Glyphes modifies</strong>';
   document.getElementById('dinfo').innerHTML = 'SVG : <strong>' + totalWmm.toFixed(1) + ' x ' + totalHmm.toFixed(1) + ' mm</strong> &nbsp;&middot;&nbsp; ' + wMm + 'x' + hMm + 'mm . esp. ' + sMm + 'mm' + tagInfo;
   updateOverlay();
+  try { buildPrintPreview(); } catch(err) { console.warn('[Jorge] Preview build failed:', err); }
 }
+
+// Build the real-size print preview (used by the compose page)
+function buildPrintPreview(){
+  var canvas = document.getElementById('printPreviewCanvas');
+  var tbody = document.getElementById('printPreviewTbody');
+  var dimsEl = document.getElementById('printPreviewDims');
+  if(!canvas || !tbody || !dimsEl) return;
+
+  var data = buildFinalSvg();
+  if(!data){
+    canvas.innerHTML = '<span style="color:#999;font-size:11px">--</span>';
+    tbody.innerHTML = '';
+    dimsEl.textContent = '--';
+    return;
+  }
+
+  // Render the SVG at actual mm size so the canvas reflects what gets printed
+  var displaySvg = data.svg.replace(/^<\?xml[^>]+\?>\s*/, '');
+  // Force the outer SVG to use mm dimensions for accurate physical sizing on screen
+  canvas.innerHTML = displaySvg;
+  var inner = canvas.querySelector('svg');
+  if(inner){
+    inner.style.width = data.widthMm + 'mm';
+    inner.style.height = data.heightMm + 'mm';
+    inner.style.display = 'block';
+    inner.style.background = '#fff';
+  }
+
+  dimsEl.textContent = data.widthMm.toFixed(1) + ' x ' + data.heightMm.toFixed(1) + ' mm';
+
+  // Build the dimensions table
+  var ef = effectiveFont();
+  if(!ef){ tbody.innerHTML = ''; return; }
+  var raw = document.getElementById('ta').value || 'Jorge';
+  var txt = applyCase(raw, ef.textCase);
+  var line = txt.split('\n')[0];
+  var hMm = parseFloat(document.getElementById('hm').value) || 20;
+  var wMm = parseFloat(document.getElementById('wm').value) || 15;
+  var sMm = parseFloat(document.getElementById('sm').value) || 0;
+  var rows = '';
+  if(S._wsLettersLayout && S._wsLettersLayout.length === line.length){
+    // Use workspace layout — position relative to first letter (offset removed)
+    var minX = Infinity, minY = Infinity;
+    S._wsLettersLayout.forEach(function(L){
+      if(L.x < minX) minX = L.x;
+      if(L.y < minY) minY = L.y;
+    });
+    S._wsLettersLayout.forEach(function(L){
+      var dispCh = L.ch === ' ' ? '(espace)' : L.ch;
+      var x = (L.x - minX).toFixed(1);
+      var y = (L.y - minY).toFixed(1);
+      rows += '<tr style="border-bottom:1px solid #f0f0f0">' +
+              '<td style="padding:5px 8px;font-weight:700;color:#0b1e12;font-size:14px">' + xc(dispCh) + '</td>' +
+              '<td style="padding:5px 8px;color:#0b1e12">' + L.w.toFixed(1) + ' mm</td>' +
+              '<td style="padding:5px 8px;color:#0b1e12">' + L.h.toFixed(1) + ' mm</td>' +
+              '<td style="padding:5px 8px;color:#666;font-size:11px">(' + x + ', ' + y + ') mm</td>' +
+              '</tr>';
+    });
+  } else {
+    for(var i=0; i<line.length; i++){
+      var ch = line[i];
+      var dispCh2 = ch === ' ' ? '(espace)' : ch;
+      var x2 = (i * (wMm + sMm)).toFixed(1);
+      var y2 = '0.0';
+      rows += '<tr style="border-bottom:1px solid #f0f0f0">' +
+              '<td style="padding:5px 8px;font-weight:700;color:#0b1e12;font-size:14px">' + xc(dispCh2) + '</td>' +
+              '<td style="padding:5px 8px;color:#0b1e12">' + wMm.toFixed(1) + ' mm</td>' +
+              '<td style="padding:5px 8px;color:#0b1e12">' + hMm.toFixed(1) + ' mm</td>' +
+              '<td style="padding:5px 8px;color:#666;font-size:11px">(' + x2 + ', ' + y2 + ') mm</td>' +
+              '</tr>';
+    }
+  }
+  // Add a TOTAL row
+  rows += '<tr style="border-top:2px solid #ccc;background:#f5f5f5">' +
+          '<td style="padding:6px 8px;font-weight:700;color:#0b1e12">TOTAL</td>' +
+          '<td style="padding:6px 8px;font-weight:700;color:#0d66d0">' + data.widthMm.toFixed(1) + ' mm</td>' +
+          '<td style="padding:6px 8px;font-weight:700;color:#0d66d0">' + data.heightMm.toFixed(1) + ' mm</td>' +
+          '<td></td>' +
+          '</tr>';
+  tbody.innerHTML = rows;
+}
+
 
 
 function updateOverlay(){
