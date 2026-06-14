@@ -95,9 +95,9 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 /* FONT PICKER */
 .pick-hd h2{font-size:15px;font-weight:700;color:var(--mid);margin-bottom:3px}
 .pick-hd p{font-size:12px;color:var(--mut)}
-.ref-img-box{position:sticky;top:0;z-index:5;background:var(--wh);border:1.5px solid var(--brd2);border-radius:12px;padding:10px;box-shadow:0 4px 14px var(--sh);display:flex;flex-direction:column;gap:7px}
+.ref-img-box{position:sticky;top:0;z-index:5;background:var(--wh);border:1.5px solid var(--brd2);border-radius:12px;padding:10px;box-shadow:0 4px 14px var(--sh);display:flex;flex-direction:column;gap:7px;align-items:center}
 .ref-label{font-size:9px;font-weight:700;letter-spacing:.12em;color:var(--mut);font-family:var(--mono);text-align:center}
-.ref-img-box img{width:100%;max-height:240px;object-fit:contain;border-radius:8px;background:var(--off);display:block}
+.ref-img-box img{width:auto;max-width:100%;max-height:380px;height:auto;object-fit:contain;border-radius:8px;background:transparent;display:block}
 .preview-input-box{background:var(--g50);border:1.5px solid var(--brd2);border-radius:10px;padding:10px 12px}
 .preview-input-box input{width:100%;border:none;background:transparent;font-family:var(--sans);font-size:18px;font-weight:600;color:var(--g600);outline:none;padding:4px 0;letter-spacing:.02em;-webkit-appearance:none;text-align:center}
 .preview-input-box input::placeholder{color:var(--fnt);font-weight:400}
@@ -107,9 +107,9 @@ input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events
 .font-card{background:var(--wh);border:2px solid var(--brd);border-radius:12px;padding:13px 11px;cursor:pointer;transition:border-color .15s,box-shadow .15s;box-shadow:0 2px 6px var(--sh);display:flex;flex-direction:column;gap:5px}
 .font-card:active{transform:scale(.97)}
 .font-card.sel{border-color:var(--g400);background:var(--g50);box-shadow:0 0 0 3px var(--g100)}
-.fc-prev{font-size:22px;line-height:1.1;color:var(--tx);height:30px;overflow:hidden}
-.fc-name{font-size:10px;font-family:var(--mono);color:var(--mut);font-weight:500}
-.fc-tag{font-size:9px;color:var(--fnt)}
+.fc-prev{font-size:24px;line-height:1.2;color:#0b1e12;height:34px;overflow:hidden;font-weight:600}
+.fc-name{font-size:11px;font-family:var(--mono);color:#333;font-weight:600}
+.fc-tag{font-size:10px;color:#666}
 
 /* CUSTOMIZER PANEL */
 #custPanel{position:fixed;inset:0;z-index:200;background:rgba(10,30,18,.6);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center}
@@ -267,7 +267,7 @@ textarea::placeholder{color:var(--fnt)}
 .ws-body{flex:1;display:flex;overflow:hidden;background:#1f1f1f}
 .ws-canvas-area{flex:1;display:flex;flex-direction:column;position:relative;overflow:hidden;background:#1f1f1f}
 /* Top toolbar — Illustrator style */
-.ws-toolbar{display:flex;align-items:center;gap:4px;padding:5px 10px;background:#252525;border-bottom:1px solid #3a3a3a;flex-wrap:wrap;height:38px;flex-shrink:0}
+.ws-toolbar{display:flex;align-items:center;gap:4px;padding:5px 10px;background:#252525;border-bottom:1px solid #3a3a3a;flex-wrap:wrap;min-height:38px;flex-shrink:0}
 .ws-tool-btn{padding:5px 9px;background:#2e2e2e;border:1px solid #3a3a3a;border-radius:3px;font-size:11px;color:#d4d4d4;cursor:pointer;font-family:var(--sans);display:flex;align-items:center;gap:4px;height:26px}
 .ws-tool-btn:hover{background:#3a3a3a;border-color:#4a4a4a}
 .ws-tool-btn.act{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -590,7 +590,7 @@ textarea::placeholder{color:var(--fnt)}
         <span class="ws-tool-lbl" id="wsHint">Cliquez une lettre pour la selectionner.</span>
       </div>
       <!-- Curve editing toolbar (hidden by default, shown when entering edit mode) -->
-      <div class="ws-toolbar" id="wsEditToolbar" style="display:none;background:#2a241c;border-bottom-color:#5a3a18;gap:4px;flex-wrap:wrap">
+      <div class="ws-toolbar" id="wsEditToolbar" style="display:none;background:#2a241c;border-bottom-color:#5a3a18;gap:4px;flex-wrap:wrap;height:auto;min-height:38px;align-items:flex-start;padding-top:6px;padding-bottom:6px">
         <button class="ws-tool-btn" id="wsBackToWS" type="button" style="background:#3a3a3a;color:#d4d4d4">&larr; Retour</button>
         <div class="ws-tool-sep"></div>
         <span class="ws-tool-lbl" style="color:#fdb45f">Lettre <strong id="wsEditChar">?</strong></span>
@@ -612,6 +612,7 @@ textarea::placeholder{color:var(--fnt)}
         <button class="ws-tool-btn" id="wsResetLetter" type="button">Reinitialiser</button>
         <div class="ws-tool-sep"></div>
         <button class="ws-tool-btn" id="wsExitEdit" type="button" style="background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;padding:6px 14px">Terminer l'edition</button>
+        <div style="flex-basis:100%;font-size:10px;color:#fdb45f;font-family:var(--mono);padding:2px 6px" id="wsEditHint"></div>
       </div>
       <div class="ws-canvas-wrap" id="wsCanvasWrap">
         <svg id="wsSvg" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -649,21 +650,7 @@ textarea::placeholder{color:var(--fnt)}
           <div id="wsSelInfo" style="font-size:10px;color:#888;font-family:var(--mono);margin-top:8px"></div>
         </div>
       </div>
-      <div class="ws-side-section" id="wsArrowsBox" style="display:none">
-        <h3>Deplacer la selection</h3>
-        <div style="font-size:10px;color:#888;margin-bottom:6px;font-family:var(--mono)">0.5 mm par clic, Shift = 5 mm</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;width:120px;margin:0 auto">
-          <div></div>
-          <button class="ws-tool-btn" id="wsArrowUp" type="button" style="padding:4px;height:28px;justify-content:center">&uarr;</button>
-          <div></div>
-          <button class="ws-tool-btn" id="wsArrowLeft" type="button" style="padding:4px;height:28px;justify-content:center">&larr;</button>
-          <button class="ws-tool-btn" id="wsArrowCenter" type="button" style="padding:4px;height:28px;justify-content:center;font-size:9px">RESET</button>
-          <button class="ws-tool-btn" id="wsArrowRight" type="button" style="padding:4px;height:28px;justify-content:center">&rarr;</button>
-          <div></div>
-          <button class="ws-tool-btn" id="wsArrowDown" type="button" style="padding:4px;height:28px;justify-content:center">&darr;</button>
-          <div></div>
-        </div>
-      </div>
+
       <div class="ws-actions" id="wsEditGlyphBox">
         <button class="btn btn-g" id="wsEditGlyph" type="button" style="flex:1;padding:11px 16px;font-size:13px;font-weight:600;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;box-shadow:0 2px 8px rgba(20,115,230,0.4);transition:all 0.15s" disabled>Modifier les courbes</button>
       </div>
@@ -3364,10 +3351,6 @@ function wsRefreshTable(){
   tbody.innerHTML = rows;
   var btn = document.getElementById('wsEditGlyph');
   if(btn) btn.disabled = (WS.selectedLetters.length !== 1);
-  var arrowsBox = document.getElementById('wsArrowsBox');
-  if(arrowsBox){
-    arrowsBox.style.display = (WS.selectedLetters.length > 0 && WS.editingLetter < 0) ? '' : 'none';
-  }
   var info = document.getElementById('wsSelInfo');
   if(info){
     if(WS.selectedLetters.length === 1){
@@ -3589,8 +3572,6 @@ function wsEnterEditMode(letterIdx){
   document.getElementById('wsHint').style.display = 'none';
   var egb = document.getElementById('wsEditGlyphBox');
   if(egb) egb.style.display = 'none';
-  var arrB = document.getElementById('wsArrowsBox');
-  if(arrB) arrB.style.display = 'none';
   // Sync the edit photo toggles
   var esp = document.getElementById('wsEditShowPhoto');
   if(esp) esp.checked = true;
@@ -3644,6 +3625,18 @@ function wsHighlightTool(){
     var el = document.getElementById(map[k]);
     if(el) el.classList[map[k] === actId ? 'add' : 'remove']('act');
   });
+  // Show contextual hint based on selected tool
+  var hintEl = document.getElementById('wsEditHint');
+  if(hintEl){
+    var hints = {
+      'edit': 'Glissez les points (ronds bleus) pour deformer la lettre.',
+      'select': 'Tracez un rectangle pour selectionner des points. Fleches du clavier pour deplacer (Shift = 5mm).',
+      'draw-line': 'Cliquez 2 points pour tracer une ligne droite.',
+      'draw-arc': 'Cliquez 3 points : debut, courbe, fin.',
+      'draw-free': 'Glissez librement pour dessiner. Revenez pres du depart pour fermer (avec "Remplir" coche).'
+    };
+    hintEl.textContent = hints[WS.editTool] || '';
+  }
 }
 
 // Render full scene at workspace scale + overlay editing handles on the edited letter
@@ -4189,18 +4182,7 @@ function wsBindEvents(){
     WS.selectedLetters = [];
     wsRender(); wsRefreshTable();
   });
-  function moveSel(dx, dy){
-    if(WS.selectedLetters.length === 0) return;
-    WS.selectedLetters.forEach(function(i){
-      WS.letters[i].x += dx;
-      WS.letters[i].y += dy;
-    });
-    wsRender(); wsRefreshTable();
-  }
-  document.getElementById('wsArrowUp').addEventListener('click', function(e){ moveSel(0, e.shiftKey ? -5 : -0.5); });
-  document.getElementById('wsArrowDown').addEventListener('click', function(e){ moveSel(0, e.shiftKey ? 5 : 0.5); });
-  document.getElementById('wsArrowLeft').addEventListener('click', function(e){ moveSel(e.shiftKey ? -5 : -0.5, 0); });
-  document.getElementById('wsArrowRight').addEventListener('click', function(e){ moveSel(e.shiftKey ? 5 : 0.5, 0); });
+
 
   // Keyboard shortcuts (only when workspace open and not typing in an input)
   document.addEventListener('keydown', function(e){
@@ -4224,48 +4206,28 @@ function wsBindEvents(){
       wsRender(); wsRefreshTable();
       return;
     }
-    // Arrow keys
+    // Arrow keys — ONLY in edit-select mode to move selected anchor points
     var isArrow = (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown');
-    if(isArrow){
-      if(WS.editingLetter < 0){
-        // Normal mode — move selected letters by 0.5mm (5mm with shift)
-        if(WS.selectedLetters.length === 0) return;
-        var step = e.shiftKey ? 5 : 0.5;
-        var dx=0, dy=0;
-        if(e.key === 'ArrowLeft') dx = -step;
-        else if(e.key === 'ArrowRight') dx = step;
-        else if(e.key === 'ArrowUp') dy = -step;
-        else if(e.key === 'ArrowDown') dy = step;
-        e.preventDefault();
-        WS.selectedLetters.forEach(function(i){
-          if(WS.letters[i]){
-            WS.letters[i].x += dx;
-            WS.letters[i].y += dy;
-          }
-        });
-        wsRender(); wsRefreshTable();
-      } else if(WS.editTool === 'select' && WS.editSelected.length > 0){
-        // Edit-select mode — move selected anchor points in glyph space
-        var stepMm = e.shiftKey ? 5 : 0.5;
-        var stepG = wsMmToGlyphUnits(stepMm);
-        var dxg=0, dyg=0;
-        if(e.key === 'ArrowLeft') dxg = -stepG;
-        else if(e.key === 'ArrowRight') dxg = stepG;
-        else if(e.key === 'ArrowUp') dyg = stepG;
-        else if(e.key === 'ArrowDown') dyg = -stepG;
-        e.preventDefault();
-        WS.editSelected.forEach(function(idx){
-          var c = WS.editGlyph.commands[idx];
-          if(!c) return;
-          if(c.x !== undefined) c.x += dxg;
-          if(c.y !== undefined) c.y += dyg;
-          if(c.x1 !== undefined) c.x1 += dxg;
-          if(c.y1 !== undefined) c.y1 += dyg;
-          if(c.x2 !== undefined) c.x2 += dxg;
-          if(c.y2 !== undefined) c.y2 += dyg;
-        });
-        wsRender();
-      }
+    if(isArrow && WS.editingLetter >= 0 && WS.editTool === 'select' && WS.editSelected.length > 0){
+      var stepMm = e.shiftKey ? 5 : 0.5;
+      var stepG = wsMmToGlyphUnits(stepMm);
+      var dxg=0, dyg=0;
+      if(e.key === 'ArrowLeft') dxg = -stepG;
+      else if(e.key === 'ArrowRight') dxg = stepG;
+      else if(e.key === 'ArrowUp') dyg = stepG;
+      else if(e.key === 'ArrowDown') dyg = -stepG;
+      e.preventDefault();
+      WS.editSelected.forEach(function(idx){
+        var c = WS.editGlyph.commands[idx];
+        if(!c) return;
+        if(c.x !== undefined) c.x += dxg;
+        if(c.y !== undefined) c.y += dyg;
+        if(c.x1 !== undefined) c.x1 += dxg;
+        if(c.y1 !== undefined) c.y1 += dyg;
+        if(c.x2 !== undefined) c.x2 += dxg;
+        if(c.y2 !== undefined) c.y2 += dyg;
+      });
+      wsRender();
     }
   });
 
