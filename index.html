@@ -612,12 +612,13 @@ textarea::placeholder{color:var(--fnt)}
         <button class="ws-tool-btn" id="wsZoomFit" type="button">Adapter</button>
         <div class="ws-tool-sep"></div>
         <button class="ws-tool-btn" id="wsAlignLetters" type="button" title="Realigne les lettres en ligne droite">Aligner</button>
+        <button class="ws-tool-btn" id="wsResetAll" type="button" title="Remet toutes les lettres aux dimensions par defaut">Tout reinit.</button>
         <div class="ws-tool-sep"></div>
         <span class="ws-tool-lbl" id="wsHint">Cliquez une lettre pour la selectionner.</span>
       </div>
       <!-- Curve editing toolbar (hidden by default, shown when entering edit mode) -->
       <div class="ws-toolbar" id="wsEditToolbar" style="display:none;background:#2a241c;border-bottom-color:#5a3a18;gap:4px;flex-wrap:wrap;height:auto;min-height:38px;align-items:flex-start;padding-top:6px;padding-bottom:6px">
-        <button class="ws-tool-btn" id="wsBackToWS" type="button" style="background:#3a3a3a;color:#d4d4d4">&larr; Retour</button>
+        <button class="ws-tool-btn" id="wsBackToWS" type="button" style="background:#2c8551;color:#fff;border-color:#2c8551;font-weight:600">&larr; Retour</button>
         <div class="ws-tool-sep"></div>
         <span class="ws-tool-lbl" style="color:#fdb45f">Lettre <strong id="wsEditChar">?</strong></span>
         <button class="ws-tool-btn act" id="wsToolEdit" type="button">Modifier points</button>
@@ -625,6 +626,7 @@ textarea::placeholder{color:var(--fnt)}
         <button class="ws-tool-btn" id="wsToolLine" type="button">Ligne</button>
         <button class="ws-tool-btn" id="wsToolArc" type="button">Arc</button>
         <button class="ws-tool-btn" id="wsToolFree" type="button">Crayon libre</button>
+        <button class="ws-tool-btn" id="wsToolEraser" type="button" title="Effacer une ligne, un arc ou un trace que vous avez dessine">Gomme</button>
         <div style="display:flex;align-items:center;gap:4px;padding:0 6px;background:#1f1f1f;border-radius:4px"><span class="ws-tool-lbl" style="font-size:10px">Trait</span><input type="range" id="wsDrawStrokeWidth" min="2" max="50" value="10" step="1" style="width:65px;accent-color:var(--accent)" title="Epaisseur du trait"><span id="wsDrawStrokeWidthVal" class="ws-tool-lbl" style="font-size:10px;min-width:36px">1.0mm</span></div>
         <label class="ws-tool-btn" style="background:#1f1f1f;cursor:pointer" title="Crayon libre uniquement : si coche, ferme le trace et le remplit en noir solide. Sinon, contour epais ouvert."><input type="checkbox" id="wsDrawFill" style="margin-right:4px;accent-color:var(--accent)"> Remplir</label>
         <div class="ws-tool-sep"></div>
@@ -670,6 +672,11 @@ textarea::placeholder{color:var(--fnt)}
         </div>
       </div>
 
+      <div class="ws-side-section" id="wsUndoBox" style="display:none">
+        <h3>Annuler</h3>
+        <button class="ws-tool-btn" id="wsUndoBtn" type="button" style="width:100%;padding:10px;font-size:13px;background:#1f1f1f;justify-content:center" title="Annuler la derniere modification">&#x21B6; Annuler la derniere action</button>
+        <div id="wsUndoCount" style="font-size:10px;color:#888;margin-top:6px;font-family:var(--mono);text-align:center"></div>
+      </div>
       <div class="ws-side-section" id="wsEditSelTools" style="display:none">
         <h3>Deplacer la selection</h3>
         <div style="font-size:10px;color:#888;margin-bottom:6px;font-family:var(--mono)">0.5 mm par clic, Shift = 5 mm</div>
@@ -688,7 +695,7 @@ textarea::placeholder{color:var(--fnt)}
         <div style="font-size:10px;color:#888;margin-top:6px;font-family:var(--mono);text-align:center">Ou glissez avec la souris dans le cadre</div>
       </div>
       <div class="ws-actions" id="wsEditGlyphBox">
-        <button class="btn btn-g" id="wsEditGlyph" type="button" style="flex:1;padding:11px 16px;font-size:13px;font-weight:600;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;box-shadow:0 2px 8px rgba(20,115,230,0.4);transition:all 0.15s" disabled>Modifier les courbes</button>
+        <button class="btn btn-g" id="wsEditGlyph" type="button" style="flex:1;padding:11px 16px;font-size:13px;font-weight:600;background:var(--accent);color:#fff;border:none;border-radius:4px;cursor:pointer;box-shadow:0 2px 8px rgba(20,115,230,0.4);transition:all 0.15s">Modifier les courbes</button>
       </div>
     </div>
   </div>
@@ -3363,7 +3370,9 @@ var WS = {
   _editTransform: null,
   // Drawing tool settings (millimeters)
   drawStrokeWidthMm: 1.0,
-  drawFillClosed: false
+  drawFillClosed: false,
+  // Undo stack for the current edit session (commands snapshots)
+  editUndoStack: []
 };
 
 // ========== OPEN / CLOSE ==========
@@ -3509,7 +3518,7 @@ function wsRefreshTable(){
   });
   tbody.innerHTML = rows;
   var btn = document.getElementById('wsEditGlyph');
-  if(btn) btn.disabled = (WS.selectedLetters.length !== 1);
+  if(btn) btn.disabled = false;  // Always clickable; uses selected letter or defaults to first
   var info = document.getElementById('wsSelInfo');
   if(info){
     if(WS.selectedLetters.length === 1){
@@ -3539,6 +3548,7 @@ function wsRender(){
   }
   svg.innerHTML = out;
   wsUpdateEditSelToolsUI();
+  wsUpdateUndoUI();
 }
 
 function wsRenderNormal(){
@@ -3720,6 +3730,7 @@ function wsEnterEditMode(letterIdx){
   WS.editDrawPreview = null;
   WS._editFreeDragging = false;
   WS._editFreePts = [];
+  WS.editUndoStack = [];  // Fresh undo history per edit session
 
   document.getElementById('wsToolbar').style.display = 'none';
   document.getElementById('wsEditToolbar').style.display = '';
@@ -3759,6 +3770,7 @@ function wsExitEditMode(){
   WS.editDrawPreview = null;
   WS._editFreeDragging = false;
   WS._editFreePts = [];
+  WS.editUndoStack = [];
   document.getElementById('wsToolbar').style.display = '';
   document.getElementById('wsEditToolbar').style.display = 'none';
   document.getElementById('wsHint').style.display = '';
@@ -3769,7 +3781,7 @@ function wsExitEditMode(){
 }
 
 function wsHighlightTool(){
-  var map = {'edit':'wsToolEdit','select':'wsToolSelect','draw-line':'wsToolLine','draw-arc':'wsToolArc','draw-free':'wsToolFree'};
+  var map = {'edit':'wsToolEdit','select':'wsToolSelect','draw-line':'wsToolLine','draw-arc':'wsToolArc','draw-free':'wsToolFree','eraser':'wsToolEraser'};
   var actId = map[WS.editTool];
   Object.keys(map).forEach(function(k){
     var el = document.getElementById(map[k]);
@@ -3783,7 +3795,8 @@ function wsHighlightTool(){
       'select': 'Tracez un rectangle pour selectionner des points. Fleches du clavier pour deplacer (Shift = 5mm).',
       'draw-line': 'Cliquez 2 points pour tracer une ligne droite.',
       'draw-arc': 'Cliquez 3 points : debut, courbe, fin.',
-      'draw-free': 'Glissez librement pour dessiner. Revenez pres du depart pour fermer (avec "Remplir" coche).'
+      'draw-free': 'Glissez librement pour dessiner. Cochez "Remplir" pour avoir une forme fermee remplie.',
+      'eraser': 'Cliquez sur un trace que vous avez dessine pour l\'effacer. La forme originale de la lettre ne peut pas etre effacee.'
     };
     hintEl.textContent = hints[WS.editTool] || '';
   }
@@ -3977,6 +3990,7 @@ function wsPxToGlyph(pxX, pxY){
 
 function wsResetCurrentLetter(){
   if(WS.editingLetter < 0) return;
+  wsPushUndo();
   var L = WS.letters[WS.editingLetter];
   var ef = effectiveFont();
   var glyphKey = ef.family + '-' + ef.weight + '-' + ef.style;
@@ -4270,26 +4284,62 @@ function wsBindEvents(){
   document.getElementById('wsZoomIn').addEventListener('click', function(){ wsZoom(1.2); wsRender(); wsSyncUI(); });
   document.getElementById('wsZoomOut').addEventListener('click', function(){ wsZoom(1/1.2); wsRender(); wsSyncUI(); });
   document.getElementById('wsZoomFit').addEventListener('click', function(){ wsFit(); wsRender(); wsSyncUI(); });
-  document.getElementById('wsAlignLetters').addEventListener('click', function(){
+  // Tout reinitialiser — reset every letter to default dimensions and uniform line
+  document.getElementById('wsResetAll').addEventListener('click', function(){
+    if(WS.letters.length === 0) return;
+    if(!confirm('Reinitialiser toutes les lettres aux tailles par defaut ? Vos personnalisations de taille seront perdues (les modifications de courbes restent).')) return;
     var hMm = parseFloat(document.getElementById('hm').value) || 20;
     var wMm = parseFloat(document.getElementById('wm').value) || 15;
-    var sMm = parseFloat(document.getElementById('sm').value) || 0;
-    var totalW = (wMm + sMm) * WS.letters.length - sMm;
-    var startX = WS.photoX + (WS.photoMmW - totalW) / 2;
-    var lineY = WS.photoY + WS.photoMmH / 2 - hMm / 2;
+    var sMm0 = parseFloat(document.getElementById('sm').value) || 0;
+    var totalW0 = (wMm + sMm0) * WS.letters.length - sMm0;
+    var startX0 = WS.photoX + (WS.photoMmW - totalW0) / 2;
+    var lineY0 = WS.photoY + WS.photoMmH / 2 - hMm / 2;
     WS.letters.forEach(function(L, i){
-      L.x = startX + i * (wMm + sMm);
-      L.y = lineY;
+      L.x = startX0 + i * (wMm + sMm0);
+      L.y = lineY0;
       L.w = wMm;
       L.h = hMm;
+    });
+    wsRender(); wsRefreshTable();
+  });
+
+  document.getElementById('wsAlignLetters').addEventListener('click', function(){
+    if(WS.letters.length === 0) return;
+    var sMm = parseFloat(document.getElementById('sm').value) || 0;
+    var hMm = parseFloat(document.getElementById('hm').value) || 20;
+
+    // Compute baseline (bottom Y) as the median bottom of current letters,
+    // so an outlier (very tall letter) doesn't drag the baseline up
+    var bottoms = WS.letters.map(function(L){ return L.y + L.h; });
+    bottoms.sort(function(a,b){ return a - b; });
+    var baselineY = bottoms[Math.floor(bottoms.length / 2)];
+    if(!isFinite(baselineY)) baselineY = WS.photoY + WS.photoMmH/2 + hMm/2;
+
+    // Total width = sum of individual letter widths + spacing between them
+    var totalW = 0;
+    WS.letters.forEach(function(L, i){
+      totalW += L.w;
+      if(i < WS.letters.length - 1) totalW += sMm;
+    });
+
+    var startX = WS.photoX + (WS.photoMmW - totalW) / 2;
+    var cursorX = startX;
+    WS.letters.forEach(function(L){
+      L.x = cursorX;
+      L.y = baselineY - L.h;  // align bottom of letter to common baseline
+      cursorX += L.w + sMm;
+      // L.w and L.h are PRESERVED — user's custom dimensions stay intact
     });
     wsRender(); wsRefreshTable();
   });
   document.getElementById('wsClose').addEventListener('click', wsApply);
   document.getElementById('wsCancel').addEventListener('click', wsCancel);
   document.getElementById('wsEditGlyph').addEventListener('click', function(){
-    if(WS.selectedLetters.length !== 1) return;
-    wsEnterEditMode(WS.selectedLetters[0]);
+    if(WS.letters.length === 0) return;
+    // If exactly one letter is selected, edit it.
+    // Otherwise default to the first letter (so the user can enter edit mode just to draw)
+    var idx = (WS.selectedLetters.length === 1) ? WS.selectedLetters[0] : 0;
+    wsEnterEditMode(idx);
   });
 
   // Edit toolbar
@@ -4298,6 +4348,8 @@ function wsBindEvents(){
   document.getElementById('wsToolLine').addEventListener('click', function(){ WS.editTool = 'draw-line'; WS.editDrawPoints = []; WS.editDrawPreview = null; WS.editSelected = []; wsHighlightTool(); wsRender(); });
   document.getElementById('wsToolArc').addEventListener('click', function(){ WS.editTool = 'draw-arc'; WS.editDrawPoints = []; WS.editDrawPreview = null; WS.editSelected = []; wsHighlightTool(); wsRender(); });
   document.getElementById('wsToolFree').addEventListener('click', function(){ WS.editTool = 'draw-free'; WS.editDrawPoints = []; WS.editDrawPreview = null; WS.editSelected = []; wsHighlightTool(); wsRender(); });
+  document.getElementById('wsToolEraser').addEventListener('click', function(){ WS.editTool = 'eraser'; WS.editDrawPoints = []; WS.editDrawPreview = null; WS.editSelected = []; wsHighlightTool(); wsRender(); });
+  document.getElementById('wsUndoBtn').addEventListener('click', wsUndo);
   document.getElementById('wsResetLetter').addEventListener('click', wsResetCurrentLetter);
   document.getElementById('wsExitEdit').addEventListener('click', wsExitEditMode);
 
@@ -4352,6 +4404,7 @@ function wsBindEvents(){
       WS.editDrawPreview = null;
       WS._editFreeDragging = false;
       WS._editFreePts = [];
+      WS.editUndoStack = [];
       document.getElementById('wsToolbar').style.display = '';
       document.getElementById('wsEditToolbar').style.display = 'none';
       document.getElementById('wsHint').style.display = '';
@@ -4510,6 +4563,74 @@ function wsPolylineToPolygon(pts, widthGlyph, closed){
   return out;
 }
 
+// === Undo system for edit mode ===
+function wsPushUndo(){
+  if(!WS.editGlyph || !WS.editGlyph.commands) return;
+  // Deep clone the current commands as a snapshot
+  var snap = WS.editGlyph.commands.map(function(c){ return Object.assign({}, c); });
+  WS.editUndoStack.push(snap);
+  if(WS.editUndoStack.length > 50) WS.editUndoStack.shift();
+  wsUpdateUndoUI();
+}
+
+function wsUndo(){
+  if(WS.editUndoStack.length === 0 || !WS.editGlyph) return;
+  var snap = WS.editUndoStack.pop();
+  WS.editGlyph.commands = snap;
+  WS.editSelected = [];  // selection refers to old indices, clear it
+  wsRender();
+  wsUpdateUndoUI();
+}
+
+function wsUpdateUndoUI(){
+  var box = document.getElementById('wsUndoBox');
+  if(box) box.style.display = (WS.editingLetter >= 0) ? '' : 'none';
+  var btn = document.getElementById('wsUndoBtn');
+  if(btn) btn.disabled = (WS.editUndoStack.length === 0);
+  var cnt = document.getElementById('wsUndoCount');
+  if(cnt) cnt.textContent = WS.editUndoStack.length + ' etape(s) en memoire';
+}
+
+// === Eraser: find the subpath (M...next-M) containing a given command index ===
+function wsFindSubpath(cmdIdx){
+  var cmds = WS.editGlyph && WS.editGlyph.commands;
+  if(!cmds || cmdIdx < 0 || cmdIdx >= cmds.length) return null;
+  var startIdx = cmdIdx;
+  while(startIdx > 0 && cmds[startIdx].type !== 'M') startIdx--;
+  var endIdx = startIdx + 1;
+  while(endIdx < cmds.length && cmds[endIdx].type !== 'M') endIdx++;
+  return { start: startIdx, end: endIdx - 1 };
+}
+
+// Erase the user-drawn subpath nearest the click point (only deletes _drawn subpaths)
+function wsEraseAt(xPx, yPx){
+  if(!WS.editGlyph || !WS._editTransform) return false;
+  var T = WS._editTransform;
+  var cmds = WS.editGlyph.commands;
+  var closest = -1, bestDist = Infinity;
+  cmds.forEach(function(c, i){
+    if(c.x === undefined || c.y === undefined) return;
+    var px = T.tx + c.x * T.sx;
+    var py = T.ty - c.y * T.sy;
+    var dx = px - xPx, dy = py - yPx;
+    var d = Math.sqrt(dx*dx + dy*dy);
+    if(d < bestDist){ bestDist = d; closest = i; }
+  });
+  if(closest < 0 || bestDist > 40) return false;
+  var range = wsFindSubpath(closest);
+  if(!range) return false;
+  var startCmd = cmds[range.start];
+  if(!startCmd || !startCmd._drawn){
+    // Not user-drawn — refuse to delete (it's the original glyph)
+    return false;
+  }
+  wsPushUndo();
+  cmds.splice(range.start, range.end - range.start + 1);
+  WS.editSelected = [];
+  wsRender();
+  return true;
+}
+
 function wsEditMouseDown(e, xy, tgt){
   e.preventDefault();
   var role = tgt && tgt.getAttribute && tgt.getAttribute('data-edit-role');
@@ -4525,6 +4646,7 @@ function wsEditMouseDown(e, xy, tgt){
   if(WS.editTool === 'edit'){
     if(role && idxAttr !== null && idxAttr !== ''){
       var idx = parseInt(idxAttr, 10);
+      wsPushUndo();
       WS.editDragging = { type: 'point', idx: idx, role: role };
     }
   } else if(WS.editTool === 'select'){
@@ -4545,6 +4667,7 @@ function wsEditMouseDown(e, xy, tgt){
         return;
       }
       // Start group drag with current selection
+      wsPushUndo();
       WS.editDragging = { type: 'group', mouseX: xy.x, mouseY: xy.y, snapshot: {} };
       WS.editSelected.forEach(function(i){
         var c = WS.editGlyph.commands[i];
@@ -4576,6 +4699,7 @@ function wsEditMouseDown(e, xy, tgt){
         var margin = 14;
         if(xy.x >= minPx - margin && xy.x <= maxPx + margin && xy.y >= minPy - margin && xy.y <= maxPy + margin){
           // Click inside selection — start group drag
+          wsPushUndo();
           WS.editDragging = { type: 'group', mouseX: xy.x, mouseY: xy.y, snapshot: {} };
           WS.editSelected.forEach(function(i){
             var c = WS.editGlyph.commands[i];
@@ -4592,12 +4716,22 @@ function wsEditMouseDown(e, xy, tgt){
     if(!e.shiftKey) WS.editSelected = [];
     WS.editSelBox = { x1: xy.x, y1: xy.y, x2: xy.x, y2: xy.y };
     wsRender();
+  } else if(WS.editTool === 'eraser'){
+    // Click to erase a drawn stroke (only user-drawn subpaths can be erased)
+    var erased = wsEraseAt(xy.x, xy.y);
+    if(!erased){
+      // Optionally flash a hint — for now just silent
+    }
   } else if(WS.editTool === 'draw-line'){
     WS.editDrawPoints.push(glyphP);
     if(WS.editDrawPoints.length === 2){
       var swG = wsMmToGlyphUnits(WS.drawStrokeWidthMm);
       var cmds = wsLineToPolygon(WS.editDrawPoints[0], WS.editDrawPoints[1], swG);
-      if(cmds){ cmds.forEach(function(c){ WS.editGlyph.commands.push(c); }); }
+      if(cmds){
+        wsPushUndo();
+        cmds[0]._drawn = true;  // tag this drawing's M so eraser can find it
+        cmds.forEach(function(c){ WS.editGlyph.commands.push(c); });
+      }
       WS.editDrawPoints = [];
       WS.editDrawPreview = null;
     } else {
@@ -4609,7 +4743,11 @@ function wsEditMouseDown(e, xy, tgt){
     if(WS.editDrawPoints.length === 3){
       var swG2 = wsMmToGlyphUnits(WS.drawStrokeWidthMm);
       var cmds2 = wsQuadToPolygon(WS.editDrawPoints[0], WS.editDrawPoints[1], WS.editDrawPoints[2], swG2);
-      if(cmds2){ cmds2.forEach(function(c){ WS.editGlyph.commands.push(c); }); }
+      if(cmds2){
+        wsPushUndo();
+        cmds2[0]._drawn = true;
+        cmds2.forEach(function(c){ WS.editGlyph.commands.push(c); });
+      }
       WS.editDrawPoints = [];
       WS.editDrawPreview = null;
     } else if(WS.editDrawPoints.length === 1){
@@ -4721,7 +4859,11 @@ function wsEditMouseUp(e){
       // "Remplir" checked = close the shape and fill it black
       // Unchecked = thick offset polyline (open brush stroke)
       var cmds3 = wsPolylineToPolygon(WS._editFreePts, swG3, WS.drawFillClosed);
-      if(cmds3){ cmds3.forEach(function(c){ WS.editGlyph.commands.push(c); }); }
+      if(cmds3){
+        wsPushUndo();
+        cmds3[0]._drawn = true;
+        cmds3.forEach(function(c){ WS.editGlyph.commands.push(c); });
+      }
     }
     WS._editFreePts = [];
     WS.editDrawPreview = null;
