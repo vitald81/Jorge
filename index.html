@@ -6,10 +6,10 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Jorge">
+<meta name="apple-mobile-web-app-title" content="Apex Draw">
 <meta name="theme-color" content="#1a5c38">
 <meta name="color-scheme" content="light">
-<title>Jorge</title>
+<title>Apex Draw</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Cormorant+SC:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=IM+Fell+DW+Pica:ital@0;1&family=IM+Fell+French+Canon:ital@0;1&family=Uncial+Antiqua&family=Forum&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Playfair+Display+SC:ital,wght@0,400;0,700;0,900;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Raleway:wght@300;400;600;700;900&family=Josefin+Sans:wght@300;400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Spectral:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Spectral+SC:wght@400;600;700&family=Cardo:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Marcellus&family=Marcellus+SC&family=Yeseva+One&family=Italianno&family=Tinos:ital,wght@0,400;0,700;1,400&family=Trajan+Pro&family=Almendra+SC&family=Almendra:ital,wght@0,400;0,700;1,400&family=Cantata+One&family=UnifrakturMaguntia&family=UnifrakturCook:wght@700&family=Pirata+One&family=Cinzel:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -353,7 +353,7 @@ textarea::placeholder{color:var(--fnt)}
       <rect x="20" y="9" width="11" height="7" rx="1.2" fill="currentColor" transform="rotate(20 25.5 12.5)"/>
       <rect x="22" y="10" width="7" height="1.5" fill="rgba(255,255,255,.4)" transform="rotate(20 25.5 10.7)"/>
     </svg>
-    <span class="logo-n">Jorge</span>
+    <span class="logo-n">Apex Draw</span>
   </div>
   <div class="dots"><div class="dot act" id="d1"></div><div class="dot" id="d2"></div><div class="dot" id="d3"></div><div class="dot" id="d4"></div></div>
 </div>
@@ -373,8 +373,9 @@ textarea::placeholder{color:var(--fnt)}
           <rect x="22" y="10" width="7" height="1.5" fill="rgba(0,0,0,.2)" transform="rotate(20 25.5 10.7)"/>
         </svg>
       </div>
-      <h1>Jorge</h1>
+      <h1>Apex Draw</h1>
       <p>Photo &rarr; Zone &rarr; Police &rarr; SVG</p>
+      <div style="margin-top:14px;font-size:10px;color:#8a8a8a;font-family:var(--mono);letter-spacing:.12em;text-transform:uppercase;opacity:0.7">JORGE's software</div>
     </div>
     <input type="file" id="iCam"  accept="image/*" capture="environment">
     <input type="file" id="iGal"  accept="image/*">
@@ -630,7 +631,10 @@ textarea::placeholder{color:var(--fnt)}
         <button class="ws-tool-btn" id="wsToolFree" type="button">Crayon libre</button>
         <button class="ws-tool-btn" id="wsToolEraser" type="button" title="Effacer une ligne, un arc ou un trace que vous avez dessine">Gomme</button>
         <div style="display:flex;align-items:center;gap:4px;padding:0 6px;background:#1f1f1f;border-radius:4px"><span class="ws-tool-lbl" style="font-size:10px">Trait</span><input type="range" id="wsDrawStrokeWidth" min="2" max="50" value="10" step="1" style="width:65px;accent-color:var(--accent)" title="Epaisseur du trait"><span id="wsDrawStrokeWidthVal" class="ws-tool-lbl" style="font-size:10px;min-width:36px">1.0mm</span></div>
-        <label class="ws-tool-btn" style="background:#1f1f1f;cursor:pointer" title="Crayon libre uniquement : si coche, ferme le trace et le remplit en noir solide. Sinon, contour epais ouvert."><input type="checkbox" id="wsDrawFill" style="margin-right:4px;accent-color:var(--accent)"> Remplir</label>
+        <div style="display:flex;align-items:center;gap:0;background:#1f1f1f;border-radius:4px;overflow:hidden;border:1px solid #444">
+          <button class="ws-tool-btn" id="wsStyleFill" type="button" style="border:none;border-radius:0;background:var(--accent);color:#fff;font-size:11px;padding:5px 10px" title="Forme dessinee = remplie noir solide">Pleine</button>
+          <button class="ws-tool-btn" id="wsStyleOutline" type="button" style="border:none;border-radius:0;background:transparent;color:#bbb;font-size:11px;padding:5px 10px" title="Forme dessinee = contour visible seulement">Contour</button>
+        </div>
         <div class="ws-tool-sep"></div>
         <button class="ws-tool-btn" id="wsResetLetter" type="button">Reinitialiser</button>
         <div class="ws-tool-sep"></div>
@@ -1260,7 +1264,7 @@ document.getElementById('btnMain').addEventListener('click',function(){
 // =============================================
 function updatePreview() {
   var ef = effectiveFont(); if(!ef) return;
-  var raw = document.getElementById('ta').value || 'Jorge';
+  var raw = document.getElementById('ta').value || 'TEXTE';
   var txt = applyCase(raw, ef.textCase);
   var hMm = parseFloat(document.getElementById('hm').value) || 20;
   var wMm = parseFloat(document.getElementById('wm').value) || 15;
@@ -1282,15 +1286,16 @@ function updatePreview() {
   var pv = document.getElementById('pvt');
   var PX = 3.7795;  // px/mm
 
-  // Determine total size in mm
+  // Determine total size in mm — use actual bboxes so drawings extending beyond letter boxes are included
   var totalWmm, totalHmm;
   if(useWS){
     var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     S._wsLettersLayout.forEach(function(L){
-      if(L.x < minX) minX = L.x;
-      if(L.y < minY) minY = L.y;
-      if(L.x + L.w > maxX) maxX = L.x + L.w;
-      if(L.y + L.h > maxY) maxY = L.y + L.h;
+      var ab = wsActualLetterBBox(L, ef);
+      if(ab.x < minX) minX = ab.x;
+      if(ab.y < minY) minY = ab.y;
+      if(ab.x + ab.w > maxX) maxX = ab.x + ab.w;
+      if(ab.y + ab.h > maxY) maxY = ab.y + ab.h;
     });
     totalWmm = maxX - minX;
     totalHmm = maxY - minY;
@@ -1327,8 +1332,27 @@ function updatePreview() {
         var sy = lh / gH;
         var tx = lx - bb.minX * sx;
         var ty = ly + bb.maxY * sy;
-        var d = commandsToPathData(modGlyph.commands);
-        svgInner += '<g transform="translate(' + tx.toFixed(3) + ',' + ty.toFixed(3) + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')"><path d="' + d + '" fill="#e4e4e4"/></g>';
+        // Split into original + drawn subpaths and render each as its own <path>
+        var origCmds_ = [], drawnList_ = [];
+        var mi_ = 0;
+        var cmdsArr_ = modGlyph.commands;
+        while(mi_ < cmdsArr_.length){
+          if(cmdsArr_[mi_].type !== 'M'){ mi_++; continue; }
+          var sI_ = mi_, eI_ = mi_ + 1;
+          while(eI_ < cmdsArr_.length && cmdsArr_[eI_].type !== 'M') eI_++;
+          var sub_ = cmdsArr_.slice(sI_, eI_);
+          if(cmdsArr_[sI_]._drawn){ drawnList_.push(sub_); }
+          else { for(var k_=0; k_<sub_.length; k_++) origCmds_.push(sub_[k_]); }
+          mi_ = eI_;
+        }
+        svgInner += '<g transform="translate(' + tx.toFixed(3) + ',' + ty.toFixed(3) + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')">';
+        if(origCmds_.length > 0){
+          svgInner += '<path d="' + commandsToPathData(origCmds_) + '" fill="#e4e4e4"/>';
+        }
+        drawnList_.forEach(function(sub_){
+          svgInner += '<path d="' + commandsToPathData(sub_) + '" fill="#e4e4e4"/>';
+        });
+        svgInner += '</g>';
       } else {
         var natW = measureCharWidth(ef.family, ef.weight, ef.style, fsPx, 'H');
         if(!natW || natW < 1) natW = fsPx * 0.55;
@@ -1418,7 +1442,7 @@ function buildPrintPreview(){
   // Build the dimensions table
   var ef = effectiveFont();
   if(!ef){ tbody.innerHTML = ''; return; }
-  var raw = document.getElementById('ta').value || 'Jorge';
+  var raw = document.getElementById('ta').value || 'TEXTE';
   var txt = applyCase(raw, ef.textCase);
   var line = txt.split('\n')[0];
   var hMm = parseFloat(document.getElementById('hm').value) || 20;
@@ -1483,7 +1507,7 @@ function updateOverlay(){
   var img = document.getElementById('overlayImg');
   if(img.src !== S.cropPreviewUrl){ img.src = S.cropPreviewUrl; }
   var ef = effectiveFont(); if(!ef) return;
-  var raw = document.getElementById('ta').value || 'Jorge';
+  var raw = document.getElementById('ta').value || 'TEXTE';
   var txt = applyCase(raw, ef.textCase);
   var ot = document.getElementById('overlayText');
   var showCb = document.getElementById('ovShowText');
@@ -1514,8 +1538,46 @@ function updateOverlay(){
   ot.innerHTML = '<span style="display:inline-block;transform:scaleX('+glyphSx+');transform-origin:center center;">' + escHTML(txt).replace(/\n/g,'<br>') + '</span>';
 }
 
-['ta','hm','wm','sm'].forEach(function(id){
-  document.getElementById(id).addEventListener('input',updatePreview);
+// When the user changes text, the workspace layout is invalidated (letter count may change)
+document.getElementById('ta').addEventListener('input', function(){
+  // Don't blindly clear — only if length changes
+  var raw = document.getElementById('ta').value || '';
+  var ef0 = effectiveFont();
+  var txt0 = ef0 ? applyCase(raw, ef0.textCase) : raw;
+  var line0 = txt0.split('\n')[0];
+  if(S._wsLettersLayout && S._wsLettersLayout.length !== line0.length){
+    S._wsLettersLayout = null;
+  }
+  updatePreview();
+});
+
+// When dimension inputs change, propagate to the workspace layout (preserves modified glyphs
+// but resets sizes / positions to the new defaults)
+function syncWsLayoutFromInputs(){
+  if(!S._wsLettersLayout || !S._wsLettersLayout.length) return;
+  var hMm = parseFloat(document.getElementById('hm').value) || 20;
+  var wMm = parseFloat(document.getElementById('wm').value) || 15;
+  var sMm = parseFloat(document.getElementById('sm').value) || 0;
+  // Use the existing center as anchor so the text doesn't jump
+  var first = S._wsLettersLayout[0];
+  var last = S._wsLettersLayout[S._wsLettersLayout.length - 1];
+  var cx = (first.x + last.x + last.w) / 2;
+  var cy = first.y + first.h / 2;
+  var totalW = (wMm + sMm) * S._wsLettersLayout.length - sMm;
+  var startX = cx - totalW / 2;
+  var newY = cy - hMm / 2;
+  S._wsLettersLayout.forEach(function(L, i){
+    L.x = startX + i * (wMm + sMm);
+    L.y = newY;
+    L.w = wMm;
+    L.h = hMm;
+  });
+}
+['hm','wm','sm'].forEach(function(id){
+  document.getElementById(id).addEventListener('input', function(){
+    syncWsLayoutFromInputs();
+    updatePreview();
+  });
 });
 
 // =============================================
@@ -1528,7 +1590,7 @@ function doExport() {
                     S._modifiedGlyphsFont === ef.family + '-' + ef.weight + '-' + ef.style &&
                     Object.keys(S._modifiedGlyphs).length > 0;
   if(hasModified){ return doExportWithCustomGlyphs(ef); }
-  var raw=document.getElementById('ta').value||'Jorge';
+  var raw=document.getElementById('ta').value||'TEXTE';
   var txt=applyCase(raw,ef.textCase);
   var h=parseFloat(document.getElementById('hm').value)||20;
   var w=parseFloat(document.getElementById('wm').value)||15;
@@ -1583,7 +1645,7 @@ function doExport() {
 
 
 function doExportWithCustomGlyphs(ef){
-  var raw=document.getElementById('ta').value||'Jorge';
+  var raw=document.getElementById('ta').value||'TEXTE';
   var txt=applyCase(raw,ef.textCase);
   var h=parseFloat(document.getElementById('hm').value)||20;
   var w=parseFloat(document.getElementById('wm').value)||15;
@@ -1715,7 +1777,7 @@ function saveBlob(blob, filename, mime, acceptDesc, acceptExt){
     try {
       var f = new File([blob], filename, { type: mime });
       if(navigator.canShare({ files: [f] })){
-        navigator.share({ title: 'Jorge — ' + filename, files: [f] })
+        navigator.share({ title: 'Apex Draw — ' + filename, files: [f] })
           .then(function(){ showSuccess('Partage'); })
           .catch(function(e){
             if(e && e.name !== 'AbortError'){
@@ -1855,7 +1917,7 @@ document.getElementById('btnEditGlyphs').addEventListener('click', openGlyphEdit
 
 function openGlyphEditor(){
   var ef = effectiveFont(); if(!ef) return;
-  var raw = document.getElementById('ta').value || 'JORGE';
+  var raw = document.getElementById('ta').value || 'TEXTE';
   var txt = applyCase(raw, ef.textCase);
   // Set photo reference
   var photoEl = document.getElementById('gePhotoImg');
@@ -1906,7 +1968,7 @@ function openGlyphEditor(){
     var msg = e.message || 'Erreur inconnue';
     document.getElementById('geStatus').textContent = msg;
     var wrap = document.getElementById('geCanvasWrap');
-    wrap.innerHTML = '<div style="color:#c0392b;font-size:13px;text-align:center;padding:30px;line-height:1.6;max-width:380px"><strong>Impossible de charger la police</strong><br><br>' + msg + '<br><br>Cette fonctionnalite necessite que Jorge soit ouvert depuis une URL en ligne (GitHub Pages), pas en fichier local. Ouvrez : <br><strong style="color:#1a5c38">https://vitald81.github.io/Jorge/</strong></div>';
+    wrap.innerHTML = '<div style="color:#c0392b;font-size:13px;text-align:center;padding:30px;line-height:1.6;max-width:380px"><strong>Impossible de charger la police</strong><br><br>' + msg + '<br><br>Cette fonctionnalite necessite que Apex Draw soit ouvert depuis une URL en ligne (GitHub Pages), pas en fichier local. Ouvrez : <br><strong style="color:#1a5c38">https://vitald81.github.io/Jorge/</strong></div>';
     console.error('[Jorge] font load error', e);
   });
 }
@@ -2709,7 +2771,7 @@ function wsActualLetterBBox(L, ef){
 function buildFinalSvg(){
   var ef = effectiveFont();
   if(!ef) return null;
-  var raw = document.getElementById('ta').value || 'Jorge';
+  var raw = document.getElementById('ta').value || 'TEXTE';
   var txt = applyCase(raw, ef.textCase);
   var hMm = parseFloat(document.getElementById('hm').value) || 20;
   var wMm = parseFloat(document.getElementById('wm').value) || 15;
@@ -2755,6 +2817,8 @@ function buildFinalSvg(){
       var cxMm = x + w/2;
       var modGlyph = modGlyphs && modGlyphs[L.ch];
       if(modGlyph){
+        // Render as multiple paths: original letter as one, each drawing as a separate path
+        // so winding/fill-rule issues never hide a drawing
         var bb = modGlyph.origBBox || computeBBox(modGlyph.commands);
         if(!bb || !isFinite(bb.minX)) bb = {minX:0, minY:0, maxX:modGlyph.unitsPerEm, maxY:modGlyph.unitsPerEm};
         var gW = (bb.maxX - bb.minX) || modGlyph.unitsPerEm;
@@ -2763,8 +2827,32 @@ function buildFinalSvg(){
         var sy = h / gH;
         var tx = x - bb.minX * sx;
         var ty = y + bb.maxY * sy;
-        var d = commandsToPathData(modGlyph.commands);
-        els += '\n  <g transform="translate(' + tx.toFixed(4) + ',' + ty.toFixed(4) + ') scale(' + sx.toFixed(6) + ',' + (-sy).toFixed(6) + ')"><path d="' + d + '" fill="#000000"/></g>';
+        // Split commands into original + drawn subpaths
+        var origCmds = [];
+        var drawnList = [];
+        var mi = 0;
+        var cmdsArr = modGlyph.commands;
+        while(mi < cmdsArr.length){
+          if(cmdsArr[mi].type !== 'M'){ mi++; continue; }
+          var startI = mi;
+          var endI = mi + 1;
+          while(endI < cmdsArr.length && cmdsArr[endI].type !== 'M') endI++;
+          var subCmds = cmdsArr.slice(startI, endI);
+          if(cmdsArr[startI]._drawn){
+            drawnList.push(subCmds);
+          } else {
+            for(var k=0; k<subCmds.length; k++) origCmds.push(subCmds[k]);
+          }
+          mi = endI;
+        }
+        els += '\n  <g transform="translate(' + tx.toFixed(4) + ',' + ty.toFixed(4) + ') scale(' + sx.toFixed(6) + ',' + (-sy).toFixed(6) + ')">';
+        if(origCmds.length > 0){
+          els += '<path d="' + commandsToPathData(origCmds) + '" fill="#000000" fill-rule="nonzero"/>';
+        }
+        drawnList.forEach(function(sub){
+          els += '<path d="' + commandsToPathData(sub) + '" fill="#000000" fill-rule="nonzero"/>';
+        });
+        els += '</g>';
       } else {
         anyTextNeeded = true;
         var natW = measureCharWidth(ef.family, ef.weight, ef.style, fsMm, 'H');
@@ -2878,7 +2966,7 @@ function buildFpLettersTable(){
   if(!tbody) return;
   var ef = effectiveFont();
   if(!ef){ tbody.innerHTML = ''; return; }
-  var raw = document.getElementById('ta').value || 'Jorge';
+  var raw = document.getElementById('ta').value || 'TEXTE';
   var txt = applyCase(raw, ef.textCase);
   var hMm = parseFloat(document.getElementById('hm').value) || 20;
   var wMm = parseFloat(document.getElementById('wm').value) || 15;
@@ -3372,7 +3460,7 @@ var WS = {
   _editTransform: null,
   // Drawing tool settings (millimeters)
   drawStrokeWidthMm: 1.0,
-  drawFillClosed: false,
+  drawFillClosed: true,
   // Undo stack for the current edit session (commands snapshots)
   editUndoStack: []
 };
@@ -3405,7 +3493,7 @@ function openWorkspace(){
   WS.photoX = marginMm;
   WS.photoY = marginMm;
 
-  var raw = document.getElementById('ta').value || 'Jorge';
+  var raw = document.getElementById('ta').value || 'TEXTE';
   var txt = applyCase(raw, ef.textCase);
   var lineHmm = parseFloat(document.getElementById('hm').value) || 20;
   var lineWmm = parseFloat(document.getElementById('wm').value) || 15;
@@ -3652,6 +3740,59 @@ function wsBuildSelOverlay(L, idx, withHandles){
 }
 
 
+
+// Render a modified glyph as multiple <path> elements:
+// - One path for the original letter outlines
+// - One separate path per user-drawn subpath (lines, arcs, free strokes)
+// This avoids fill-rule conflicts that could hide drawings inside the letter
+function wsRenderModifiedGlyphPaths(mg, px, py, pw, ph, fillColor, opacity, useStrokeForOutline){
+  fillColor = fillColor || '#000';
+  if(opacity === undefined) opacity = 1;
+  var origBB = mg.origBBox || computeBBox(mg.commands);
+  if(!origBB || !isFinite(origBB.minX)) return '';
+  var gW = origBB.maxX - origBB.minX;
+  var gH = origBB.maxY - origBB.minY;
+  if(gW < 0.001 || gH < 0.001) return '';
+  var sx = pw / gW;
+  var sy = ph / gH;
+  var tx = px - origBB.minX * sx;
+  var ty = py + origBB.maxY * sy;
+  var op = (opacity < 1) ? ' opacity="' + opacity + '"' : '';
+  var xform = 'translate(' + tx + ',' + ty + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')';
+
+  // Split commands into subpaths
+  var cmds = mg.commands;
+  var origCmds = [];  // accumulated original (letter) subpaths
+  var drawnSubpaths = [];  // each entry: { cmds: [...], outline: bool }
+  var i = 0;
+  while(i < cmds.length){
+    if(cmds[i].type !== 'M'){ i++; continue; }
+    var startIdx = i;
+    var endIdx = i + 1;
+    while(endIdx < cmds.length && cmds[endIdx].type !== 'M') endIdx++;
+    var subCmds = cmds.slice(startIdx, endIdx);
+    if(cmds[startIdx]._drawn){
+      drawnSubpaths.push({ cmds: subCmds, outline: !!cmds[startIdx]._outline });
+    } else {
+      for(var k=0; k<subCmds.length; k++) origCmds.push(subCmds[k]);
+    }
+    i = endIdx;
+  }
+
+  var out = '';
+  // Original letter path first (filled solid)
+  if(origCmds.length > 0){
+    var dorig = commandsToPathData(origCmds);
+    out += '<path d="' + dorig + '" fill="' + fillColor + '" fill-rule="nonzero"' + op + ' transform="' + xform + '" pointer-events="none"/>';
+  }
+  // Each user-drawn subpath as a SEPARATE path so it always renders independently
+  drawnSubpaths.forEach(function(sp){
+    var d = commandsToPathData(sp.cmds);
+    out += '<path d="' + d + '" fill="' + fillColor + '" fill-rule="nonzero"' + op + ' transform="' + xform + '" pointer-events="none"/>';
+  });
+  return out;
+}
+
 // Build SVG for rendering a letter glyph at a pixel-space box.
 // Uses opentype.js paths if font is loaded (so workspace + edit mode look identical).
 // Falls back to <text> element while font loads.
@@ -3659,19 +3800,19 @@ function wsBuildSelOverlay(L, idx, withHandles){
 function wsRenderGlyphSvg(ch, px, py, pw, ph, ef, opacity, modGlyph, fillColor){
   fillColor = fillColor || '#0a0a0a';
   if(opacity === undefined) opacity = 1;
-  var commands, bb;
+  // For a modified glyph, render as multiple separate paths so drawings don't conflict
   if(modGlyph){
-    commands = modGlyph.commands;
-    bb = modGlyph.origBBox || computeBBox(commands);
-  } else {
-    var glyphKey = ef.family + '-' + ef.weight + '-' + ef.style;
-    if(window._otFonts && window._otFonts[glyphKey]){
-      var font = window._otFonts[glyphKey];
-      var otGlyph = font.charToGlyph(ch);
-      if(otGlyph){
-        commands = otGlyph.path.commands;
-        bb = computeBBox(commands);
-      }
+    return wsRenderModifiedGlyphPaths(modGlyph, px, py, pw, ph, fillColor, opacity, false);
+  }
+  // For an unmodified letter, fetch the font path
+  var commands, bb;
+  var glyphKey = ef.family + '-' + ef.weight + '-' + ef.style;
+  if(window._otFonts && window._otFonts[glyphKey]){
+    var font = window._otFonts[glyphKey];
+    var otGlyph = font.charToGlyph(ch);
+    if(otGlyph){
+      commands = otGlyph.path.commands;
+      bb = computeBBox(commands);
     }
   }
   if(commands && bb && isFinite(bb.minX) && (bb.maxX - bb.minX) > 0.001){
@@ -3683,7 +3824,7 @@ function wsRenderGlyphSvg(ch, px, py, pw, ph, ef, opacity, modGlyph, fillColor){
     var ty = py + bb.maxY * sy;
     var d = commandsToPathData(commands);
     var op = (opacity < 1) ? ' opacity="' + opacity + '"' : '';
-    return '<path d="' + d + '" fill="' + fillColor + '"' + op + ' transform="translate(' + tx + ',' + ty + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')" pointer-events="none"/>';
+    return '<path d="' + d + '" fill="' + fillColor + '" fill-rule="nonzero"' + op + ' transform="translate(' + tx + ',' + ty + ') scale(' + sx.toFixed(5) + ',' + (-sy).toFixed(5) + ')" pointer-events="none"/>';
   }
   // Fallback while font loads — use <text> element
   var fsPx = ph * 0.76;
@@ -4364,14 +4505,24 @@ function wsBindEvents(){
     swEl.addEventListener('input', syncSW);
     syncSW();
   }
-  // Drawing tool: fill toggle
-  var fillEl = document.getElementById('wsDrawFill');
-  if(fillEl){
-    fillEl.checked = WS.drawFillClosed;
-    fillEl.addEventListener('change', function(e){
-      WS.drawFillClosed = e.target.checked;
-    });
+  // Drawing tool style: Pleine (filled) / Contour (outline-only) segmented control
+  function setDrawStyle(filled){
+    WS.drawFillClosed = filled;
+    var bf = document.getElementById('wsStyleFill');
+    var bo = document.getElementById('wsStyleOutline');
+    if(bf && bo){
+      bf.style.background = filled ? 'var(--accent)' : 'transparent';
+      bf.style.color = filled ? '#fff' : '#bbb';
+      bo.style.background = filled ? 'transparent' : 'var(--accent)';
+      bo.style.color = filled ? '#bbb' : '#fff';
+    }
   }
+  var sfEl = document.getElementById('wsStyleFill');
+  var soEl = document.getElementById('wsStyleOutline');
+  if(sfEl) sfEl.addEventListener('click', function(){ setDrawStyle(true); });
+  if(soEl) soEl.addEventListener('click', function(){ setDrawStyle(false); });
+  // Initialize: default to Pleine (filled)
+  setDrawStyle(true);
 
   // Photo opacity controlled via side panel only (unified)
   // Edit-select arrow pad
@@ -4972,7 +5123,7 @@ function buildFinalSvgPaths(){
   }
   var font = window._otFonts[glyphKey];
   var upem = font.unitsPerEm || 1000;
-  var raw = document.getElementById('ta').value || 'Jorge';
+  var raw = document.getElementById('ta').value || 'TEXTE';
   var txt = applyCase(raw, ef.textCase);
   var hMm = parseFloat(document.getElementById('hm').value) || 20;
   var wMm = parseFloat(document.getElementById('wm').value) || 15;
