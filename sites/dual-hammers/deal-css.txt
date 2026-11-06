@@ -1,0 +1,25 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Mona+Sans:wdth,wght@75..125,400..600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/system.css">
+<link rel="stylesheet" href="assets/ui/cards.css">
+<link rel="stylesheet" href="assets/motion/motion.css">
+<link rel="stylesheet" href="assets/backgrounds/backgrounds.css">
+<link rel="stylesheet" href="assets/layout/layout.css">
+<link rel="stylesheet" href="assets/icons/icon.css">
+<!-- <html lang="en" data-radius="soft">; keep this <style> after the links: layout.css resets --ly-scale -->
+<style>
+:root {
+  --p-bg: #ffffff; --p-surface: #f4f4f2; --p-ink: #1f2b4d; --p-muted: #646b81;
+  --p-accent: #f7941d; --p-accent-ink: #1f2b4d; --p-action: #f7941d; --p-action-ink: #1f2b4d;
+  --p-inv-bg: #05070a; --p-inv-surface: #111417; --p-inv-ink: #ffffff; --p-inv-muted: #939597;
+  --p-inv-accent: #f7941d; --p-inv-accent-ink: #1f2b4d; --p-inv-action: #f7941d; --p-inv-action-ink: #1f2b4d;
+  --font-display: "Mona Sans", system-ui, sans-serif;
+  --font-text: "Mona Sans", system-ui, sans-serif;
+  --display-weight: 400;
+  --display-tracking: -0.03em;
+  --display-tracking-xl: -0.04em;
+  --display-stretch: 104%;
+  --ly-scale: 0.96;
+}
+</style>
